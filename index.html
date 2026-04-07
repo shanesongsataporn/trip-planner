@@ -2709,6 +2709,11 @@
             var pc = JSON.parse(data.citySettings);
             Object.keys(pc).forEach(function(key) { citySettings[key] = pc[key]; });
           }
+          if (data.cardPhotos) {
+            var remote = JSON.parse(data.cardPhotos);
+            Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
+            try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+          }
         }
         if (callback) { callback(); }
       }).catch(function(e) {
