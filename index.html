@@ -1416,14 +1416,15 @@
               var fromName = isTransit ? parts[0].trim() : null;
               var cs = citySettings[baseName];
               var fromCs = fromName ? citySettings[fromName] : null;
+              var codeMap = { "Bangkok": "BKK", "Chiang Rai": "CEI", "Koh Samui": "USM", "Sydney": "SYD" };
               if (isTransit) {
                 cityColor = '#5B9BD5';
-                var fromCode = fromCs ? fromCs.code : fromName;
-                var toCode = cs ? cs.code : baseName;
+                var fromCode = codeMap[fromName] || (fromCs && fromCs.code) || (fromName ? fromName.substring(0,3).toUpperCase() : '');
+                var toCode = codeMap[baseName] || (cs && cs.code) || baseName.substring(0,3).toUpperCase();
                 cityPill = '<span class="cal-city-pill" style="background:' + cityColor + ';">' + fromCode + '→' + toCode + '</span>';
               } else {
                 if (cs) { cityColor = cs.color; }
-                var code = cs ? cs.code : baseName.substring(0,3).toUpperCase();
+                var code = codeMap[baseName] || (cs && cs.code) || baseName.substring(0,3).toUpperCase();
                 cityPill = '<span class="cal-city-pill" style="background:' + cityColor + ';">' + code + '</span>';
               }
             }
@@ -2295,7 +2296,7 @@
       "Bangkok":    { emoji: "\uD83C\uDFD9\uFE0F", color: "#E67E22", code: "BKK" },
       "Chiang Rai": { emoji: "\u26E9\uFE0F", color: "#9B59B6", code: "CEI" },
       "Koh Samui":  { emoji: "\uD83C\uDF34", color: "#2D9E75", code: "USM" },
-      "Sydney":     { emoji: "\uD83C\uDDF3\uD83C\uDDE6", color: "#3498DB", code: "SYD" }
+      "Sydney":     { emoji: "\uD83C\uDDF3\uD83C\uDDE6", color: "#3498DB", code: "SYD", noMarker: true }
     };
 
     var activityCategories = {
@@ -2396,7 +2397,7 @@
       var seen = {}, cities = [];
       currentTrip.days.forEach(function(day) {
         var baseName = day.city.split('>').pop().trim();
-        if (!seen[baseName] && citySettings[baseName]) { seen[baseName] = true; cities.push({ name: baseName, lat: day.lat, lng: day.lng }); }
+        if (!seen[baseName] && citySettings[baseName] && !citySettings[baseName].noMarker) { seen[baseName] = true; cities.push({ name: baseName, lat: day.lat, lng: day.lng }); }
       });
       cities.forEach(function(city) {
           var el = buildCityMarkerEl(city.name);
