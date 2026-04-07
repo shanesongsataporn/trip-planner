@@ -2508,14 +2508,16 @@
           map.setCenter(thailand);
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          addCityMarkers();
-          requestAnimationFrame(function() {
-            setView('calendar');
-            requestAnimationFrame(function() {
-              setView('map');
+          if (!isMobile()) {
+            addCityMarkers();
+          } else {
+            addCityMarkers();
+            map.getDiv().addEventListener('touchstart', function() {
+              cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
+              cityMarkerObjs = [];
               addCityMarkers();
-            });
-          });
+            }, { once: true });
+          }
         });
       });
     }
