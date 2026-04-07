@@ -949,8 +949,12 @@
     }
 
     function confirmReset() {
-      showModal('Reset all data', '<p style="font-size:13px;color:var(--ink-light);">This will delete all trips and reset to the default. This cannot be undone.</p>',
-        function() { localStorage.clear(); location.reload(); }
+      showModal('Reset all data', '<p style="font-size:13px;color:var(--ink-light);">This will permanently delete all trips and data. This cannot be undone.</p>',
+        function() {
+          showModal('Are you absolutely sure?', '<p style="font-size:13px;color:var(--danger);font-weight:600;">This is irreversible. All your trips, activities, photos and notes will be lost forever.</p>',
+            function() { localStorage.clear(); location.reload(); }
+          );
+        }
       );
     }
 
