@@ -674,7 +674,6 @@
     <div id="panel-head">
       <button id="panel-close">x</button>
       <div id="panel-head-content"></div>
-      <button id="panel-delete-day" style="margin:8px 16px 0;width:calc(100% - 32px);font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">🗑 Delete this day</button>
     </div>
     <div class="panel-tabs">
       <div class="panel-tab active" data-tab="overview">Overview</div>
@@ -2426,7 +2425,32 @@
       document.getElementById('tab-overview').innerHTML =
         '<div class="panel-day-num" style="margin-bottom:6px;">Accommodation</div>' + makeSortableAccom(item, 'overview') +
         '<div class="panel-day-num" style="margin-top:16px;margin-bottom:6px;">Activities</div>' + makeSortableActivities(item, 'overview') +
-        '<div class="panel-day-num" style="margin-top:16px;margin-bottom:6px;">Food</div>' + makeSortableFood(item, 'overview');
+        '<div class="panel-day-num" style="margin-top:16px;margin-bottom:6px;">Food</div>' + makeSortableFood(item, 'overview') +
+        '<div style="margin-top:24px;padding-top:14px;border-top:1px solid var(--sand-dark);display:flex;align-items:center;justify-content:space-between;">' +
+          '<div style="font-size:11px;color:var(--ink-muted);">Day ' + item.day + ' of ' + currentTrip.days.length + '</div>' +
+          '<button id="panel-delete-day" style="font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid transparent;background:none;color:var(--ink-muted);cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color=\'var(--danger)\';this.style.borderColor=\'var(--danger)\'" onmouseout="this.style.color=\'var(--ink-muted)\';this.style.borderColor=\'transparent\'">🗑 Delete day</button>' +
+        '</div>';
+      var deleteBtn = document.getElementById('panel-delete-day');
+      if (deleteBtn) {
+        deleteBtn.onclick = function() {
+          var idx = currentTrip.days.indexOf(item);
+          if (idx === -1) return;
+          showModal('Delete Day ' + item.day,
+            '<p style="font-size:13px;color:var(--ink-light);">Delete Day ' + item.day + ' · ' + item.city + '? This cannot be undone.</p>',
+            function() {
+              currentTrip.days.splice(idx, 1);
+              currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
+              saveToStorage();
+              rebuildTimeline();
+              rebuildMobStrip();
+              document.getElementById('panel').classList.remove('open');
+              if (currentView === 'itinerary') { renderItinerary(); }
+              if (currentView === 'cards') { renderKanban(); }
+              if (currentView === 'budget') { renderBudget(); }
+            }
+          );
+        };
+      }
 
       document.getElementById('tab-accommodation').innerHTML = makeSortableAccom(item, 'tab') + buildSearchBox('accommodation');
       document.getElementById('tab-activities').innerHTML = makeSortableActivities(item, 'tab') + buildSearchBox('activities');
