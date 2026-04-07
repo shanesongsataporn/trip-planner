@@ -978,6 +978,7 @@
       if (!trips[key]) return;
       currentTripKey = key; currentTrip = trips[key]; currentDayItem = null;
       document.getElementById('panel').classList.remove('open');
+      closeMobDaySummary();
       clearActivityMarkers();
       cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
       cityMarkerObjs = [];
