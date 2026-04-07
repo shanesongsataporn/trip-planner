@@ -2925,22 +2925,25 @@
     // ===== MAP FLOAT CARD =====
     var mapFloatCardItem = null;
 
-    function showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex) {
-      mapFloatCardItem = (dayIndex !== undefined && actIndex !== undefined) ? { dayIndex: dayIndex, actIndex: actIndex } : null;
+    function showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex, itemType) {
+      mapFloatCardItem = (dayIndex !== undefined && actIndex !== undefined) ? { dayIndex: dayIndex, actIndex: actIndex, type: itemType || 'activity' } : null;
       var card = document.getElementById('map-float-card');
       var img = document.getElementById('map-float-card-img');
       var nameEl = document.getElementById('map-float-card-name');
       var noteEl = document.getElementById('map-float-card-note');
       var linkEl = document.getElementById('map-float-card-link');
+      var editBtn = document.getElementById('map-float-card-edit');
       nameEl.textContent = name;
       if (mapFloatCardItem) {
         noteEl.innerHTML = note
           ? '<span style="font-style:italic;">' + note + '</span> <span onclick="openMapFloatCardNoteModal()" style="font-size:10px;color:var(--ink-muted);cursor:pointer;margin-left:4px;">📝 Edit</span>'
           : '<span onclick="openMapFloatCardNoteModal()" style="font-size:11px;color:var(--ink-muted);cursor:pointer;">📝 Add note</span>';
         noteEl.style.display = 'block';
+        if (editBtn) { editBtn.style.display = 'block'; }
       } else {
         noteEl.textContent = note || '';
         noteEl.style.display = note ? 'block' : 'none';
+        if (editBtn) { editBtn.style.display = 'none'; }
       }
       linkEl.href = mapsUrl;
       if (photoUrl) { img.src = photoUrl; img.style.display = 'block'; }
@@ -2948,6 +2951,20 @@
       card.classList.remove('open');
       void card.offsetWidth;
       card.classList.add('open');
+    }
+
+    function openFloatCardEdit() {
+      if (!mapFloatCardItem) return;
+      var dayIndex = mapFloatCardItem.dayIndex;
+      var type = mapFloatCardItem.type;
+      var tabMap = { activity: 'activities', food: 'food', accommodation: 'accommodation' };
+      var targetTab = tabMap[type] || 'overview';
+      closeMapFloatCard();
+      openDayPanel(currentTrip.days[dayIndex]);
+      setTimeout(function() {
+        var tab = document.querySelector('.panel-tab[data-tab="' + targetTab + '"]');
+        if (tab) { tab.click(); }
+      }, 50);
     }
 
     function openMapFloatCardNoteModal() {
@@ -3138,7 +3155,10 @@
     <div id="map-float-card-body">
       <div id="map-float-card-name"></div>
       <div id="map-float-card-note"></div>
-      <a id="map-float-card-link" href="" target="_blank">📍 Open in Maps</a>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <a id="map-float-card-link" href="" target="_blank" style="flex:1;">📍 Open in Maps</a>
+        <button id="map-float-card-edit" onclick="openFloatCardEdit()" style="font-family:inherit;font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;white-space:nowrap;display:none;">✏️ Edit</button>
+      </div>
     </div>
   </div>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXFs5TVkOdKJciflCTQmX2vH9FwWTqfz8&callback=initMap&loading=async&libraries=places,marker" async defer></script>
