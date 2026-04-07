@@ -197,10 +197,13 @@
     /* ===== MAP FLOAT CARD ===== */
     #map-float-card {
       display: none; position: fixed; z-index: 2000;
-      bottom: 110px; left: 16px; width: 240px;
+      bottom: 90px; left: 16px; width: 240px;
       background: var(--white); border-radius: var(--radius); overflow: hidden;
       box-shadow: var(--card-shadow-hover); border: 1px solid var(--sand-dark);
       animation: fadeInUp 0.2s ease;
+    }
+    @media (max-width: 640px) {
+      #map-float-card { bottom: 88px; width: 200px; }
     }
     #map-float-card.open { display: block; }
     #map-float-card img { width:100%; height:120px; object-fit:cover; display:block; }
@@ -2423,7 +2426,7 @@
             service.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_address', 'opening_hours', 'photos', 'url'] }, function(details, detailStatus) {
               var el = document.createElement('div');
               el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
-              el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.55) + 'px;font-weight:800;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + (task.catIndex + 1) + '</div>';
+              el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + pinEmoji + '</div>';
               var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: splitMap, title: task.name, content: el });
               var cardContent = '<div style="width:240px;font-family:system-ui,sans-serif;">';
               var photoUrl = (details && detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0)
@@ -2491,7 +2494,7 @@
           service.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_address', 'opening_hours', 'photos', 'url'] }, function(details, detailStatus) {
             var el = document.createElement('div');
             el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
-            el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.55) + 'px;font-weight:800;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + (task.catIndex + 1) + '</div>';
+            el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + pinEmoji + '</div>';
             var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: map, title: task.name, content: el });
             var cardContent = '<div style="width:' + (isMobile() ? '150px' : '260px') + ';font-family:system-ui,sans-serif;font-size:' + (isMobile() ? '11px' : '13px') + ';">';
             if (details && detailStatus === google.maps.places.PlacesServiceStatus.OK) {
