@@ -2332,20 +2332,20 @@
           addCityMarkers();
           if (isMobile()) {
             initMobPill();
-            var mapEl = document.getElementById('map');
-            var observer = new MutationObserver(function() {
-              if (mapEl.offsetWidth > 0 && mapEl.offsetHeight > 0) {
-                observer.disconnect();
-                google.maps.event.trigger(map, 'resize');
-                map.setCenter(thailand);
-                cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
-                cityMarkerObjs = [];
-                addCityMarkers();
-                updateMobPill();
-              }
-            });
-            observer.observe(mapEl, { attributes: true, childList: true, subtree: true });
-            setTimeout(function() { observer.disconnect(); }, 5000);
+            var mobReady = false;
+            function mobMapRefresh() {
+              if (mobReady) return;
+              mobReady = true;
+              google.maps.event.trigger(map, 'resize');
+              map.setCenter(thailand);
+              cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
+              cityMarkerObjs = [];
+              addCityMarkers();
+              updateMobPill();
+            }
+            document.addEventListener('touchstart', function() { mobMapRefresh(); }, { once: true });
+            document.addEventListener('touchmove', function() { mobMapRefresh(); }, { once: true });
+            setTimeout(function() { mobMapRefresh(); }, 2000);
           }
         });
       });
