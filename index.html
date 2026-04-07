@@ -2854,7 +2854,7 @@
               el.addEventListener('click', handler);
             var dayIndex = currentTrip.days.indexOf(item);
             })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index, dayIndex);
-            activityMarkers.push({ marker: marker, index: task.index, type: task.type });
+            activityMarkers.push({ marker: marker, index: task.index, type: task.type, position: place.geometry.location });
             if (callback) { callback(); }
           });
         } else { if (callback) { callback(); } }
@@ -2912,8 +2912,13 @@
       addActivityMarkers(day, function() {
         if (activityMarkers.length > 0) {
           var bounds = new google.maps.LatLngBounds();
-          activityMarkers.forEach(function(obj) { bounds.extend(obj.marker.position); });
-          map.fitBounds(bounds, { padding: 60 });
+          activityMarkers.forEach(function(obj) {
+            if (obj.position) { bounds.extend(obj.position); }
+          });
+          if (!bounds.isEmpty()) { map.fitBounds(bounds, { padding: 60 }); }
+        } else {
+          map.panTo({ lat: day.lat, lng: day.lng });
+          map.setZoom(13);
         }
       });
     }
