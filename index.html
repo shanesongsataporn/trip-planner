@@ -2510,10 +2510,11 @@
           if (isMobile()) { initMobPill(); updateMobPill(); }
           addCityMarkers();
           requestAnimationFrame(function() {
-            google.maps.event.trigger(map, 'resize');
-            map.setZoom(map.getZoom() - 0.0001);
-            map.setZoom(6);
-            map.setCenter(thailand);
+            setView('calendar');
+            requestAnimationFrame(function() {
+              setView('map');
+              addCityMarkers();
+            });
           });
         });
       });
