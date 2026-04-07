@@ -1485,13 +1485,14 @@
                 '<div class="cal-detail-header">' +
                   '<span style="font-size:24px;">' + getCityEmoji(sd.city) + '</span>' +
                   '<div><div class="cal-detail-day-num">Day ' + sd.day + ' · ' + sd.date + '</div><div class="cal-detail-city">' + sd.city + '</div></div>' +
-                  '<button onclick="editItinDay(' + dayIndex + ')" style="margin-left:auto;font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">Edit</button>' +
+                  '<button onclick="toggleCalEdit(' + dayIndex + ')" id="cal-edit-btn-' + dayIndex + '" style="margin-left:auto;font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">Edit</button>' +
                 '</div>' +
-                '<div class="cal-detail-body">' +
+                '<div class="cal-detail-body" id="cal-detail-body-' + dayIndex + '">' +
                   '<div class="cal-detail-section"><div class="cal-detail-label">Accommodation</div>' + accomItems + '</div>' +
                   '<div class="cal-detail-section"><div class="cal-detail-label">Activities</div>' + actItems + '</div>' +
                   '<div class="cal-detail-section"><div class="cal-detail-label">Food</div>' + foodItems + '</div>' +
                 '</div>' +
+                '<div id="cal-edit-panel-' + dayIndex + '" style="display:none;"></div>' +
               '</div>';
             }
           }
@@ -1771,6 +1772,140 @@
 
     function editItinDay(index) {
       openDayPanel(currentTrip.days[index]);
+    }
+
+    function toggleCalEdit(dayIndex) {
+      var editPanel = document.getElementById('cal-edit-panel-' + dayIndex);
+      var detailBody = document.getElementById('cal-detail-body-' + dayIndex);
+      var btn = document.getElementById('cal-edit-btn-' + dayIndex);
+      if (!editPanel || !detailBody) return;
+      var isOpen = editPanel.style.display !== 'none';
+      if (isOpen) {
+        editPanel.style.display = 'none';
+        detailBody.style.display = 'block';
+        btn.textContent = 'Edit';
+        btn.style.background = 'none';
+        btn.style.color = 'var(--accent)';
+      } else {
+        detailBody.style.display = 'none';
+        btn.textContent = 'Done';
+        btn.style.background = 'var(--accent)';
+        btn.style.color = '#fff';
+        var item = currentTrip.days[dayIndex];
+        currentDayItem = item;
+        normaliseAccom(item); normaliseDayTransport(item);
+        editPanel.style.display = 'block';
+        editPanel.innerHTML =
+          '<div style="padding:16px;">' +
+            '<div style="margin-bottom:12px;">' +
+              '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Date</div>' +
+              '<input class="inline-edit" style="font-size:13px;font-weight:600;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:8px 10px;background:var(--sand);" value="' + item.date + '" onchange="updateCalDayField(' + dayIndex + ',\'date\',this.value)" onblur="updateCalDayField(' + dayIndex + ',\'date\',this.value)">' +
+            '</div>' +
+            '<div style="margin-bottom:12px;">' +
+              '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">City</div>' +
+              '<input class="inline-edit" style="font-size:13px;font-weight:600;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:8px 10px;background:var(--sand);" value="' + item.city + '" onchange="updateCalDayField(' + dayIndex + ',\'city\',this.value)" onblur="updateCalDayField(' + dayIndex + ',\'city\',this.value)">' +
+            '</div>' +
+            '<div style="margin-bottom:16px;">' +
+              '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Note</div>' +
+              '<input class="inline-edit" style="font-size:13px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:8px 10px;background:var(--sand);" value="' + (item.note||'') + '" placeholder="Add a note..." onchange="updateCalDayField(' + dayIndex + ',\'note\',this.value)" onblur="updateCalDayField(' + dayIndex + ',\'note\',this.value)">' +
+            '</div>' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Accommodation</div>' +
+            '<div id="cal-edit-accom-' + dayIndex + '">' + renderCalEditAccom(dayIndex) + '</div>' +
+            '<button class="add-btn" onclick="addCalAccom(' + dayIndex + ')">+ Add accommodation</button>' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Activities</div>' +
+            '<div id="cal-edit-acts-' + dayIndex + '">' + renderCalEditActs(dayIndex) + '</div>' +
+            buildSearchBox('activities') +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Food</div>' +
+            '<div id="cal-edit-food-' + dayIndex + '">' + renderCalEditFood(dayIndex) + '</div>' +
+            buildSearchBox('food') +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Transport</div>' +
+            '<div id="cal-edit-transport-' + dayIndex + '">' + renderTransportTab(item) + '</div>' +
+          '</div>';
+      }
+    }
+
+    function updateCalDayField(dayIndex, field, value) {
+      var item = currentTrip.days[dayIndex];
+      if (!item) return;
+      item[field] = value;
+      saveToStorage(); rebuildTimeline(); rebuildMobStrip();
+    }
+
+    function renderCalEditAccom(dayIndex) {
+      var item = currentTrip.days[dayIndex];
+      normaliseAccom(item);
+      if (!item.accommodation.length) return '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">None added</div>';
+      return item.accommodation.map(function(a, i) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--sand-dark);">' +
+          '<span style="font-size:14px;">🏨</span>' +
+          '<span style="flex:1;font-size:12px;color:var(--ink);">' + a.name + '</span>' +
+          makeDeleteBtn('deleteCalAccom(' + dayIndex + ',' + i + ')') +
+        '</div>';
+      }).join('');
+    }
+
+    function renderCalEditActs(dayIndex) {
+      var item = currentTrip.days[dayIndex];
+      if (!item.activities.length) return '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">None added</div>';
+      return item.activities.map(function(a, i) {
+        var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
+        var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--sand-dark);">' +
+          '<span style="font-size:14px;">' + emoji + '</span>' +
+          '<span style="flex:1;font-size:12px;color:var(--ink);">' + a + '</span>' +
+          makeDeleteBtn('deleteCalActivity(' + dayIndex + ',' + i + ')') +
+        '</div>';
+      }).join('');
+    }
+
+    function renderCalEditFood(dayIndex) {
+      var item = currentTrip.days[dayIndex];
+      if (!item.food.length) return '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">None added</div>';
+      return item.food.map(function(f, i) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--sand-dark);">' +
+          '<span style="font-size:14px;">🍽️</span>' +
+          '<span style="flex:1;font-size:12px;color:var(--ink);">' + f + '</span>' +
+          makeDeleteBtn('deleteCalFood(' + dayIndex + ',' + i + ')') +
+        '</div>';
+      }).join('');
+    }
+
+    function addCalAccom(dayIndex) {
+      showModal('Add accommodation',
+        '<div class="modal-field"><label>Name</label><input type="text" id="cal-accom-input" placeholder="e.g. Airbnb Bangkok"></div>',
+        function() {
+          var name = document.getElementById('cal-accom-input').value.trim();
+          if (!name) return;
+          normaliseAccom(currentTrip.days[dayIndex]);
+          currentTrip.days[dayIndex].accommodation.push({ name: name, notes: '', price: '' });
+          saveToStorage();
+          var el = document.getElementById('cal-edit-accom-' + dayIndex);
+          if (el) { el.innerHTML = renderCalEditAccom(dayIndex); }
+        }
+      );
+    }
+
+    function deleteCalAccom(dayIndex, i) {
+      normaliseAccom(currentTrip.days[dayIndex]);
+      currentTrip.days[dayIndex].accommodation.splice(i, 1);
+      saveToStorage();
+      var el = document.getElementById('cal-edit-accom-' + dayIndex);
+      if (el) { el.innerHTML = renderCalEditAccom(dayIndex); }
+    }
+
+    function deleteCalActivity(dayIndex, i) {
+      currentTrip.days[dayIndex].activities.splice(i, 1);
+      if (currentTrip.days[dayIndex].activityCategories) { currentTrip.days[dayIndex].activityCategories.splice(i, 1); }
+      saveToStorage();
+      var el = document.getElementById('cal-edit-acts-' + dayIndex);
+      if (el) { el.innerHTML = renderCalEditActs(dayIndex); }
+    }
+
+    function deleteCalFood(dayIndex, i) {
+      currentTrip.days[dayIndex].food.splice(i, 1);
+      saveToStorage();
+      var el = document.getElementById('cal-edit-food-' + dayIndex);
+      if (el) { el.innerHTML = renderCalEditFood(dayIndex); }
     }
 
     function toggleItinDay(day) {
