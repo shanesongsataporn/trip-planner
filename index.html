@@ -2644,7 +2644,7 @@
     }
 
     function clearActivityMarkers() {
-      activityMarkers.forEach(function(obj) { obj.marker.setMap(null); });
+      activityMarkers.forEach(function(obj) { obj.marker.map = null; });
       activityMarkers = [];
       closeMapFloatCard();
     }
