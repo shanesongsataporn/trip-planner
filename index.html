@@ -513,7 +513,7 @@
     }
   </style>
 </head>
-<body class="view-cards">
+<body class="view-map">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -530,8 +530,8 @@
     </div>
     <div class="hdr-right">
       <div class="view-switcher">
-        <button class="view-btn active" onclick="setView('cards')">🃏 Cards</button>
-        <button class="view-btn" onclick="setView('map')">🗺 Map</button>
+        <button class="view-btn active" onclick="setView('map')">🗺 Map</button>
+        <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
         <button class="view-btn" onclick="setView('calendar')">📅 Calendar</button>
         <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
@@ -711,7 +711,7 @@
     var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var activityMarkers = [], cityMarkerObjs = [], openInfoWindow = null;
     var splitActivityMarkers = [], splitOpenInfoWindow = null;
-    var currentDayItem = null, currentView = 'cards';
+    var currentDayItem = null, currentView = 'map';
     var kanbanSortables = [], cardPhotos = {}, tlDragged = false;
     var isMobile = function() { return window.innerWidth <= 640; };
 
@@ -2586,12 +2586,11 @@
           setTheme(savedTheme);
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
+          setView('map');
           map.setCenter(thailand);
           setupRealtimeSync();
-          addCityMarkers();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          setView('map');
-          setTimeout(function() { setView('cards'); }, 100);
+          addCityMarkers();
         });
       });
     }
