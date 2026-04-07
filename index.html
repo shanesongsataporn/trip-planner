@@ -1878,9 +1878,9 @@
           }
         });
         localStorage.setItem('card_photos', JSON.stringify(urlsOnly));
-        db.collection('trips').doc(currentTripKey).update({
+        db.collection('trips').doc(currentTripKey).set({
           cardPhotos: JSON.stringify(urlsOnly)
-        }).catch(function(e) { console.warn('Firestore photo save failed:', e); });
+        }, { merge: true }).catch(function(e) { console.warn('Firestore photo save failed:', e); });
       } catch(e) {
         console.warn('localStorage save failed:', e);
       }
