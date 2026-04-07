@@ -309,7 +309,7 @@
     }
     #mob-cards-indicator-text { font-size: 11px; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.05em; text-transform: uppercase; }
     #mob-cards-indicator-date { font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
-    #mob-cards-dots { display: flex; gap: 4px; align-items: center; }
+    #mob-cards-dots { display: flex; gap: 4px; align-items: center; padding: 8px 4px; cursor: pointer; touch-action: pan-x; }
     .mob-cards-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sand-dark); transition: all 0.2s; }
     .mob-cards-dot.active { width: 16px; border-radius: 3px; background: var(--accent); }
     #mob-cards-track-wrap { flex: 1; overflow: hidden; position: relative; }
@@ -850,6 +850,7 @@
 
       mobCardsGoTo(mobCardsCurrentIndex, false);
       initMobCardsSwipe();
+      initMobDotsSwipe();
     }
 
     function mobCardsGoTo(index, animate) {
@@ -866,6 +867,31 @@
       if (dateEl) { dateEl.textContent = day.date + ' · ' + day.city.split('>').pop().trim(); }
       document.querySelectorAll('.mob-cards-dot').forEach(function(dot, i) {
         dot.classList.toggle('active', i === index);
+      });
+    }
+
+    function initMobDotsSwipe() {
+      var dotsEl = document.getElementById('mob-cards-dots');
+      if (!dotsEl) return;
+      var startX, isDragging = false;
+      dotsEl.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+      }, { passive: true });
+      dotsEl.addEventListener('touchend', function(e) {
+        if (!isDragging) return;
+        isDragging = false;
+        var diff = e.changedTouches[0].clientX - startX;
+        if (Math.abs(diff) < 10) return;
+        var total = currentTrip.days.length;
+        if (diff < 0 && mobCardsCurrentIndex < total - 1) { mobCardsGoTo(mobCardsCurrentIndex + 1, true); }
+        else if (diff > 0 && mobCardsCurrentIndex > 0) { mobCardsGoTo(mobCardsCurrentIndex - 1, true); }
+      });
+      dotsEl.addEventListener('click', function(e) {
+        var dots = dotsEl.querySelectorAll('.mob-cards-dot');
+        dots.forEach(function(dot, i) {
+          if (dot.contains(e.target)) { mobCardsGoTo(i, true); }
+        });
       });
     }
 
