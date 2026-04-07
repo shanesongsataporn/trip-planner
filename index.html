@@ -815,14 +815,24 @@
 
         var foodCardsHtml = item.food.length ? '<div style="margin-top:6px;"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;font-weight:700;padding:0 2px;">Food & Drinks</div>' + item.food.map(function(f, fi) {
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.split(' for ')[0].trim() + ' ' + item.city.split('>').pop().trim() + ' Thailand');
+          var foodPhotoKey = 'day' + item.day + '_food' + fi;
+          var savedFoodPhoto = cardPhotos[foodPhotoKey];
+          if (!item.foodNotes) { item.foodNotes = {}; }
+          var foodNote = item.foodNotes[String(fi)] || '';
+          var foodPhotoHtml = savedFoodPhoto
+            ? '<img style="width:100%;height:290px;object-fit:cover;display:block;" src="' + savedFoodPhoto + '">'
+            : '<div style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">\uD83C\uDF7D\uFE0F</div>';
           return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
-            '<div style="width:100%;height:80px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">\uD83C\uDF7D\uFE0F</div>' +
+            foodPhotoHtml +
             '<div style="padding:12px 14px;">' +
               '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;font-weight:700;">food</div>' +
               '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">' + f + '</div>' +
+              (foodNote ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-bottom:8px;">' + foodNote + '</div>' : '') +
             '</div>' +
             '<div style="padding:8px 14px;border-top:1px solid var(--sand-dark);display:flex;gap:6px;">' +
               '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
+              '<button class="kbtn" onclick="openFoodNote(' + dayIndex + ',' + fi + ')">📝 Note</button>' +
+              '<button class="kbtn" onclick="triggerPhotoUpload(\'' + foodPhotoKey + '\',' + dayIndex + ',' + fi + ',\'food\')">📷</button>' +
               '<button class="kbtn" onclick="editItinDay(' + dayIndex + ')">Edit</button>' +
             '</div>' +
           '</div>';
@@ -2031,19 +2041,34 @@
       });
     }
 
-    function triggerPhotoUpload(photoKey, dayIndex, actIndex) {
+    function triggerPhotoUpload(photoKey, dayIndex, actIndex, type) {
       var input = document.createElement('input');
       input.type = 'file'; input.accept = 'image/*';
       input.onchange = function(e) {
         var file = e.target.files[0];
         if (!file) return;
         if (file.size > 5 * 1024 * 1024) { alert('Please choose an image under 5MB.'); return; }
-        uploadImageToFirebase(file, photoKey, dayIndex, actIndex);
+        uploadImageToFirebase(file, photoKey, dayIndex, actIndex, type);
       };
       input.click();
     }
 
-    function uploadImageToFirebase(file, photoKey, dayIndex, actIndex) {
+    function openFoodNote(dayIndex, foodIndex) {
+      var item = currentTrip.days[dayIndex];
+      if (!item) return;
+      if (!item.foodNotes) { item.foodNotes = {}; }
+      var current = item.foodNotes[String(foodIndex)] || '';
+      showModal('Note for ' + item.food[foodIndex],
+        '<div class="modal-field"><label>Note</label><input type="text" id="food-note-input" value="' + current.replace(/"/g, '&quot;') + '" placeholder="e.g. Make a reservation"></div>',
+        function() {
+          item.foodNotes[String(foodIndex)] = document.getElementById('food-note-input').value.trim();
+          saveToStorage();
+          renderKanban();
+        }
+      );
+    }
+
+    function uploadImageToFirebase(file, photoKey, dayIndex, actIndex, type) {
       var fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       var ref = storage.ref('images/' + fileName);
 
