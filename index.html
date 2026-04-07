@@ -2531,7 +2531,10 @@
     }
 
     function addCityMarkers() {
-      cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
+      cityMarkerObjs.forEach(function(obj) {
+        if (obj.marker.setMap) { obj.marker.setMap(null); }
+        else { obj.marker.map = null; }
+      });
       cityMarkerObjs = [];
       var seen = {}, cities = [];
       currentTrip.days.forEach(function(day) {
@@ -2539,10 +2542,23 @@
         if (!seen[baseName] && citySettings[baseName] && !citySettings[baseName].noMarker) { seen[baseName] = true; cities.push({ name: baseName, lat: day.lat, lng: day.lng }); }
       });
       cities.forEach(function(city) {
-          var el = buildCityMarkerEl(city.name);
-          var marker = new google.maps.marker.AdvancedMarkerElement({ position: { lat: city.lat, lng: city.lng }, map: map, title: city.name, content: el });
+          var s = citySettings[city.name] || { emoji: '\uD83D\uDCCD', color: '#2D9E75' };
+          var marker = new google.maps.Marker({
+            position: { lat: city.lat, lng: city.lng },
+            map: map,
+            title: city.name,
+            label: { text: s.emoji + ' ' + city.name, color: '#000000', fontSize: '12px', fontWeight: '700' },
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 18,
+              fillColor: s.color,
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 2
+            }
+          });
           cityMarkerObjs.push({ marker: marker, city: city });
-          marker.addListener('gmp-click', function() {
+          marker.addListener('click', function() {
             var cards = document.querySelectorAll('.day-card');
             cards.forEach(function(c) { c.classList.remove('active'); });
             clearActivityMarkers();
