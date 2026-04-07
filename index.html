@@ -2586,20 +2586,11 @@
           setTheme(savedTheme);
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
-          setView('map');
           map.setCenter(thailand);
           setupRealtimeSync();
+          addCityMarkers();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          if (!isMobile()) {
-            addCityMarkers();
-          } else {
-            addCityMarkers();
-            map.getDiv().addEventListener('touchstart', function() {
-              cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
-              cityMarkerObjs = [];
-              addCityMarkers();
-            }, { once: true });
-          }
+          setView('cards');
         });
       });
     }
