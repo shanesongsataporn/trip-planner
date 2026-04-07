@@ -197,13 +197,13 @@
     /* ===== MAP FLOAT CARD ===== */
     #map-float-card {
       display: none; position: fixed; z-index: 2000;
-      bottom: 90px; left: 16px; width: 240px;
+      bottom: 110px; left: 16px; width: 240px;
       background: var(--white); border-radius: var(--radius); overflow: hidden;
       box-shadow: var(--card-shadow-hover); border: 1px solid var(--sand-dark);
       animation: fadeInUp 0.2s ease;
     }
     @media (max-width: 640px) {
-      #map-float-card { bottom: 92px; left: 50%; transform: translateX(-50%); width: 280px; }
+      #map-float-card { bottom: 82px; left: 10px; width: 190px; z-index: 2600; }
     }
     #map-float-card.open { display: block; }
     #map-float-card img { width:100%; height:120px; object-fit:cover; display:block; }
@@ -2524,8 +2524,7 @@
                 if (t === 'activity') { highlightPanelActivity(idx); }
                 if (t === 'food') { highlightPanelFood(idx); }
                 if (t === 'accommodation') { highlightPanelAccom(idx); }
-                if (isMobile()) { showMobPinSheet(dn, pu, un, mu); }
-                else { showMapFloatCard(dn, pu, un, mu); }
+                showMapFloatCard(dn, pu, un, mu);
               };
               marker.addListener('gmp-click', handler);
               el.addEventListener('click', handler);
