@@ -2332,16 +2332,20 @@
           addCityMarkers();
           if (isMobile()) {
             initMobPill();
-            [300, 800, 1500].forEach(function(delay) {
-              setTimeout(function() {
+            var mapEl = document.getElementById('map');
+            var observer = new MutationObserver(function() {
+              if (mapEl.offsetWidth > 0 && mapEl.offsetHeight > 0) {
+                observer.disconnect();
                 google.maps.event.trigger(map, 'resize');
                 map.setCenter(thailand);
                 cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
                 cityMarkerObjs = [];
                 addCityMarkers();
                 updateMobPill();
-              }, delay);
+              }
             });
+            observer.observe(mapEl, { attributes: true, childList: true, subtree: true });
+            setTimeout(function() { observer.disconnect(); }, 5000);
           }
         });
       });
