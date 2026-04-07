@@ -2538,12 +2538,17 @@
     // ===== MOBILE DAY PILL =====
     var mobPillIndex = 0;
 
+    var mobPillInited = false;
+
     function initMobPill() {
       if (!isMobile()) return;
       var pill = document.getElementById('mob-day-pill');
       if (pill) { pill.classList.add('active'); }
       mobPillIndex = 0;
       updateMobPill();
+
+      if (mobPillInited) return;
+      mobPillInited = true;
 
       document.getElementById('mob-pill-prev').addEventListener('click', function() {
         if (mobPillIndex > 0) { mobPillIndex--; updateMobPill(); loadMobPillDay(); }
