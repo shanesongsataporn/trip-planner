@@ -2748,7 +2748,13 @@
             }
             rebuildTimeline();
             rebuildMobStrip();
-            if (cityMarkerObjs.length === 0) { addCityMarkers(); }
+            if (cityMarkerObjs.length === 0) { 
+              requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                  addCityMarkers();
+                });
+              });
+            }
             if (currentView === 'itinerary') { renderItinerary(); }
             if (currentView === 'cards') { renderKanban(); }
             if (currentView === 'split') { renderSplit(); }
