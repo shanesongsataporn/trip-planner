@@ -873,25 +873,39 @@
     function initMobDotsSwipe() {
       var dotsEl = document.getElementById('mob-cards-dots');
       if (!dotsEl) return;
-      var startX, isDragging = false;
+      var startX, isDragging = false, lastIndex = -1;
+
+      function getIndexFromTouch(clientX) {
+        var rect = dotsEl.getBoundingClientRect();
+        var total = currentTrip.days.length;
+        var pct = (clientX - rect.left) / rect.width;
+        var idx = Math.round(pct * (total - 1));
+        return Math.max(0, Math.min(total - 1, idx));
+      }
+
       dotsEl.addEventListener('touchstart', function(e) {
         startX = e.touches[0].clientX;
         isDragging = true;
+        lastIndex = -1;
       }, { passive: true });
-      dotsEl.addEventListener('touchend', function(e) {
+
+      dotsEl.addEventListener('touchmove', function(e) {
         if (!isDragging) return;
+        var idx = getIndexFromTouch(e.touches[0].clientX);
+        if (idx !== lastIndex) {
+          lastIndex = idx;
+          mobCardsGoTo(idx, true);
+        }
+      }, { passive: true });
+
+      dotsEl.addEventListener('touchend', function() {
         isDragging = false;
-        var diff = e.changedTouches[0].clientX - startX;
-        if (Math.abs(diff) < 10) return;
-        var total = currentTrip.days.length;
-        if (diff < 0 && mobCardsCurrentIndex < total - 1) { mobCardsGoTo(mobCardsCurrentIndex + 1, true); }
-        else if (diff > 0 && mobCardsCurrentIndex > 0) { mobCardsGoTo(mobCardsCurrentIndex - 1, true); }
+        lastIndex = -1;
       });
+
       dotsEl.addEventListener('click', function(e) {
-        var dots = dotsEl.querySelectorAll('.mob-cards-dot');
-        dots.forEach(function(dot, i) {
-          if (dot.contains(e.target)) { mobCardsGoTo(i, true); }
-        });
+        var idx = getIndexFromTouch(e.clientX);
+        mobCardsGoTo(idx, true);
       });
     }
 
