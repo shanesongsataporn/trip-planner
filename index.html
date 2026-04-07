@@ -640,10 +640,10 @@
     </div>
   </div>
 
-  <div id="map" style="display:none;"></div>
+  <div id="map"></div>
   <div id="view-itinerary"></div>
   <div id="view-cards"><div id="kanban-board"></div></div>
-  <div id="mob-cards-view" class="active">
+  <div id="mob-cards-view">
     <div id="mob-cards-indicator">
       <div>
         <div id="mob-cards-indicator-text">Day 1 of 16</div>
@@ -2590,7 +2590,8 @@
           setupRealtimeSync();
           addCityMarkers();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          setView('cards');
+          setView('map');
+          setTimeout(function() { setView('cards'); }, 100);
         });
       });
     }
