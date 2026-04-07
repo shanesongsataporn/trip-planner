@@ -412,7 +412,7 @@
       #mob-hdr { display: flex; }
 
       /* Full screen map */
-      #map { top: 54px; bottom: 0; height: calc(100vh - 54px); }
+      #map { top: 54px; bottom: 0; height: calc(100svh - 54px); }
 
       /* Hide old day strip */
       #mob-day-strip { display: none !important; }
@@ -2330,7 +2330,19 @@
           map.setCenter(thailand);
           setupRealtimeSync();
           addCityMarkers();
-          if (isMobile()) { initMobPill(); }
+          if (isMobile()) {
+            initMobPill();
+            [300, 800, 1500].forEach(function(delay) {
+              setTimeout(function() {
+                google.maps.event.trigger(map, 'resize');
+                map.setCenter(thailand);
+                cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
+                cityMarkerObjs = [];
+                addCityMarkers();
+                updateMobPill();
+              }, delay);
+            });
+          }
         });
       });
     }
