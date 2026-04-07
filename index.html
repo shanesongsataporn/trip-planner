@@ -788,8 +788,9 @@
           var userNote = (item.cardNotes && item.cardNotes[actIndex]) || '';
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' Thailand');
           var photoHtml = savedPhoto
-            ? '<img style="width:100%;height:160px;object-fit:cover;display:block;" src="' + savedPhoto + '">'
-            : '<div style="width:100%;height:80px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';
+            var photoHtml = savedPhoto
+            ? '<img style="width:100%;height:240px;object-fit:cover;display:block;" src="' + savedPhoto + '">'
+            : '<div style="width:100%;height:100px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';
           return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
             photoHtml +
             '<div style="padding:12px 14px;">' +
