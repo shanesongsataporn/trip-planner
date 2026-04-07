@@ -530,11 +530,11 @@
     </div>
     <div class="hdr-right">
       <div class="view-switcher">
+        <button class="view-btn active" onclick="setView('cards')">🃏 Cards</button>
         <button class="view-btn" onclick="setView('map')">🗺 Map</button>
         <button class="view-btn" onclick="setView('calendar')">📅 Calendar</button>
         <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
-        <button class="view-btn active" onclick="setView('cards')">🃏 Cards</button>
         <button class="view-btn" onclick="setView('budget')">💰 Budget</button>
         <button class="view-btn" onclick="resetMapView()" title="Reset map to overview">🌏</button>
       </div>
@@ -595,11 +595,11 @@
   <!-- MOBILE VIEW PICKER -->
   <div id="mob-view-menu">
     <div class="menu-section">
+      <button class="menu-item" onclick="setView('cards');toggleMenu('mob-view-menu')">🃏 Cards</button>
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
       <button class="menu-item" onclick="setView('calendar');toggleMenu('mob-view-menu')">📅 Calendar</button>
       <button class="menu-item" onclick="setView('split');toggleMenu('mob-view-menu')">⬛ Split</button>
       <button class="menu-item" onclick="setView('itinerary');toggleMenu('mob-view-menu')">📋 Itinerary</button>
-      <button class="menu-item" onclick="setView('cards');toggleMenu('mob-view-menu')">🃏 Cards</button>
       <button class="menu-item" onclick="setView('budget');toggleMenu('mob-view-menu')">💰 Budget</button>
     </div>
   </div>
@@ -2586,7 +2586,7 @@
           setTheme(savedTheme);
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
-          setView('cards');
+          setView('map');
           map.setCenter(thailand);
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
