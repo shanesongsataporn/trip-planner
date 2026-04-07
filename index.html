@@ -2505,16 +2505,15 @@
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
           setView('map');
-          google.maps.event.trigger(map, 'resize');
           map.setCenter(thailand);
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
+          var mapEl = document.getElementById('map');
+          mapEl.style.visibility = 'hidden';
           requestAnimationFrame(function() {
-            requestAnimationFrame(function() {
-              setTimeout(function() {
-                addCityMarkers();
-              }, 0);
-            });
+            mapEl.style.visibility = 'visible';
+            google.maps.event.trigger(map, 'resize');
+            addCityMarkers();
           });
         });
       });
