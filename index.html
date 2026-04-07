@@ -2748,6 +2748,7 @@
             }
             rebuildTimeline();
             rebuildMobStrip();
+            if (cityMarkerObjs.length === 0) { addCityMarkers(); }
             if (currentView === 'itinerary') { renderItinerary(); }
             if (currentView === 'cards') { renderKanban(); }
             if (currentView === 'split') { renderSplit(); }
