@@ -2329,24 +2329,15 @@
           google.maps.event.trigger(map, 'resize');
           map.setCenter(thailand);
           setupRealtimeSync();
-          addCityMarkers();
           if (isMobile()) {
             initMobPill();
-            var mobReady = false;
-            function mobMapRefresh() {
-              if (mobReady) return;
-              mobReady = true;
-              google.maps.event.trigger(map, 'resize');
-              map.setCenter(thailand);
-              cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
-              cityMarkerObjs = [];
-              addCityMarkers();
-              updateMobPill();
-            }
-            document.addEventListener('touchstart', function() { mobMapRefresh(); }, { once: true });
-            document.addEventListener('touchmove', function() { mobMapRefresh(); }, { once: true });
-            setTimeout(function() { mobMapRefresh(); }, 2000);
           }
+          google.maps.event.addListenerOnce(map, 'idle', function() {
+            addCityMarkers();
+            updateMobPill();
+          });
+          google.maps.event.trigger(map, 'resize');
+          map.setCenter(thailand);
         });
       });
     }
