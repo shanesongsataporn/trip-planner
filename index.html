@@ -2735,10 +2735,18 @@
       mobPillInited = true;
 
       document.getElementById('mob-pill-prev').addEventListener('click', function() {
-        if (mobPillIndex > 0) { mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); if (document.getElementById('mob-day-summary').classList.contains('open')) { toggleMobDaySummary(); } }
+        if (mobPillIndex > 0) {
+          var summaryWasOpen = document.getElementById('mob-day-summary').classList.contains('open');
+          mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
+          if (summaryWasOpen) { toggleMobDaySummary(); }
+        }
       });
       document.getElementById('mob-pill-next').addEventListener('click', function() {
-        if (mobPillIndex < currentTrip.days.length - 1) { mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); if (document.getElementById('mob-day-summary').classList.contains('open')) { toggleMobDaySummary(); } }
+        if (mobPillIndex < currentTrip.days.length - 1) {
+          var summaryWasOpen = document.getElementById('mob-day-summary').classList.contains('open');
+          mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
+          if (summaryWasOpen) { toggleMobDaySummary(); }
+        }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
         toggleMobDaySummary();
