@@ -2735,10 +2735,10 @@
       mobPillInited = true;
 
       document.getElementById('mob-pill-prev').addEventListener('click', function() {
-        if (mobPillIndex > 0) { mobPillIndex--; updateMobPill(); loadMobPillDay(); }
+        if (mobPillIndex > 0) { mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); if (document.getElementById('mob-day-summary').classList.contains('open')) { toggleMobDaySummary(); } }
       });
       document.getElementById('mob-pill-next').addEventListener('click', function() {
-        if (mobPillIndex < currentTrip.days.length - 1) { mobPillIndex++; updateMobPill(); loadMobPillDay(); }
+        if (mobPillIndex < currentTrip.days.length - 1) { mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); if (document.getElementById('mob-day-summary').classList.contains('open')) { toggleMobDaySummary(); } }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
         toggleMobDaySummary();
@@ -2769,6 +2769,7 @@
     }
 
     function toggleMobDaySummary() {
+      closeMapFloatCard();
       var summary = document.getElementById('mob-day-summary');
       if (summary.classList.contains('open')) { closeMobDaySummary(); return; }
       var day = currentTrip.days[mobPillIndex];
@@ -2780,8 +2781,8 @@
       var chips = '';
       if (day.accommodation.length) { chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>'; }
       if (day.transport.length) { day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; }); }
-      if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; chips += '<div class="mob-day-summary-chip">' + emoji + ' ' + a + '</div>'; }); }
-      if (day.food.length) { day.food.forEach(function(f) { chips += '<div class="mob-day-summary-chip">🍽️ ' + f + '</div>'; }); }
+      if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\')">' + emoji + ' ' + a + '</div>'; }); }
+      if (day.food.length) { day.food.forEach(function(f) { var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + f.replace(/'/g, "\\'") + '\',\'\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + f + '</div>'; }); }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
     }
