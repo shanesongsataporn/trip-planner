@@ -530,11 +530,11 @@
     </div>
     <div class="hdr-right">
       <div class="view-switcher">
-        <button class="view-btn active" onclick="setView('cards')">🃏 Cards</button>
+        <button class="view-btn" onclick="setView('map')">🗺 Map</button>
         <button class="view-btn" onclick="setView('calendar')">📅 Calendar</button>
         <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
-        <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
+        <button class="view-btn active" onclick="setView('cards')">🃏 Cards</button>
         <button class="view-btn" onclick="setView('budget')">💰 Budget</button>
         <button class="view-btn" onclick="resetMapView()" title="Reset map to overview">🌏</button>
       </div>
@@ -2586,7 +2586,7 @@
           setTheme(savedTheme);
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
-          setView('map');
+          setView('cards');
           map.setCenter(thailand);
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
