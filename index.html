@@ -2508,12 +2508,12 @@
           map.setCenter(thailand);
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          var mapEl = document.getElementById('map');
-          mapEl.style.visibility = 'hidden';
+          addCityMarkers();
           requestAnimationFrame(function() {
-            mapEl.style.visibility = 'visible';
             google.maps.event.trigger(map, 'resize');
-            addCityMarkers();
+            map.setZoom(map.getZoom() - 0.0001);
+            map.setZoom(6);
+            map.setCenter(thailand);
           });
         });
       });
