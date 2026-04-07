@@ -332,6 +332,9 @@
     .kanban-card-footer { padding: 8px 14px; border-top: 1px solid var(--sand-dark); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .kbtn { font-family: inherit; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
     .kbtn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .drag-handle { display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; cursor: grab; flex-shrink: 0; opacity: 0.4; }
+    .drag-handle:active { cursor: grabbing; opacity: 0.8; }
+    .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--ink-muted); border-radius: 1px; }
 
     /* ===== SPLIT VIEW ===== */
     #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; }
@@ -422,7 +425,7 @@
 
       /* Panel as bottom sheet - 40% height */
       #panel {
-        top: auto; right: 0; left: 0; width: 100%; height: 42vh; bottom: 0;
+        top: auto; right: 0; left: 0; width: 100%; height: 60vh; bottom: 0;
         border-left: none; border-top: 1px solid var(--sand-dark);
         border-radius: 20px 20px 0 0;
         transform: translateY(100%);
@@ -2386,13 +2389,16 @@
         return '<option value="' + cat + '">' + activityCategories[cat].emoji + ' ' + cat + '</option>';
       }).join('');
 
+      var dragHandleHtml = '<div class="drag-handle"><span></span><span></span><span></span></div>';
+
       function makeSortableAccom(item, idSuffix) {
         return item.accommodation.length ?
           '<div id="sortable-accom-' + (idSuffix||item.day) + '">' +
           item.accommodation.map(function(a, i) {
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:8px;">' +
-              '<span style="font-size:16px;cursor:grab;padding-top:2px;">🏨</span>' +
-              '<div style="flex:1;">' +
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:6px;">' +
+              dragHandleHtml +
+              '<span style="font-size:16px;padding-top:2px;flex-shrink:0;">🏨</span>' +
+              '<div style="flex:1;min-width:0;">' +
                 '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:2px;" value="' + a.name.replace(/"/g,'&quot;') + '" placeholder="Accommodation name" onchange="updateAccomName(' + i + ',this.value)" onblur="updateAccomName(' + i + ',this.value)">' +
                 '<input class="inline-edit" style="font-size:11px;color:var(--ink-muted);width:100%;" value="' + (a.notes||'').replace(/"/g,'&quot;') + '" placeholder="Add notes..." onchange="updateAccomNotes(' + i + ',this.value)" onblur="updateAccomNotes(' + i + ',this.value)">' +
               '</div>' +
@@ -2409,9 +2415,10 @@
             var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
             var catStyle = activityCategories[cat] || activityCategories['default'];
             var note = (item.cardNotes && item.cardNotes[String(i)]) || '';
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:8px;">' +
-              '<span style="font-size:16px;cursor:grab;padding-top:2px;">' + catStyle.emoji + '</span>' +
-              '<div style="flex:1;">' +
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:6px;">' +
+              dragHandleHtml +
+              '<span style="font-size:16px;padding-top:2px;flex-shrink:0;">' + catStyle.emoji + '</span>' +
+              '<div style="flex:1;min-width:0;">' +
                 '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + a.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="updateActivityName(' + i + ',this.value)" onblur="updateActivityName(' + i + ',this.value)">' +
                 '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
                   '<select onchange="updateActivityCat(' + i + ',this.value)" style="font-family:inherit;font-size:11px;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">' +
@@ -2432,9 +2439,10 @@
           '<div id="sortable-food-' + idSuffix + '">' +
           item.food.map(function(f, i) {
             var note = (item.foodNotes && item.foodNotes[String(i)]) || '';
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:8px;">' +
-              '<span style="font-size:16px;cursor:grab;padding-top:2px;">🍽️</span>' +
-              '<div style="flex:1;">' +
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:6px;">' +
+              dragHandleHtml +
+              '<span style="font-size:16px;padding-top:2px;flex-shrink:0;">🍽️</span>' +
+              '<div style="flex:1;min-width:0;">' +
                 '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + f.replace(/"/g,'&quot;') + '" placeholder="Restaurant or dish" onchange="updateFoodName(' + i + ',this.value)" onblur="updateFoodName(' + i + ',this.value)">' +
                 '<span onclick="openFoodNote(' + (item.day-1) + ',' + i + ')" style="font-size:11px;color:var(--ink-muted);cursor:pointer;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);">📝 ' + (note ? 'Edit note' : 'Note') + '</span>' +
                 (note ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + note + '</div>' : '') +
@@ -2482,7 +2490,7 @@
 
       function bindSortable(id, arr, onEnd) {
         var el = document.getElementById(id);
-        if (el) { Sortable.create(el, { animation: 150, onEnd: onEnd }); }
+        if (el) { Sortable.create(el, { animation: 150, handle: '.drag-handle', onEnd: onEnd }); }
       }
 
       bindSortable('sortable-accom-overview', item.accommodation, function(evt) { var m = item.accommodation.splice(evt.oldIndex,1)[0]; item.accommodation.splice(evt.newIndex,0,m); saveToStorage(); refreshPanelTabs(item); });
