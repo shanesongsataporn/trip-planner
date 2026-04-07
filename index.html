@@ -2382,16 +2382,22 @@
     function refreshPanelTabs(item) {
       normaliseAccom(item); normaliseDayTransport(item);
 
+      var catOptions = Object.keys(activityCategories).map(function(cat) {
+        return '<option value="' + cat + '">' + activityCategories[cat].emoji + ' ' + cat + '</option>';
+      }).join('');
+
       function makeSortableAccom(item, idSuffix) {
         return item.accommodation.length ?
           '<div id="sortable-accom-' + (idSuffix||item.day) + '">' +
           item.accommodation.map(function(a, i) {
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);cursor:grab;display:flex;align-items:center;gap:8px;">' +
-              '<span style="font-size:16px;">🏨</span>' +
-              '<div style="flex:1;cursor:pointer;" onclick="openMarkerByIndex(' + i + ',\'accommodation\')">' +
-                '<div class="panel-note" style="font-weight:500;">' + a.name + '</div>' +
-                (a.notes ? '<div style="font-size:11px;color:var(--ink-muted);">' + a.notes + '</div>' : '') +
-              '</div>' + makeDeleteBtn('deleteAccom(' + i + ')') + '</div>';
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:8px;">' +
+              '<span style="font-size:16px;cursor:grab;padding-top:2px;">🏨</span>' +
+              '<div style="flex:1;">' +
+                '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:2px;" value="' + a.name.replace(/"/g,'&quot;') + '" placeholder="Accommodation name" onchange="updateAccomName(' + i + ',this.value)" onblur="updateAccomName(' + i + ',this.value)">' +
+                '<input class="inline-edit" style="font-size:11px;color:var(--ink-muted);width:100%;" value="' + (a.notes||'').replace(/"/g,'&quot;') + '" placeholder="Add notes..." onchange="updateAccomNotes(' + i + ',this.value)" onblur="updateAccomNotes(' + i + ',this.value)">' +
+              '</div>' +
+              makeDeleteBtn('deleteAccom(' + i + ')') +
+            '</div>';
           }).join('') + '</div>' :
           '<div class="panel-note" style="color:var(--ink-muted);font-style:italic;">No accommodation added yet</div>';
       }
@@ -2402,10 +2408,21 @@
           item.activities.map(function(a, i) {
             var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
             var catStyle = activityCategories[cat] || activityCategories['default'];
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);cursor:grab;display:flex;align-items:center;gap:8px;">' +
-              '<span style="font-size:16px;">' + catStyle.emoji + '</span>' +
-              '<div class="panel-note" onclick="openMarkerByIndex(' + i + ',\'activity\')" style="flex:1;cursor:pointer;">' + a + '</div>' +
-              makeDeleteBtn('deleteActivity(' + i + ')') + '</div>';
+            var note = (item.cardNotes && item.cardNotes[String(i)]) || '';
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:8px;">' +
+              '<span style="font-size:16px;cursor:grab;padding-top:2px;">' + catStyle.emoji + '</span>' +
+              '<div style="flex:1;">' +
+                '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + a.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="updateActivityName(' + i + ',this.value)" onblur="updateActivityName(' + i + ',this.value)">' +
+                '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
+                  '<select onchange="updateActivityCat(' + i + ',this.value)" style="font-family:inherit;font-size:11px;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">' +
+                    catOptions.replace('value="' + cat + '"', 'value="' + cat + '" selected') +
+                  '</select>' +
+                  '<span onclick="openItinNoteModal(' + (item.day-1) + ',' + i + ')" style="font-size:11px;color:var(--ink-muted);cursor:pointer;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);">📝 ' + (note ? 'Edit note' : 'Note') + '</span>' +
+                '</div>' +
+                (note ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + note + '</div>' : '') +
+              '</div>' +
+              makeDeleteBtn('deleteActivity(' + i + ')') +
+            '</div>';
           }).join('') + '</div>' :
           '<div class="panel-note" style="color:var(--ink-muted);font-style:italic;">No activities added yet</div>';
       }
@@ -2414,10 +2431,16 @@
         return item.food.length ?
           '<div id="sortable-food-' + idSuffix + '">' +
           item.food.map(function(f, i) {
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);cursor:grab;display:flex;align-items:center;gap:8px;">' +
-              '<span style="font-size:16px;">🍽️</span>' +
-              '<div class="panel-note" onclick="openMarkerByIndex(' + i + ',\'food\')" style="flex:1;cursor:pointer;">' + f + '</div>' +
-              makeDeleteBtn('deleteFood(' + i + ')') + '</div>';
+            var note = (item.foodNotes && item.foodNotes[String(i)]) || '';
+            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:8px;">' +
+              '<span style="font-size:16px;cursor:grab;padding-top:2px;">🍽️</span>' +
+              '<div style="flex:1;">' +
+                '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + f.replace(/"/g,'&quot;') + '" placeholder="Restaurant or dish" onchange="updateFoodName(' + i + ',this.value)" onblur="updateFoodName(' + i + ',this.value)">' +
+                '<span onclick="openFoodNote(' + (item.day-1) + ',' + i + ')" style="font-size:11px;color:var(--ink-muted);cursor:pointer;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);">📝 ' + (note ? 'Edit note' : 'Note') + '</span>' +
+                (note ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + note + '</div>' : '') +
+              '</div>' +
+              makeDeleteBtn('deleteFood(' + i + ')') +
+            '</div>';
           }).join('') + '</div>' :
           '<div class="panel-note" style="color:var(--ink-muted);font-style:italic;">No food added yet</div>';
       }
@@ -2516,6 +2539,11 @@
 
     function deleteActivity(index) { currentDayItem.activities.splice(index, 1); if (currentDayItem.activityCategories) { currentDayItem.activityCategories.splice(index, 1); } saveToStorage(); refreshPanelTabs(currentDayItem); }
     function deleteFood(index) { currentDayItem.food.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
+    function updateActivityName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.activities[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateActivityCat(index, value) { if (!currentDayItem) return; if (!currentDayItem.activityCategories) { currentDayItem.activityCategories = []; } currentDayItem.activityCategories[index] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
+    function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.food[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
     function normaliseAccom(item) { if (!Array.isArray(item.accommodation)) { item.accommodation = item.accommodation && item.accommodation.name ? [item.accommodation] : []; } }
     function deleteAccom(index) { normaliseAccom(currentDayItem); currentDayItem.accommodation.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
 
