@@ -2506,16 +2506,17 @@
         google.maps.event.addListenerOnce(map, 'idle', function() {
           setView('map');
           requestAnimationFrame(function() {
+            google.maps.event.trigger(map, 'resize');
+            map.moveCamera({ center: thailand, zoom: 6 });
+            addCityMarkers();
             requestAnimationFrame(function() {
-              google.maps.event.trigger(map, 'resize');
-              map.setCenter(thailand);
-              addCityMarkers();
-              setupRealtimeSync();
-              if (isMobile()) {
-                initMobPill();
-                updateMobPill();
-              }
+              map.moveCamera({ center: map.getCenter(), zoom: map.getZoom() });
             });
+            setupRealtimeSync();
+            if (isMobile()) {
+              initMobPill();
+              updateMobPill();
+            }
           });
         });
       });
