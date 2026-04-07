@@ -2595,10 +2595,10 @@
       document.getElementById('mob-day-summary-city').textContent = day.city;
       var chips = '';
       if (day.accommodation.length) { chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>'; }
-      chips += '<div class="mob-day-summary-chip">📍 ' + day.activities.length + ' activities</div>';
-      if (day.food.length) { chips += '<div class="mob-day-summary-chip">🍽️ ' + day.food.length + ' meals</div>'; }
-      if (day.transport.length) { chips += '<div class="mob-day-summary-chip">✈️ ' + day.transport[0].from + ' → ' + day.transport[0].to + '</div>'; }
-      if (day.note) { chips += '<div class="mob-day-summary-chip" style="width:100%;white-space:normal;">' + day.note + '</div>'; }
+      if (day.transport.length) { day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; }); }
+      if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; chips += '<div class="mob-day-summary-chip">' + emoji + ' ' + a + '</div>'; }); }
+      if (day.food.length) { day.food.forEach(function(f) { chips += '<div class="mob-day-summary-chip">🍽️ ' + f + '</div>'; }); }
+      if (day.note) { chips += '<div class="mob-day-summary-chip" style="width:100%;white-space:normal;">📝 ' + day.note + '</div>'; }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
     }
