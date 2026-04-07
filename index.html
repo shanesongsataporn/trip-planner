@@ -2706,18 +2706,21 @@
               if (cardPhotos[pk]) { photoUrl = cardPhotos[pk]; }
             }
             var userNote = (task.type === 'activity' && item.cardNotes && item.cardNotes[String(task.index)]) ? item.cardNotes[String(task.index)] : '';
-            (function(dn, pu, un, mu, t, idx) {
+            (function(dn, pu, un, mu, t, idx, dayIdx) {
               var handler = function(e) {
                 if (e && e.stopPropagation) { e.stopPropagation(); }
                 document.getElementById('panel').classList.remove('open');
                 if (t === 'activity') { highlightPanelActivity(idx); }
                 if (t === 'food') { highlightPanelFood(idx); }
                 if (t === 'accommodation') { highlightPanelAccom(idx); }
-                showMapFloatCard(dn, pu, un, mu);
+                var di = (t === 'activity') ? dayIdx : undefined;
+                var ai = (t === 'activity') ? idx : undefined;
+                showMapFloatCard(dn, pu, un, mu, di, ai);
               };
               marker.addListener('gmp-click', handler);
               el.addEventListener('click', handler);
-            })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index);
+            var dayIndex = currentTrip.days.indexOf(item);
+            })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index, dayIndex);
             activityMarkers.push({ marker: marker, index: task.index, type: task.type });
             if (callback) { callback(); }
           });
@@ -2795,7 +2798,7 @@
       var chips = '';
       if (day.accommodation.length) { chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>'; }
       if (day.transport.length) { day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; }); }
-      if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\')">' + emoji + ' ' + a + '</div>'; }); }
+      if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; }); }
       if (day.food.length) { day.food.forEach(function(f) { var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + f.replace(/'/g, "\\'") + '\',\'\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + f + '</div>'; }); }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
@@ -2823,21 +2826,54 @@
     }
 
     // ===== MAP FLOAT CARD =====
-    function showMapFloatCard(name, photoUrl, note, mapsUrl) {
+    var mapFloatCardItem = null;
+
+    function showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex) {
+      mapFloatCardItem = (dayIndex !== undefined && actIndex !== undefined) ? { dayIndex: dayIndex, actIndex: actIndex } : null;
       var card = document.getElementById('map-float-card');
       var img = document.getElementById('map-float-card-img');
       var nameEl = document.getElementById('map-float-card-name');
       var noteEl = document.getElementById('map-float-card-note');
       var linkEl = document.getElementById('map-float-card-link');
       nameEl.textContent = name;
-      noteEl.textContent = note || '';
-      noteEl.style.display = note ? 'block' : 'none';
+      if (mapFloatCardItem) {
+        noteEl.innerHTML = note
+          ? '<span style="font-style:italic;">' + note + '</span> <span onclick="openMapFloatCardNoteModal()" style="font-size:10px;color:var(--ink-muted);cursor:pointer;margin-left:4px;">📝 Edit</span>'
+          : '<span onclick="openMapFloatCardNoteModal()" style="font-size:11px;color:var(--ink-muted);cursor:pointer;">📝 Add note</span>';
+        noteEl.style.display = 'block';
+      } else {
+        noteEl.textContent = note || '';
+        noteEl.style.display = note ? 'block' : 'none';
+      }
       linkEl.href = mapsUrl;
       if (photoUrl) { img.src = photoUrl; img.style.display = 'block'; }
       else { img.style.display = 'none'; }
       card.classList.remove('open');
       void card.offsetWidth;
       card.classList.add('open');
+    }
+
+    function openMapFloatCardNoteModal() {
+      if (!mapFloatCardItem) return;
+      var item = currentTrip.days[mapFloatCardItem.dayIndex];
+      var actIndex = mapFloatCardItem.actIndex;
+      if (!item) return;
+      if (!item.cardNotes) { item.cardNotes = {}; }
+      var current = item.cardNotes[String(actIndex)] || '';
+      showModal('Note for ' + item.activities[actIndex],
+        '<div class="modal-field"><label>Note</label><input type="text" id="map-float-note-input" value="' + current.replace(/"/g, '&quot;') + '" placeholder="e.g. Book tickets in advance"></div>',
+        function() {
+          item.cardNotes[String(actIndex)] = document.getElementById('map-float-note-input').value.trim();
+          saveToStorage();
+          var newNote = item.cardNotes[String(actIndex)];
+          var noteEl = document.getElementById('map-float-card-note');
+          if (noteEl) {
+            noteEl.innerHTML = newNote
+              ? '<span style="font-style:italic;">' + newNote + '</span> <span onclick="openMapFloatCardNoteModal()" style="font-size:10px;color:var(--ink-muted);cursor:pointer;margin-left:4px;">📝 Edit</span>'
+              : '<span onclick="openMapFloatCardNoteModal()" style="font-size:11px;color:var(--ink-muted);cursor:pointer;">📝 Add note</span>';
+          }
+        }
+      );
     }
 
     function closeMapFloatCard() {
