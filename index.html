@@ -2505,18 +2505,16 @@
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
           setView('map');
+          google.maps.event.trigger(map, 'resize');
+          map.setCenter(thailand);
+          setupRealtimeSync();
+          if (isMobile()) { initMobPill(); updateMobPill(); }
           requestAnimationFrame(function() {
-            google.maps.event.trigger(map, 'resize');
-            map.moveCamera({ center: thailand, zoom: 6 });
-            addCityMarkers();
             requestAnimationFrame(function() {
-              map.moveCamera({ center: map.getCenter(), zoom: map.getZoom() });
+              setTimeout(function() {
+                addCityMarkers();
+              }, 0);
             });
-            setupRealtimeSync();
-            if (isMobile()) {
-              initMobPill();
-              updateMobPill();
-            }
           });
         });
       });
