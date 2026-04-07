@@ -766,6 +766,7 @@
     }
 
     function renderMobCards() {
+      if (!isMobile()) return;
       var mobView = document.getElementById('mob-cards-view');
       var track = document.getElementById('mob-cards-track');
       var dotsEl = document.getElementById('mob-cards-dots');
@@ -1131,7 +1132,7 @@
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
       var mobCards = document.getElementById('mob-cards-view');
       if (mobCards) { 
-        if (view === 'cards' && isMobile()) { mobCards.classList.add('active'); renderMobCards(); } 
+        if (view === 'cards' && isMobile()) { mobCards.classList.add('active'); renderMobCards(); }
         else { mobCards.classList.remove('active'); }
       }
       document.getElementById('panel').classList.remove('open');
@@ -1877,6 +1878,9 @@
           }
         });
         localStorage.setItem('card_photos', JSON.stringify(urlsOnly));
+        db.collection('trips').doc(currentTripKey).update({
+          cardPhotos: JSON.stringify(urlsOnly)
+        }).catch(function(e) { console.warn('Firestore photo save failed:', e); });
       } catch(e) {
         console.warn('localStorage save failed:', e);
       }
@@ -1885,6 +1889,20 @@
     function loadCardPhotos() {
       var saved = localStorage.getItem('card_photos');
       if (saved) { cardPhotos = JSON.parse(saved); }
+    }
+
+    function loadCardPhotosFromFirestore(callback) {
+      db.collection('trips').doc(currentTripKey).get().then(function(doc) {
+        if (doc.exists && doc.data().cardPhotos) {
+          var remote = JSON.parse(doc.data().cardPhotos);
+          Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
+          try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+        }
+        if (callback) { callback(); }
+      }).catch(function(e) {
+        console.warn('Firestore photo load failed:', e);
+        if (callback) { callback(); }
+      });
     }
 
     // ===== SPLIT VIEW =====
@@ -2276,6 +2294,7 @@
     // ===== MAP INIT =====
     function initMap() {
       loadCardPhotos();
+      loadCardPhotosFromFirestore(function() {});
      var thailand = { lat: 15.2, lng: 100.9 };
       map = new google.maps.Map(document.getElementById('map'), {
         center: thailand, zoom: 6, mapTypeId: 'roadmap', mapId: 'DEMO_MAP_ID',
@@ -2706,6 +2725,11 @@
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
             currentTrip = trips[currentTripKey];
+            if (data.cardPhotos) {
+              var remote = JSON.parse(data.cardPhotos);
+              Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
+              try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+            }
             rebuildTimeline();
             rebuildMobStrip();
             if (currentView === 'itinerary') { renderItinerary(); }
