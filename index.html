@@ -2505,15 +2505,18 @@
         }
         google.maps.event.addListenerOnce(map, 'idle', function() {
           setView('map');
-          google.maps.event.trigger(map, 'resize');
-          map.setCenter(thailand);
-          setupRealtimeSync();
-          if (isMobile()) { initMobPill(); }
-          addCityMarkers();
-          setTimeout(function() {
-            addCityMarkers();
-            if (isMobile()) { updateMobPill(); }
-          }, 3000);
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              google.maps.event.trigger(map, 'resize');
+              map.setCenter(thailand);
+              addCityMarkers();
+              setupRealtimeSync();
+              if (isMobile()) {
+                initMobPill();
+                updateMobPill();
+              }
+            });
+          });
         });
       });
     }
@@ -2529,6 +2532,8 @@
     }
 
     function addCityMarkers() {
+      cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
+      cityMarkerObjs = [];
       var seen = {}, cities = [];
       currentTrip.days.forEach(function(day) {
         var baseName = day.city.split('>').pop().trim();
