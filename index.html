@@ -2424,7 +2424,7 @@
               var el = document.createElement('div');
               el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
               el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + pinEmoji + '</div>' +
-                '<div style="background:rgba(255,255,255,0.95);border-radius:3px;padding:1px 5px;font-size:9px;font-weight:600;margin-top:2px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">' + task.name + '</div>';
+                '<div style="font-size:9px;font-weight:800;margin-top:2px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;color:#000;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' + task.name + '</div>';
               var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: splitMap, title: task.name, content: el });
               var cardContent = '<div style="width:240px;font-family:system-ui,sans-serif;">';
               var photoUrl = (details && detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0)
@@ -2493,7 +2493,7 @@
             var el = document.createElement('div');
             el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
             el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + pinEmoji + '</div>' +
-              '<div style="background:rgba(255,255,255,0.95);border-radius:3px;padding:1px 5px;font-size:9px;font-weight:600;margin-top:2px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">' + task.name + '</div>';
+              '<div style="font-size:9px;font-weight:800;margin-top:2px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;color:#000;text-shadow:0 1px 2px rgba(255,255,255,0.8);">' + task.name + '</div>';
             var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: map, title: task.name, content: el });
             var cardContent = '<div style="width:' + (isMobile() ? '150px' : '260px') + ';font-family:system-ui,sans-serif;font-size:' + (isMobile() ? '11px' : '13px') + ';">';
             if (details && detailStatus === google.maps.places.PlacesServiceStatus.OK) {
