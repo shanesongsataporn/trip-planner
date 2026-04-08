@@ -1664,12 +1664,12 @@
         '</div>' : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;">No reservations needed</div>') +
       '</div>';
 
-      var alertHtml = needsBooking.length ? '<div style="background:#3D1A1A;border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;border:1px solid var(--danger);">' +
-        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--danger);margin-bottom:10px;">⚠️ Needs Booking</div>' +
+      var alertHtml = needsBooking.length ? '<div style="background:#fff0f0;border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;border:1px solid #E05555;">' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C0392B;margin-bottom:10px;">⚠️ Needs Booking</div>' +
         needsBooking.map(function(r) {
-          return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(224,85,85,0.2);">' +
-            '<span style="font-size:13px;font-weight:600;color:var(--ink);flex:1;">' + r.name + '</span>' +
-            '<span style="font-size:11px;color:var(--danger);">Day ' + r.day + ' · ' + r.date + '</span>' +
+          return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(192,57,43,0.15);">' +
+            '<span style="font-size:13px;font-weight:600;color:#1A1A18;flex:1;">' + r.name + '</span>' +
+            '<span style="font-size:11px;font-weight:600;color:#C0392B;">Day ' + r.day + ' · ' + r.date + '</span>' +
           '</div>';
         }).join('') +
       '</div>' : '';
@@ -1735,6 +1735,13 @@
           '</div>';
         }).join('');
 
+        var dayHasUnbooked = day.food.some(function(f) { return f.reservationRequired && !f.reservationBooked; });
+        var dayHasBooked = day.food.some(function(f) { return f.reservationRequired && f.reservationBooked; });
+        var dayBadge = dayHasUnbooked
+          ? '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:#fff0f0;color:#C0392B;border:1px solid #E05555;white-space:nowrap;">⚠️ Book</span>'
+          : dayHasBooked
+            ? '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);white-space:nowrap;">✅ Booked</span>'
+            : '';
         return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
           '<div style="padding:14px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--sand-dark);" onclick="toggleFoodDay(\'' + dayId + '\')">' +
             '<span style="font-size:18px;">' + getCityEmoji(day.city) + '</span>' +
@@ -1742,7 +1749,8 @@
               '<div style="font-size:13px;font-weight:700;color:var(--ink);">Day ' + day.day + ' · ' + day.city + '</div>' +
               '<div style="font-size:11px;color:var(--ink-muted);">' + day.date + ' · ' + day.food.length + ' place' + (day.food.length !== 1 ? 's' : '') + '</div>' +
             '</div>' +
-            '<span style="font-size:12px;color:var(--ink-muted);">▾</span>' +
+            dayBadge +
+            '<span style="font-size:12px;color:var(--ink-muted);margin-left:6px;">▾</span>' +
           '</div>' +
           '<div id="' + dayId + '" style="display:none;">' + foodRows + '</div>' +
         '</div>';
