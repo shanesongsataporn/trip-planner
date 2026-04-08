@@ -1436,7 +1436,7 @@
         }
       });
       if (bounds.isEmpty()) { bounds.extend({ lat: 15.2, lng: 100.9 }); }
-      map.fitBounds(bounds, { top: 80, right: 80, bottom: 220, left: 80 });
+      map.fitBounds(bounds, { top: 80, right: 80, bottom: 420, left: 80 });
       if (currentView !== 'map') { setView('map'); }
     }
 
@@ -3221,7 +3221,7 @@
           setView('map');
           var bounds = new google.maps.LatLngBounds();
           currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
-          if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: 220, left: 80 }); }
+          if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: 420, left: 80 }); }
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
           addCityMarkers();
