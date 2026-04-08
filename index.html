@@ -602,7 +602,7 @@
   </div>
 
   <!-- MOBILE VIEW PICKER -->
-  <<div id="mob-view-menu">
+  <div id="mob-view-menu">
     <div class="menu-section">
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
       <button class="menu-item" onclick="setView('calendar');toggleMenu('mob-view-menu')">📅 Calendar</button>
@@ -1696,7 +1696,7 @@
                 '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
                 (f.link ? '<a href="' + f.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn">🔗 Link</button></a>' : '') +
                 '<button class="kbtn" onclick="toggleFoodBooked(' + di + ',' + fi + ')">✅ ' + (f.reservationBooked ? 'Unbook' : 'Mark booked') + '</button>' +
-                '<button class="kbtn" onclick="openDayPanel(currentTrip.days[' + di + '])">✏️ Edit</button>' +
+                '<button class="kbtn" onclick="setView(\'map\');setTimeout(function(){openDayPanel(currentTrip.days[' + di + '])},150)">✏️ Edit</button>' +
               '</div>' +
             '</div>' +
           '</div>';
@@ -2439,9 +2439,10 @@
         }).join('') : '<div style="font-size:12px;color:var(--ink-muted);padding:6px 0;font-style:italic;">No activities</div>';
 
         var foodHtml = day.food.length ? day.food.map(function(f, i) {
+          var fname = typeof f === 'string' ? f : f.name;
           return '<div onclick="openSplitPin(' + i + ',\'food\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.5)\'" onmouseout="this.style.background=\'\'">' +
             '<span style="font-size:14px;">🍽️</span>' +
-            '<span style="font-size:12px;color:var(--ink);flex:1;">' + f + '</span>' +
+            '<span style="font-size:12px;color:var(--ink);flex:1;">' + fname + '</span>' +
             '<span style="font-size:10px;color:var(--accent);">📍</span>' +
           '</div>';
         }).join('') : '';
@@ -2725,11 +2726,6 @@
     function deleteFood(index) { currentDayItem.food.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
     function updateActivityName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.activities[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateActivityCat(index, value) { if (!currentDayItem) return; if (!currentDayItem.activityCategories) { currentDayItem.activityCategories = []; } currentDayItem.activityCategories[index] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
-    function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseFood(currentDayItem); currentDayItem.food[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
-    function updateFoodField(index, field, value) { if (!currentDayItem) return; normaliseFood(currentDayItem); currentDayItem.food[index][field] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
-    function toggleFoodExpand(id) { var el = document.getElementById(id); if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; } }
-    function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
-    function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
     function normaliseFood(item) {
       if (!item.food) { item.food = []; }
       item.food = item.food.map(function(f) {
@@ -2739,6 +2735,11 @@
         return f;
       });
     }
+    function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseFood(currentDayItem); currentDayItem.food[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateFoodField(index, field, value) { if (!currentDayItem) return; normaliseFood(currentDayItem); currentDayItem.food[index][field] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
+    function toggleFoodExpand(id) { var el = document.getElementById(id); if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; } }
+    function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
     function deleteAccom(index) { normaliseAccom(currentDayItem); currentDayItem.accommodation.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
 
     function highlightPanelActivity(index) { var rows = document.querySelectorAll('#sortable-activities-overview > div'); rows.forEach(function(row, i) { row.style.background = i === index ? 'var(--accent-light)' : ''; }); }
@@ -3331,6 +3332,8 @@
             if (currentView === 'cards') { renderKanban(); }
             if (currentView === 'split') { renderSplit(); }
             if (currentView === 'budget') { renderBudget(); }
+            if (currentView === 'food') { renderFood(); }
+            if (currentView === 'calendar') { renderCalendar(); }
           }
         }
       });
