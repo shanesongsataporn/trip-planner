@@ -1694,7 +1694,7 @@
                 '</div>' +
                 (f.mustOrder ? '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:2px;">🍴 Must order: <strong>' + f.mustOrder + '</strong></div>' : '') +
                 (f.notes ? '<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:2px;">' + f.notes + '</div>' : '') +
-                (f.link ? '<div style="margin-bottom:4px;"><a href="' + f.link + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600;">🔗 Link</a></div>' : '') +
+                (f.link ? '<a href="' + f.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn" style="margin-bottom:4px;">🔗 Link</button></a>' : '') +
                 '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' +
                   '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
                   '<button class="kbtn" onclick="toggleFoodBooked(' + di + ',' + fi + ')">✅ ' + (f.reservationBooked ? 'Unbook' : 'Mark booked') + '</button>' +
