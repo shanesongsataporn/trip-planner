@@ -2738,6 +2738,7 @@
     function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseFood(currentDayItem); currentDayItem.food[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateFoodField(index, field, value) { if (!currentDayItem) return; normaliseFood(currentDayItem); currentDayItem.food[index][field] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
     function toggleFoodExpand(id) { var el = document.getElementById(id); if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; } }
+    function normaliseAccom(item) { if (!Array.isArray(item.accommodation)) { item.accommodation = item.accommodation && item.accommodation.name ? [item.accommodation] : []; } }
     function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
     function deleteAccom(index) { normaliseAccom(currentDayItem); currentDayItem.accommodation.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
