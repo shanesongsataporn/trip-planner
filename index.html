@@ -3203,10 +3203,25 @@
       document.getElementById('mob-day-summary-daynum').textContent = 'Day ' + day.day + ' · ' + day.date;
       document.getElementById('mob-day-summary-city').textContent = day.city;
       var chips = '';
-      if (day.accommodation.length) { chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>'; }
-      if (day.transport.length) { day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; }); }
-      if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; }); }
-      if (day.food.length) { day.food.forEach(function(f, i) { var fname = typeof f === 'string' ? f : f.name; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + fname + '</div>'; }); }
+      var divider = function(label) {
+        return '<div style="width:100%;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);padding:6px 2px 2px;flex-basis:100%;">' + label + '</div>';
+      };
+      if (day.accommodation.length) {
+        chips += divider('Stay');
+        chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>';
+      }
+      if (day.transport.length) {
+        chips += divider('Transport');
+        day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; });
+      }
+      if (day.activities.length) {
+        chips += divider('Activities');
+        day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; });
+      }
+      if (day.food.length) {
+        chips += divider('Food & Drinks');
+        day.food.forEach(function(f, i) { var fname = typeof f === 'string' ? f : f.name; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + fname + '</div>'; });
+      }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
     }
