@@ -383,6 +383,7 @@
 
     /* ===== BUDGET VIEW ===== */
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
+    #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     .budget-summary { background: var(--white); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); }
     .budget-summary-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.01em; }
     .budget-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
@@ -441,6 +442,7 @@
       #view-cards { top: 54px; bottom: 0; }
       #view-split { top: 54px; bottom: 0; }
       #view-budget { top: 54px; bottom: 0; }
+      #view-food { top: 54px; bottom: 0; }
       #view-calendar { top: 54px; bottom: 0; }
       #split-map { width: 100%; height: 45%; bottom: auto; top: 0; position: absolute; }
       #split-list { left: 0; top: 45%; height: 55%; position: absolute; }
@@ -680,6 +682,7 @@
     </div>
   </div>
   <div id="view-budget"></div>
+  <div id="view-food"></div>
   <div id="view-calendar"></div>
   <div id="panel">
     <div id="panel-head">
@@ -1262,6 +1265,7 @@
       document.getElementById('view-cards').style.display = (view === 'cards' && !isMobile()) ? 'block' : 'none';
       document.getElementById('view-split').style.display = view === 'split' ? 'block' : 'none';
       document.getElementById('view-budget').style.display = view === 'budget' ? 'block' : 'none';
+      document.getElementById('view-food').style.display = view === 'food' ? 'block' : 'none';
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
       var mobCards = document.getElementById('mob-cards-view');
       if (mobCards) { 
@@ -1285,6 +1289,7 @@
       if (view === 'cards') { renderKanban(); }
       if (view === 'split') { renderSplit(); }
       if (view === 'budget') { renderBudget(); }
+      if (view === 'food') { renderFood(); }
       if (view === 'calendar') { renderCalendar(); }
       if (view === 'map') { google.maps.event.trigger(map, 'resize'); }
       if (view !== 'split') { clearSplitActivityMarkers(); }
@@ -1625,6 +1630,107 @@
     }
 
     // ===== BUDGET VIEW =====
+    function renderFood() {
+      var el = document.getElementById('view-food');
+      if (!el) return;
+
+      // count reservation stats
+      var totalRes = 0, bookedRes = 0, needsBooking = [];
+      currentTrip.days.forEach(function(day) {
+        normaliseFood(day);
+        day.food.forEach(function(f) {
+          if (f.reservationRequired) {
+            totalRes++;
+            if (f.reservationBooked) { bookedRes++; }
+            else { needsBooking.push({ name: f.name, day: day.day, date: day.date, city: day.city }); }
+          }
+        });
+      });
+
+      var summaryHtml = '<div style="background:var(--white);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">Reservation Tracker</div>' +
+          '<div style="font-size:12px;color:var(--ink-muted);">' + bookedRes + ' of ' + totalRes + ' reservations booked</div>' +
+        '</div>' +
+        (totalRes > 0 ? '<div style="display:flex;gap:8px;">' +
+          '<div style="text-align:center;background:var(--accent-light);border-radius:var(--radius-sm);padding:8px 16px;">' +
+            '<div style="font-size:20px;font-weight:800;color:var(--accent);">' + bookedRes + '</div>' +
+            '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);font-weight:700;">Booked</div>' +
+          '</div>' +
+          '<div style="text-align:center;background:#3D1A1A;border-radius:var(--radius-sm);padding:8px 16px;">' +
+            '<div style="font-size:20px;font-weight:800;color:var(--danger);">' + (totalRes - bookedRes) + '</div>' +
+            '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--danger);font-weight:700;">To Book</div>' +
+          '</div>' +
+        '</div>' : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;">No reservations needed</div>') +
+      '</div>';
+
+      var alertHtml = needsBooking.length ? '<div style="background:#3D1A1A;border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;border:1px solid var(--danger);">' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--danger);margin-bottom:10px;">⚠️ Needs Booking</div>' +
+        needsBooking.map(function(r) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(224,85,85,0.2);">' +
+            '<span style="font-size:13px;font-weight:600;color:var(--ink);flex:1;">' + r.name + '</span>' +
+            '<span style="font-size:11px;color:var(--danger);">Day ' + r.day + ' · ' + r.date + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' : '';
+
+      var daysHtml = currentTrip.days.map(function(day, di) {
+        normaliseFood(day);
+        if (!day.food.length) return '';
+        var dayId = 'food-day-' + di;
+        var foodRows = day.food.map(function(f, fi) {
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.name + ' ' + day.city.split('>').pop().trim() + ' Thailand');
+          var resBadge = f.reservationRequired
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;' + (f.reservationBooked ? 'background:var(--accent-light);color:var(--accent);' : 'background:#3D1A1A;color:var(--danger);') + '">' + (f.reservationBooked ? '✅ Booked' : '⚠️ Book') + '</span>'
+            : '';
+          return '<div style="padding:12px 18px;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:10px;">' +
+            '<span style="font-size:18px;flex-shrink:0;padding-top:1px;">🍽️</span>' +
+            '<div style="flex:1;min-width:0;">' +
+              '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:3px;">' +
+                '<span style="font-size:13px;font-weight:700;color:var(--ink);">' + f.name + '</span>' +
+                resBadge +
+              '</div>' +
+              (f.mustOrder ? '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:2px;">🍴 ' + f.mustOrder + '</div>' : '') +
+              (f.notes ? '<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:4px;">' + f.notes + '</div>' : '') +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' +
+                '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
+                (f.link ? '<a href="' + f.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn">🔗 Link</button></a>' : '') +
+                '<button class="kbtn" onclick="toggleFoodBooked(' + di + ',' + fi + ')">✅ ' + (f.reservationBooked ? 'Unbook' : 'Mark booked') + '</button>' +
+                '<button class="kbtn" onclick="openDayPanel(currentTrip.days[' + di + '])">✏️ Edit</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
+          '<div style="padding:14px 18px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--sand-dark);" onclick="toggleFoodDay(\'' + dayId + '\')">' +
+            '<span style="font-size:18px;">' + getCityEmoji(day.city) + '</span>' +
+            '<div style="flex:1;">' +
+              '<div style="font-size:13px;font-weight:700;color:var(--ink);">Day ' + day.day + ' · ' + day.city + '</div>' +
+              '<div style="font-size:11px;color:var(--ink-muted);">' + day.date + ' · ' + day.food.length + ' place' + (day.food.length !== 1 ? 's' : '') + '</div>' +
+            '</div>' +
+            '<span style="font-size:12px;color:var(--ink-muted);">▾</span>' +
+          '</div>' +
+          '<div id="' + dayId + '" style="display:none;">' + foodRows + '</div>' +
+        '</div>';
+      }).filter(Boolean).join('');
+
+      el.innerHTML = summaryHtml + alertHtml + (daysHtml || '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No food added yet — open any day and add restaurants.</div>');
+    }
+
+    function toggleFoodDay(id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+    }
+
+    function toggleFoodBooked(dayIndex, foodIndex) {
+      normaliseFood(currentTrip.days[dayIndex]);
+      var f = currentTrip.days[dayIndex].food[foodIndex];
+      f.reservationBooked = !f.reservationBooked;
+      saveToStorage();
+      renderFood();
+    }
+
     function renderBudget() {
       var el = document.getElementById('view-budget');
       var currency = 'AUD';
