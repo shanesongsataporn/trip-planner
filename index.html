@@ -1089,7 +1089,7 @@
       showModal('Trip Settings',
         '<div class="modal-field"><label>Trip name</label><input type="text" id="rename-trip-name" value="' + currentTrip.name + '"></div>' +
         '<div class="modal-field"><label>Trip year</label><input type="number" id="trip-year" value="' + (currentTrip.year || new Date().getFullYear()) + '" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
-        '<div class="modal-field"><label>Shift all dates by (days)</label><input type="number" id="trip-shift-days" value="0" placeholder="e.g. 7 to move forward a week, -3 to move back 3 days" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
+        '<div class="modal-field"><label>Shift trip start date</label><input type="date" id="trip-shift-start" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Base currency (your home currency)</label>' + buildCurrencySelect('trip-base-currency', currentTrip.baseCurrency || 'AUD') + '</div>' +
         ratesInfo +
         '<div style="margin-top:8px;"><button onclick="refreshRatesFromModal()" style="font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">🔄 Refresh exchange rates</button></div>',
@@ -1103,11 +1103,21 @@
           currentTrip.baseCurrencySymbol = selCurrency.symbol;
           var yearInput = document.getElementById('trip-year');
           if (yearInput) { currentTrip.year = parseInt(yearInput.value) || new Date().getFullYear(); }
-          var shiftInput = document.getElementById('trip-shift-days');
-          if (shiftInput && shiftInput.value && parseInt(shiftInput.value) !== 0) {
-            shiftTripDates(parseInt(shiftInput.value));
+          var shiftInput = document.getElementById('trip-shift-start');
+          if (shiftInput && shiftInput.value) {
+            var months3 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+            var firstDay = currentTrip.days[0];
+            var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+            var currentStart = new Date(currentTrip.year || new Date().getFullYear(), months3[p[0]], parseInt(p[1]));
+            var newStart = new Date(shiftInput.value + 'T00:00:00');
+            var diffDays = Math.round((newStart - currentStart) / (1000 * 60 * 60 * 24));
+            if (diffDays !== 0) { shiftTripDates(diffDays); }
           }
           saveToStorage(); populateTripSelector(); updateMobTripLabel();
+          rebuildTimeline(); rebuildMobStrip();
+          if (currentView === 'calendar') { renderCalendar(); }
+          if (currentView === 'itinerary') { renderItinerary(); }
+          if (currentView === 'budget') { renderBudget(); }
         }
       );
     }
@@ -1724,8 +1734,9 @@
           var dateObj = new Date(parseInt(yr), mi, dy);
           var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
           var dateStr = dowNames2[dateObj.getDay()] + ' ' + monthNames2[mi] + ' ' + dy;
+          var lastCity = currentTrip.days.length ? currentTrip.days[currentTrip.days.length-1].city.split('>').pop().trim() : '';
           showModal('Add day on ' + dateStr,
-            '<div class="modal-field"><label>City</label><input type="text" id="cal-new-city" placeholder="e.g. Bangkok" value="' + (currentTrip.days.length ? currentTrip.days[currentTrip.days.length-1].city.split(\'>\').pop().trim() : \'\') + '"></div>' +
+            '<div class="modal-field"><label>City</label><input type="text" id="cal-new-city" placeholder="e.g. Bangkok" value="' + lastCity + '"></div>' +
             '<div class="modal-field"><label>Note</label><input type="text" id="cal-new-note" placeholder="Optional note..."></div>',
             function() {
               var city = document.getElementById('cal-new-city').value.trim() || 'City';
