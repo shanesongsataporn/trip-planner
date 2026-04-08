@@ -1694,10 +1694,10 @@
                 '</div>' +
                 (f.mustOrder ? '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:2px;">🍴 Must order: <strong>' + f.mustOrder + '</strong></div>' : '') +
                 (f.notes ? '<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:2px;">' + f.notes + '</div>' : '') +
-                (f.link ? '<a href="' + f.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn" style="margin-bottom:4px;">🔗 Link</button></a>' : '') +
+                (f.link ? '<a href="' + f.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn" style="margin-bottom:4px;">🔗 Socials</button></a>' : '') +
                 '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' +
                   '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
-                  '<button class="kbtn" onclick="toggleFoodBooked(' + di + ',' + fi + ')">✅ ' + (f.reservationBooked ? 'Unbook' : 'Mark booked') + '</button>' +
+                  (f.reservationRequired ? '<button class="kbtn" onclick="toggleFoodBooked(' + di + ',' + fi + ')" style="' + (f.reservationBooked ? 'border-color:var(--accent);color:var(--accent);' : '') + '">✅ ' + (f.reservationBooked ? 'Booked' : 'Booked?') + '</button>' : '') +
                   '<button class="kbtn" onclick="toggleFoodEditRow(\'' + editId + '\')">✏️ Edit</button>' +
                 '</div>' +
               '</div>' +
@@ -1708,8 +1708,8 @@
                 '<input class="inline-edit" style="font-size:13px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + f.name.replace(/"/g,'&quot;') + '" placeholder="Restaurant name" onchange="updateFoodFieldDirect(' + di + ',' + fi + ',\'name\',this.value);renderFood()" onblur="updateFoodFieldDirect(' + di + ',' + fi + ',\'name\',this.value);renderFood()">' +
               '</div>' +
               '<div style="margin-bottom:10px;">' +
-                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Link</div>' +
-                '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (f.link||'').replace(/"/g,'&quot;') + '" placeholder="Instagram, Google Maps, website..." onchange="updateFoodFieldDirect(' + di + ',' + fi + ',\'link\',this.value)" onblur="updateFoodFieldDirect(' + di + ',' + fi + ',\'link\',this.value)">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Socials</div>' +
+                '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (f.link||'').replace(/"/g,'&quot;') + '" placeholder="Instagram, TikTok, website..." onchange="updateFoodFieldDirect(' + di + ',' + fi + ',\'link\',this.value)" onblur="updateFoodFieldDirect(' + di + ',' + fi + ',\'link\',this.value)">' +
               '</div>' +
               '<div style="margin-bottom:10px;">' +
                 '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">Reservation</div>' +
