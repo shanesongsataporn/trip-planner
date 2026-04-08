@@ -2460,19 +2460,56 @@
       }
 
       function makeSortableFood(item, idSuffix) {
+        normaliseFood(item);
         return item.food.length ?
           '<div id="sortable-food-' + idSuffix + '">' +
           item.food.map(function(f, i) {
-            var note = (item.foodNotes && item.foodNotes[String(i)]) || '';
-            return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:6px;">' +
-              dragHandleHtml +
-              '<span style="font-size:16px;padding-top:2px;flex-shrink:0;">🍽️</span>' +
-              '<div style="flex:1;min-width:0;">' +
-                '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + f.replace(/"/g,'&quot;') + '" placeholder="Restaurant or dish" onchange="updateFoodName(' + i + ',this.value)" onblur="updateFoodName(' + i + ',this.value)">' +
-                '<span onclick="openFoodNote(' + (item.day-1) + ',' + i + ')" style="font-size:11px;color:var(--ink-muted);cursor:pointer;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);">📝 ' + (note ? 'Edit note' : 'Note') + '</span>' +
-                (note ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + note + '</div>' : '') +
+            var cardId = 'food-expand-' + idSuffix + '-' + i;
+            var isBooked = f.reservationBooked;
+            var needsRes = f.reservationRequired;
+            var resBadge = needsRes
+              ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;' + (isBooked ? 'background:var(--accent-light);color:var(--accent);' : 'background:#3D1A1A;color:var(--danger);') + '">' + (isBooked ? '✅ Booked' : '⚠️ Needs booking') + '</span>'
+              : '';
+            return '<div style="border-bottom:1px solid var(--sand-dark);">' +
+              '<div style="padding:8px 0;display:flex;align-items:center;gap:6px;">' +
+                dragHandleHtml +
+                '<span style="font-size:16px;flex-shrink:0;">🍽️</span>' +
+                '<div style="flex:1;min-width:0;">' +
+                  '<div style="font-size:13px;font-weight:600;color:var(--ink);">' + f.name + '</div>' +
+                  (resBadge ? '<div style="margin-top:3px;">' + resBadge + '</div>' : '') +
+                '</div>' +
+                '<span onclick="toggleFoodExpand(\'' + cardId + '\')" style="font-size:14px;color:var(--ink-muted);cursor:pointer;padding:4px 8px;flex-shrink:0;">▾</span>' +
+                makeDeleteBtn('deleteFood(' + i + ')') +
               '</div>' +
-              makeDeleteBtn('deleteFood(' + i + ')') +
+              '<div id="' + cardId + '" style="display:none;padding:0 0 12px 32px;">' +
+                '<div style="margin-bottom:8px;">' +
+                  '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Name</div>' +
+                  '<input class="inline-edit" style="font-size:13px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--sand);" value="' + f.name.replace(/"/g,'&quot;') + '" placeholder="Restaurant name" onchange="updateFoodField(' + i + ',\'name\',this.value)" onblur="updateFoodField(' + i + ',\'name\',this.value)">' +
+                '</div>' +
+                '<div style="margin-bottom:8px;">' +
+                  '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Link</div>' +
+                  '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--sand);" value="' + (f.link||'').replace(/"/g,'&quot;') + '" placeholder="Instagram, Google Maps, website..." onchange="updateFoodField(' + i + ',\'link\',this.value)" onblur="updateFoodField(' + i + ',\'link\',this.value)">' +
+                '</div>' +
+                '<div style="margin-bottom:8px;">' +
+                  '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">Reservation</div>' +
+                  '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+                    '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-light);cursor:pointer;">' +
+                      '<input type="checkbox" ' + (f.reservationRequired ? 'checked' : '') + ' onchange="updateFoodField(' + i + ',\'reservationRequired\',this.checked)" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;"> Required' +
+                    '</label>' +
+                    '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-light);cursor:pointer;">' +
+                      '<input type="checkbox" ' + (f.reservationBooked ? 'checked' : '') + ' onchange="updateFoodField(' + i + ',\'reservationBooked\',this.checked)" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;"> Booked' +
+                    '</label>' +
+                  '</div>' +
+                '</div>' +
+                '<div style="margin-bottom:8px;">' +
+                  '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Must Order</div>' +
+                  '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--sand);" value="' + (f.mustOrder||'').replace(/"/g,'&quot;') + '" placeholder="e.g. Crab omelette" onchange="updateFoodField(' + i + ',\'mustOrder\',this.value)" onblur="updateFoodField(' + i + ',\'mustOrder\',this.value)">' +
+                '</div>' +
+                '<div>' +
+                  '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Notes</div>' +
+                  '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--sand);" value="' + (f.notes||'').replace(/"/g,'&quot;') + '" placeholder="Any notes..." onchange="updateFoodField(' + i + ',\'notes\',this.value)" onblur="updateFoodField(' + i + ',\'notes\',this.value)">' +
+                '</div>' +
+              '</div>' +
             '</div>';
           }).join('') + '</div>' :
           '<div class="panel-note" style="color:var(--ink-muted);font-style:italic;">No food added yet</div>';
@@ -2574,7 +2611,9 @@
     function deleteFood(index) { currentDayItem.food.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
     function updateActivityName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.activities[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateActivityCat(index, value) { if (!currentDayItem) return; if (!currentDayItem.activityCategories) { currentDayItem.activityCategories = []; } currentDayItem.activityCategories[index] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
-    function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.food[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseFood(currentDayItem); currentDayItem.food[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
+    function updateFoodField(index, field, value) { if (!currentDayItem) return; normaliseFood(currentDayItem); currentDayItem.food[index][field] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
+    function toggleFoodExpand(id) { var el = document.getElementById(id); if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; } }
     function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
     function normaliseFood(item) {
