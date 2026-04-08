@@ -1088,6 +1088,8 @@
       }
       showModal('Trip Settings',
         '<div class="modal-field"><label>Trip name</label><input type="text" id="rename-trip-name" value="' + currentTrip.name + '"></div>' +
+        '<div class="modal-field"><label>Destination country</label><input type="text" id="trip-destination" placeholder="e.g. Thailand, Japan" value="' + (currentTrip.destination || '') + '"></div>' +
+        '<div class="modal-field"><label>App title</label><input type="text" id="app-title-input" placeholder="e.g. Shane &amp; Cheryl\'s Trip Planner" value="' + (localStorage.getItem('appTitle') || 'Shane &amp; Cheryl\'s Trip Planner') + '"></div>' +
         '<div class="modal-field"><label>Trip year</label><input type="number" id="trip-year" value="' + (currentTrip.year || new Date().getFullYear()) + '" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Shift trip start date</label><input type="date" id="trip-shift-start" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Base currency (your home currency)</label>' + buildCurrencySelect('trip-base-currency', currentTrip.baseCurrency || 'AUD') + '</div>' +
@@ -1101,6 +1103,13 @@
           currentTrip.name = name;
           currentTrip.baseCurrency = selCurrency.code;
           currentTrip.baseCurrencySymbol = selCurrency.symbol;
+          var destInput = document.getElementById('trip-destination');
+          if (destInput) { currentTrip.destination = destInput.value.trim(); }
+          var titleInput = document.getElementById('app-title-input');
+          if (titleInput && titleInput.value.trim()) {
+            localStorage.setItem('appTitle', titleInput.value.trim());
+            updateAppTitle();
+          }
           var yearInput = document.getElementById('trip-year');
           if (yearInput) { currentTrip.year = parseInt(yearInput.value) || new Date().getFullYear(); }
           var shiftInput = document.getElementById('trip-shift-start');
@@ -1160,6 +1169,14 @@
     function updateMobTripLabel() {
       var lbl = document.getElementById('mob-trip-label');
       if (lbl) { lbl.textContent = '🗺 ' + (currentTrip ? currentTrip.name : ''); }
+    }
+
+    function updateAppTitle() {
+      var title = localStorage.getItem('appTitle') || 'Shane &amp; Cheryl\'s Trip Planner';
+      var accent = title.replace(/(&amp;|&)/g, '<span style="color:var(--accent)">$1</span>');
+      var els = document.querySelectorAll('.brand, .mob-brand');
+      els.forEach(function(el) { el.innerHTML = accent; });
+      document.title = title.replace(/&amp;/g, '&');
     }
 
     function switchTrip(key) {
@@ -3188,6 +3205,7 @@
         initTabs();
         initDragScroll();
         initCustomThemeSliders();
+        updateAppTitle();
         var savedTheme = localStorage.getItem('theme') || 'dark';
         if (savedTheme === 'custom') {
           var b = parseInt(localStorage.getItem('custom-base') || '10');
