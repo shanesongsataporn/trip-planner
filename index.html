@@ -538,7 +538,6 @@
         <button class="view-btn" onclick="setView('calendar')">📅 Calendar</button>
         <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
-        <button class="view-btn" onclick="setView('budget')">💰 Budget</button>
         <button class="view-btn" onclick="resetMapView()" title="Reset map to overview">🌏</button>
       </div>
       <div class="hdr-sep"></div>
@@ -581,6 +580,11 @@
   <!-- DESKTOP HAMBURGER MENU -->
   <div id="hamburger-menu">
     <div class="menu-section">
+      <div class="menu-section-label">Tools</div>
+      <button class="menu-item" onclick="setView('food');toggleMenu('hamburger-menu')">🍽️ Food Planner</button>
+      <button class="menu-item" onclick="setView('budget');toggleMenu('hamburger-menu')">💰 Budget Tracker</button>
+    </div>
+    <div class="menu-section">
       <div class="menu-section-label">Trips</div>
       <button class="menu-item" onclick="showAddTripModal()">✈️ Add new trip</button>
       <button class="menu-item" onclick="showRenameTripModal()">✏️ Rename current trip</button>
@@ -596,19 +600,23 @@
   </div>
 
   <!-- MOBILE VIEW PICKER -->
-  <div id="mob-view-menu">
+  <<div id="mob-view-menu">
     <div class="menu-section">
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
       <button class="menu-item" onclick="setView('calendar');toggleMenu('mob-view-menu')">📅 Calendar</button>
       <button class="menu-item" onclick="setView('split');toggleMenu('mob-view-menu')">⬛ Split</button>
       <button class="menu-item" onclick="setView('itinerary');toggleMenu('mob-view-menu')">📋 Itinerary</button>
       <button class="menu-item" onclick="setView('cards');toggleMenu('mob-view-menu')">🃏 Cards</button>
-      <button class="menu-item" onclick="setView('budget');toggleMenu('mob-view-menu')">💰 Budget</button>
     </div>
   </div>
 
   <!-- MOBILE HAMBURGER MENU -->
   <div id="mob-hamburger-menu">
+    <div class="menu-section">
+      <div class="menu-section-label">Tools</div>
+      <button class="menu-item" onclick="setView('food');toggleMenu('mob-hamburger-menu')">🍽️ Food Planner</button>
+      <button class="menu-item" onclick="setView('budget');toggleMenu('mob-hamburger-menu')">💰 Budget Tracker</button>
+    </div>
     <div class="menu-section">
       <div class="menu-section-label">Trip</div>
       <button class="menu-item" id="mob-trip-label" onclick="showMobTripSelector()">🗺 Thailand - May 2026</button>
