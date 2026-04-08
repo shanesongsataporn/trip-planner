@@ -2567,7 +2567,15 @@
     function updateFoodName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.food[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
-    function normaliseAccom(item) { if (!Array.isArray(item.accommodation)) { item.accommodation = item.accommodation && item.accommodation.name ? [item.accommodation] : []; } }
+    function normaliseFood(item) {
+      if (!item.food) { item.food = []; }
+      item.food = item.food.map(function(f) {
+        if (typeof f === 'string') {
+          return { name: f, link: '', reservationRequired: false, reservationBooked: false, notes: '', mustOrder: '' };
+        }
+        return f;
+      });
+    }
     function deleteAccom(index) { normaliseAccom(currentDayItem); currentDayItem.accommodation.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
 
     function highlightPanelActivity(index) { var rows = document.querySelectorAll('#sortable-activities-overview > div'); rows.forEach(function(row, i) { row.style.background = i === index ? 'var(--accent-light)' : ''; }); }
