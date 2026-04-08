@@ -1088,6 +1088,7 @@
       }
       showModal('Trip Settings',
         '<div class="modal-field"><label>Trip name</label><input type="text" id="rename-trip-name" value="' + currentTrip.name + '"></div>' +
+        '<div class="modal-field"><label>Trip year</label><input type="number" id="trip-year" value="' + (currentTrip.year || new Date().getFullYear()) + '" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Base currency (your home currency)</label>' + buildCurrencySelect('trip-base-currency', currentTrip.baseCurrency || 'AUD') + '</div>' +
         ratesInfo +
         '<div style="margin-top:8px;"><button onclick="refreshRatesFromModal()" style="font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">🔄 Refresh exchange rates</button></div>',
@@ -1099,6 +1100,8 @@
           currentTrip.name = name;
           currentTrip.baseCurrency = selCurrency.code;
           currentTrip.baseCurrencySymbol = selCurrency.symbol;
+          var yearInput = document.getElementById('trip-year');
+          if (yearInput) { currentTrip.year = parseInt(yearInput.value) || new Date().getFullYear(); }
           saveToStorage(); populateTripSelector(); updateMobTripLabel();
         }
       );
@@ -1547,12 +1550,16 @@
 
       // build a map of date string -> day item
       var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+
+      // extract year dynamically — check trip object first, then current year
+      var tripYear = currentTrip.year || new Date().getFullYear();
+
       var dayMap = {};
       currentTrip.days.forEach(function(day) {
         var parts = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
         var m = months[parts[0]]; var d = parseInt(parts[1]);
         if (!isNaN(m) && !isNaN(d)) {
-          var key = '2026-' + m + '-' + d;
+          var key = tripYear + '-' + m + '-' + d;
           dayMap[key] = day;
         }
       });
