@@ -806,7 +806,7 @@
           var photoKey = 'day' + item.day + '_act' + actIndex;
           var savedPhoto = cardPhotos[photoKey];
           var userNote = (item.cardNotes && item.cardNotes[actIndex]) || '';
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' Thailand');
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
           var photoHtml = savedPhoto
             ? '<img style="width:100%;height:290px;object-fit:cover;display:block;" src="' + savedPhoto + '">'
             : '<div style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';
@@ -829,7 +829,7 @@
         var foodCardsHtml = item.food.length ? '<div style="margin-top:6px;"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;font-weight:700;padding:0 2px;">Food & Drinks</div>' + item.food.map(function(f, fi) {
           normaliseFood(item);
           var fname = f.name;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + item.city.split('>').pop().trim() + ' Thailand');
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
           var foodPhotoKey = 'day' + item.day + '_food' + fi;
           var savedFoodPhoto = cardPhotos[foodPhotoKey];
           var foodNote = f.notes || '';
@@ -1164,6 +1164,10 @@
     function updateMobTripLabel() {
       var lbl = document.getElementById('mob-trip-label');
       if (lbl) { lbl.textContent = '🗺 ' + (currentTrip ? currentTrip.name : ''); }
+    }
+
+    function getTripDestination() {
+      return (currentTrip && currentTrip.destination) ? currentTrip.destination : 'Thailand';
     }
 
     function updateAppTitle() {
@@ -1670,7 +1674,7 @@
               var foodHtml = sd.food.length ? sd.food.map(function(f) { return '<div class="cal-detail-item">🍽️ ' + f + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
               var dayIndex = sd.day - 1;
               var makeCalItinItem = function(emoji, text, type, itemIndex) {
-                var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + sd.city.split('>').pop().trim() + ' Thailand');
+                var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + sd.city.split('>').pop().trim() + ' ' + getTripDestination());
                 var detailId = 'cal-detail-' + sd.day + '-' + type + '-' + itemIndex;
                 var photoKey = 'day' + sd.day + '_act' + itemIndex;
                 var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
@@ -1850,7 +1854,7 @@
         if (!day.food.length) return '';
         var dayId = 'food-day-' + di;
         var foodRows = day.food.map(function(f, fi) {
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.name + ' ' + day.city.split('>').pop().trim() + ' Thailand');
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.name + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
           var editId = 'food-edit-' + di + '-' + fi;
           var resBadge = f.reservationRequired
             ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;' + (f.reservationBooked ? 'background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);' : 'background:#fff0f0;color:#C0392B;border:1px solid #E05555;') + '">' + (f.reservationBooked ? '✅ Booked' : '⚠️ Book') + '</span>'
@@ -2154,7 +2158,7 @@
         var cityEmoji = getCityEmoji(item.city);
 
         function makeItinItem(emoji, text, dayIndex, type, itemIndex) {
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + item.city.split('>').pop().trim() + ' Thailand');
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
           var detailId = 'itin-detail-' + item.day + '-' + type + '-' + itemIndex;
           var photoKey = 'day' + item.day + '_act' + itemIndex;
           var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
@@ -2508,7 +2512,7 @@
         ? '<img class="kanban-card-photo" src="' + savedPhoto + '">'
         : '<div class="kanban-card-photo-placeholder" id="' + photoId + '">' + catStyle.emoji + '</div>';
 
-      var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' Thailand');
+      var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
 
       card.innerHTML = photoHtml +
         '<div class="kanban-card-body">' +
@@ -2543,7 +2547,7 @@
 
     function fetchKanbanPhoto(activity, item, photoId) {
       var service = new google.maps.places.PlacesService(map);
-      service.findPlaceFromQuery({ query: activity + ' ' + item.city.split('>').pop().trim() + ' Thailand', fields: ['place_id'] }, function(results, status) {
+      service.findPlaceFromQuery({ query: activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination(), fields: ['place_id'] }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           service.getDetails({ placeId: results[0].place_id, fields: ['photos'] }, function(details, detailStatus) {
             if (detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0) {
@@ -2820,7 +2824,7 @@
         var actsHtml = day.activities.length ? day.activities.map(function(a, i) {
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
           var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand');
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
           var photoKey = 'day' + day.day + '_act' + i;
           var photo = cardPhotos[photoKey] || '';
           var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : '';
@@ -2834,7 +2838,7 @@
 
         var foodHtml = day.food.length ? day.food.map(function(f, i) {
           var fname = typeof f === 'string' ? f : f.name;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand');
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
           return '<div onclick="showSplitFloatCardDirect(\'' + fname.replace(/'/g,"\\'") + '\',\'\',\'\',\'' + mapsUrl + '\',-1,-1)" style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--sand-dark);cursor:pointer;">' +
             '<span style="font-size:13px;">🍽️</span>' +
             '<span style="flex:1;font-size:12px;color:var(--ink-light);">' + fname + '</span>' +
@@ -3030,7 +3034,7 @@
       if (!query) return;
       var city = currentDayItem.city.split('>').pop().trim();
       var service = new google.maps.places.PlacesService(map);
-      service.textSearch({ query: query + ' ' + city + ' Thailand' }, function(results, status) {
+      service.textSearch({ query: query + ' ' + city + ' ' + getTripDestination() }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results.length) {
           var resultsEl = document.getElementById('search-results-' + type);
           resultsEl.innerHTML = ''; resultsEl.classList.add('open');
@@ -3303,7 +3307,7 @@
       tasks.forEach(function(task) {
         var service = new google.maps.places.PlacesService(splitMap);
         var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
-        var query = rawName + ' ' + item.city.split('>').pop().trim() + ' Thailand';
+        var query = rawName + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination();
         var pinColor, pinEmoji, pinSize;
         if (task.type === 'food') { pinColor = '#E74C3C'; pinEmoji = '\uD83C\uDF7D\uFE0F'; pinSize = 28; }
         else if (task.type === 'accommodation') { pinColor = '#2980B9'; pinEmoji = '\uD83C\uDFE8'; pinSize = 28; }
@@ -3371,7 +3375,7 @@
     function geocodeActivity(task, item, callback) {
       var service = new google.maps.places.PlacesService(map);
       var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
-      var query = rawName + ' ' + item.city.split('>').pop().trim() + ' Thailand';
+      var query = rawName + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination();
       var pinColor, pinEmoji, pinSize;
       if (task.type === 'food') { pinColor = '#E74C3C'; pinEmoji = '\uD83C\uDF7D\uFE0F'; pinSize = 28; }
       else if (task.type === 'accommodation') { pinColor = '#2980B9'; pinEmoji = '\uD83C\uDFE8'; pinSize = 28; }
@@ -3512,11 +3516,11 @@
       }
       if (day.activities.length) {
         chips += divider('Activities');
-        day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; });
+        day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination()); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; });
       }
       if (day.food.length) {
         chips += divider('Food & Drinks');
-        day.food.forEach(function(f, i) { var fname = typeof f === 'string' ? f : f.name; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + fname + '</div>'; });
+        day.food.forEach(function(f, i) { var fname = typeof f === 'string' ? f : f.name; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination()); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + fname + '</div>'; });
       }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
