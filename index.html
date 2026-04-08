@@ -3134,7 +3134,7 @@
 
     function setupRealtimeSync() {
       db.collection('trips').doc(currentTripKey).onSnapshot(function(doc) {
-        if (doc.exists && doc.metadata.hasPendingWrites === false) {
+        if (doc.exists) {
           var data = doc.data();
           if (data && data.data) {
             var parsed = JSON.parse(data.data);
