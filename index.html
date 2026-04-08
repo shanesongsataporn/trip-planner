@@ -964,11 +964,11 @@
         }
         var delta = 0;
         var absVel = Math.abs(avgVelocity);
-        if (absVel > 1.2) {
+        if (absVel > 2.5) {
           delta = avgVelocity < 0 ? 3 : -3;
-        } else if (absVel > 0.6) {
+        } else if (absVel > 1.5) {
           delta = avgVelocity < 0 ? 2 : -2;
-        } else if (absVel > 0.25) {
+        } else if (absVel > 0.8) {
           delta = avgVelocity < 0 ? 1 : -1;
         } else if (Math.abs(diffX) > threshold) {
           delta = diffX < 0 ? 1 : -1;
