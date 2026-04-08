@@ -1089,6 +1089,7 @@
       showModal('Trip Settings',
         '<div class="modal-field"><label>Trip name</label><input type="text" id="rename-trip-name" value="' + currentTrip.name + '"></div>' +
         '<div class="modal-field"><label>Trip year</label><input type="number" id="trip-year" value="' + (currentTrip.year || new Date().getFullYear()) + '" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
+        '<div class="modal-field"><label>Shift all dates by (days)</label><input type="number" id="trip-shift-days" value="0" placeholder="e.g. 7 to move forward a week, -3 to move back 3 days" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Base currency (your home currency)</label>' + buildCurrencySelect('trip-base-currency', currentTrip.baseCurrency || 'AUD') + '</div>' +
         ratesInfo +
         '<div style="margin-top:8px;"><button onclick="refreshRatesFromModal()" style="font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">🔄 Refresh exchange rates</button></div>',
@@ -1102,6 +1103,10 @@
           currentTrip.baseCurrencySymbol = selCurrency.symbol;
           var yearInput = document.getElementById('trip-year');
           if (yearInput) { currentTrip.year = parseInt(yearInput.value) || new Date().getFullYear(); }
+          var shiftInput = document.getElementById('trip-shift-days');
+          if (shiftInput && shiftInput.value && parseInt(shiftInput.value) !== 0) {
+            shiftTripDates(parseInt(shiftInput.value));
+          }
           saveToStorage(); populateTripSelector(); updateMobTripLabel();
         }
       );
@@ -1682,7 +1687,10 @@
                 '<div class="cal-detail-header">' +
                   '<span style="font-size:24px;">' + getCityEmoji(sd.city) + '</span>' +
                   '<div><div class="cal-detail-day-num">Day ' + sd.day + ' · ' + sd.date + '</div><div class="cal-detail-city">' + sd.city + '</div></div>' +
-                  '<button onclick="toggleCalEdit(' + dayIndex + ')" id="cal-edit-btn-' + dayIndex + '" style="margin-left:auto;font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">Edit</button>' +
+                  '<div style="display:flex;gap:6px;margin-left:auto;">' +
+                    '<button onclick="calMoveDay(' + dayIndex + ')" style="font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">📅 Move</button>' +
+                    '<button onclick="toggleCalEdit(' + dayIndex + ')" id="cal-edit-btn-' + dayIndex + '" style="font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">Edit</button>' +
+                  '</div>' +
                 '</div>' +
                 '<div class="cal-detail-body" id="cal-detail-body-' + dayIndex + '">' +
                   '<div class="cal-detail-section"><div class="cal-detail-label">Accommodation</div>' + accomItems + '</div>' +
@@ -1708,7 +1716,54 @@
       }
 
       window.calSelectDay = function(key) {
-        if (!dayMap[key]) return;
+        if (!dayMap[key]) {
+          // empty cell — offer to add a day on this date
+          var parts = key.split('-');
+          var yr = parts[0], mi = parseInt(parts[1]), dy = parseInt(parts[2]);
+          var monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var dateObj = new Date(parseInt(yr), mi, dy);
+          var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          var dateStr = dowNames2[dateObj.getDay()] + ' ' + monthNames2[mi] + ' ' + dy;
+          showModal('Add day on ' + dateStr,
+            '<div class="modal-field"><label>City</label><input type="text" id="cal-new-city" placeholder="e.g. Bangkok" value="' + (currentTrip.days.length ? currentTrip.days[currentTrip.days.length-1].city.split(\'>\').pop().trim() : \'\') + '"></div>' +
+            '<div class="modal-field"><label>Note</label><input type="text" id="cal-new-note" placeholder="Optional note..."></div>',
+            function() {
+              var city = document.getElementById('cal-new-city').value.trim() || 'City';
+              var note = document.getElementById('cal-new-note').value.trim();
+              var lastDay = currentTrip.days[currentTrip.days.length - 1];
+              var base = currentTrip.baseCurrency || 'AUD';
+              var baseSym = currentTrip.baseCurrencySymbol || '$';
+              var newDay = {
+                day: currentTrip.days.length + 1,
+                date: dateStr,
+                city: city,
+                lat: lastDay ? lastDay.lat : 13.7563,
+                lng: lastDay ? lastDay.lng : 100.5018,
+                note: note,
+                accommodation: [], activities: [], activityCategories: [],
+                food: [], transport: [],
+                currency: base, currencySymbol: baseSym
+              };
+              currentTrip.days.push(newDay);
+              // sort days by date
+              currentTrip.days.sort(function(a, b) {
+                var parse = function(d) {
+                  var p = d.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+                  var mo = months[p[0]]; var dy2 = parseInt(p[1]);
+                  return new Date(tripYear, mo, dy2);
+                };
+                return parse(a) - parse(b);
+              });
+              // renumber days
+              currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
+              saveToStorage();
+              rebuildTimeline();
+              rebuildMobStrip();
+              renderCalendar();
+            }
+          );
+          return;
+        }
         selectedKey = selectedKey === key ? null : key;
         renderAll();
         if (selectedKey) {
@@ -2187,6 +2242,53 @@
 
     function editItinDay(index) {
       openDayPanel(currentTrip.days[index]);
+    }
+
+    function shiftTripDates(days) {
+      var months2 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var yr = currentTrip.year || new Date().getFullYear();
+      currentTrip.days.forEach(function(day) {
+        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var mo = months2[p[0]]; var dy = parseInt(p[1]);
+        if (isNaN(mo) || isNaN(dy)) return;
+        var d = new Date(yr, mo, dy);
+        d.setDate(d.getDate() + days);
+        day.date = dowNames2[d.getDay()] + ' ' + monthNames2[d.getMonth()] + ' ' + d.getDate();
+      });
+    }
+
+    function calMoveDay(dayIndex) {
+      var item = currentTrip.days[dayIndex];
+      if (!item) return;
+      var months2 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      showModal('Move Day ' + item.day + ' to new date',
+        '<div class="modal-field"><label>New date</label><input type="date" id="cal-move-date" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>',
+        function() {
+          var val = document.getElementById('cal-move-date').value;
+          if (!val) return;
+          var d = new Date(val + 'T00:00:00');
+          var dateStr = dowNames2[d.getDay()] + ' ' + monthNames2[d.getMonth()] + ' ' + d.getDate();
+          item.date = dateStr;
+          // re-sort and renumber
+          currentTrip.days.sort(function(a, b) {
+            var parse = function(day) {
+              var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+              var mo = months2[p[0]]; var dy = parseInt(p[1]);
+              return new Date(currentTrip.year || new Date().getFullYear(), mo, dy);
+            };
+            return parse(a) - parse(b);
+          });
+          currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
+          saveToStorage();
+          rebuildTimeline();
+          rebuildMobStrip();
+          renderCalendar();
+        }
+      );
     }
 
     function toggleCalEdit(dayIndex) {
