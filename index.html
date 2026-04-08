@@ -957,21 +957,14 @@
         isDragging = false;
         var total = currentTrip.days.length;
         var slideWidth = wrap.offsetWidth;
-        var threshold = slideWidth * 0.35;
+        var threshold = slideWidth * 0.25;
         var avgVelocity = 0;
         if (velocitySamples.length > 0) {
           avgVelocity = velocitySamples.reduce(function(a, b) { return a + b; }, 0) / velocitySamples.length;
         }
         var delta = 0;
-        var absVel = Math.abs(avgVelocity);
-        if (absVel > 4.0) {
-          delta = avgVelocity < 0 ? 3 : -3;
-        } else if (absVel > 2.5) {
-          delta = avgVelocity < 0 ? 2 : -2;
-        } else if (absVel > 1.2) {
-          delta = avgVelocity < 0 ? 1 : -1;
-        } else if (Math.abs(diffX) > threshold) {
-          delta = diffX < 0 ? 1 : -1;
+        if (Math.abs(avgVelocity) > 0.3 || Math.abs(diffX) > threshold) {
+          delta = (avgVelocity < 0 || diffX < 0) ? 1 : -1;
         }
         var target = Math.max(0, Math.min(total - 1, mobCardsCurrentIndex + delta));
         mobCardsGoTo(target, true);
