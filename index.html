@@ -1731,7 +1731,7 @@
                 '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (f.notes||'').replace(/"/g,'&quot;') + '" placeholder="Any notes..." onchange="updateFoodFieldDirect(' + di + ',' + fi + ',\'notes\',this.value)" onblur="updateFoodFieldDirect(' + di + ',' + fi + ',\'notes\',this.value)">' +
               '</div>' +
               '<button onclick="deleteFoodDirect(' + di + ',' + fi + ')" style="font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">🗑 Delete</button>' +
-              '<button onclick="renderFood()" style="margin-left:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✓ Save</button>' +
+              '<button onclick="saveFoodAndKeepOpen(\'' + editId + '\')" style="margin-left:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✓ Save</button>' +
             '</div>' +
           '</div>';
         }).join('');
@@ -1792,6 +1792,19 @@
       if (!el) return;
       var isOpen = el.style.display !== 'none';
       el.style.display = isOpen ? 'none' : 'block';
+    }
+
+    function saveFoodAndKeepOpen(editId) {
+      renderFood();
+      setTimeout(function() {
+        var el = document.getElementById(editId);
+        if (el) { el.style.display = 'block'; }
+        // also make sure the day container is open
+        var parts = editId.replace('food-edit-','').split('-');
+        var dayId = 'food-day-' + parts[0];
+        var dayEl = document.getElementById(dayId);
+        if (dayEl) { dayEl.style.display = 'block'; }
+      }, 50);
     }
 
     function renderBudget() {
