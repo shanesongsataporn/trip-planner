@@ -1692,9 +1692,9 @@
                   '<span style="font-size:13px;font-weight:700;color:var(--ink);">' + f.name + '</span>' +
                   resBadge +
                 '</div>' +
-                (f.mustOrder ? '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:2px;">🍴 ' + f.mustOrder + '</div>' : '') +
-                (f.notes ? '<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:4px;">' + f.notes + '</div>' : '') +
-                (f.link ? '<div style="margin-bottom:4px;"><a href="' + f.link + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600;">🔗 ' + f.link + '</a></div>' : '') +
+                (f.mustOrder ? '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:2px;">🍴 Must order: <strong>' + f.mustOrder + '</strong></div>' : '') +
+                (f.notes ? '<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:2px;">' + f.notes + '</div>' : '') +
+                (f.link ? '<div style="margin-bottom:4px;"><a href="' + f.link + '" target="_blank" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:600;">🔗 Link</a></div>' : '') +
                 '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' +
                   '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
                   '<button class="kbtn" onclick="toggleFoodBooked(' + di + ',' + fi + ')">✅ ' + (f.reservationBooked ? 'Unbook' : 'Mark booked') + '</button>' +
@@ -1731,6 +1731,7 @@
                 '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (f.notes||'').replace(/"/g,'&quot;') + '" placeholder="Any notes..." onchange="updateFoodFieldDirect(' + di + ',' + fi + ',\'notes\',this.value)" onblur="updateFoodFieldDirect(' + di + ',' + fi + ',\'notes\',this.value)">' +
               '</div>' +
               '<button onclick="deleteFoodDirect(' + di + ',' + fi + ')" style="font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">🗑 Delete</button>' +
+              '<button onclick="renderFood()" style="margin-left:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✓ Save & Close</button>' +
             '</div>' +
           '</div>';
         }).join('');
