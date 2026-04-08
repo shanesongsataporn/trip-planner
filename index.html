@@ -1571,19 +1571,25 @@
 
       var selectedKey = null;
 
+      // build codeMap dynamically from citySettings
+      var codeMap = {};
+      Object.keys(citySettings).forEach(function(name) {
+        if (citySettings[name].code) { codeMap[name] = citySettings[name].code; }
+      });
+
       function renderAll() {
         var html = tripMonths.map(function(monthIdx) {
-          var firstDay = new Date(2026, monthIdx, 1).getDay();
-          var daysInMonth = new Date(2026, monthIdx + 1, 0).getDate();
+          var firstDay = new Date(tripYear, monthIdx, 1).getDay();
+          var daysInMonth = new Date(tripYear, monthIdx + 1, 0).getDate();
 
           var cells = '';
           for (var i = 0; i < firstDay; i++) {
             cells += '<div class="cal-cell empty"><div class="cal-date"></div></div>';
           }
           for (var d = 1; d <= daysInMonth; d++) {
-            var key = '2026-' + monthIdx + '-' + d;
+            var key = tripYear + '-' + monthIdx + '-' + d;
             var tripDay = dayMap[key];
-            var cellDate = new Date(2026, monthIdx, d); cellDate.setHours(0,0,0,0);
+            var cellDate = new Date(tripYear, monthIdx, d); cellDate.setHours(0,0,0,0);
             var isToday = cellDate.getTime() === today.getTime();
             var isSelected = key === selectedKey;
             var cls = 'cal-cell';
@@ -1601,7 +1607,6 @@
               var fromName = isTransit ? parts[0].trim() : null;
               var cs = citySettings[baseName];
               var fromCs = fromName ? citySettings[fromName] : null;
-              var codeMap = { "Bangkok": "BKK", "Chiang Rai": "CEI", "Koh Samui": "USM", "Sydney": "SYD" };
               if (isTransit) {
                 cityColor = '#5B9BD5';
                 var fromCode = codeMap[fromName] || (fromCs && fromCs.code) || (fromName ? fromName.substring(0,3).toUpperCase() : '');
@@ -1623,7 +1628,7 @@
           var detailHtml = '';
           if (selectedKey && dayMap[selectedKey]) {
             var parts = selectedKey.split('-');
-            if (parseInt(parts[1]) === monthIdx) {
+            if (parseInt(parts[1]) === monthIdx && parseInt(parts[0]) === tripYear) {
               var sd = dayMap[selectedKey];
               normaliseAccom(sd); normaliseDayTransport(sd);
               var accomHtml = sd.accommodation.length ? sd.accommodation.map(function(a) { return '<div class="cal-detail-item">🏨 ' + a.name + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
@@ -1684,8 +1689,8 @@
 
           return '<div class="cal-month">' +
             '<div class="cal-month-header">' +
-              '<div><div class="cal-month-title">' + monthNames[monthIdx] + ' 2026</div><div class="cal-month-sub">Shane &amp; Cheryl\'s Thailand Trip</div></div>' +
-              '<div style="font-size:22px;">\uD83C\uDDF9\uD83C\uDDED</div>' +
+              '<div><div class="cal-month-title">' + monthNames[monthIdx] + ' ' + tripYear + '</div><div class="cal-month-sub">' + (currentTrip.name || 'Trip') + '</div></div>' +
+              '<div style="font-size:22px;">' + getCityEmoji(currentTrip.days[0] ? currentTrip.days[0].city : 'Bangkok') + '</div>' +
             '</div>' +
             '<div class="cal-dow-row">' + dowNames.map(function(d) { return '<div class="cal-dow">' + d + '</div>'; }).join('') + '</div>' +
             '<div class="cal-grid">' + cells + '</div>' +
