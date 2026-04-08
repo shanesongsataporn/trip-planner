@@ -1684,7 +1684,8 @@
         });
         (day.food || []).forEach(function(f, i) {
           var k = 'food_' + i;
-          rows += makeRow(f, '🍽️', k, parseFloat(day.costs[k+'_est']||0), parseFloat(day.costs[k+'_act']||0));
+          var fname = typeof f === 'string' ? f : f.name;
+          rows += makeRow(fname, '🍽️', k, parseFloat(day.costs[k+'_est']||0), parseFloat(day.costs[k+'_act']||0));
         });
         (day.transport || []).forEach(function(t, i) {
           var k = 'trans_' + i;
@@ -2375,10 +2376,11 @@
         }).join('') : '<div style="font-size:12px;color:var(--ink-muted);">No activities</div>';
 
         var foodHtml = day.food.length ? day.food.map(function(f, i) {
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand');
-          return '<div onclick="showSplitFloatCardDirect(\'' + f.replace(/'/g,"\\'") + '\',\'\',\'\',\'' + mapsUrl + '\',-1,-1)" style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--sand-dark);cursor:pointer;">' +
+          var fname = typeof f === 'string' ? f : f.name;
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand');
+          return '<div onclick="showSplitFloatCardDirect(\'' + fname.replace(/'/g,"\\'") + '\',\'\',\'\',\'' + mapsUrl + '\',-1,-1)" style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--sand-dark);cursor:pointer;">' +
             '<span style="font-size:13px;">🍽️</span>' +
-            '<span style="flex:1;font-size:12px;color:var(--ink-light);">' + f + '</span>' +
+            '<span style="flex:1;font-size:12px;color:var(--ink-light);">' + fname + '</span>' +
             '<span style="font-size:10px;color:var(--accent);white-space:nowrap;">📍</span>' +
           '</div>';
         }).join('') : '';
@@ -2551,7 +2553,7 @@
 
     function addFromSearch(type, place) {
       if (type === 'activities') { currentDayItem.activities.push(place.name); currentDayItem.activityCategories.push('default'); }
-      else if (type === 'food') { currentDayItem.food.push(place.name); }
+      else if (type === 'food') { currentDayItem.food.push({ name: place.name, link: '', reservationRequired: false, reservationBooked: false, notes: '', mustOrder: '' }); }
       else if (type === 'accommodation') { normaliseAccom(currentDayItem); currentDayItem.accommodation.push({ name: place.name, notes: place.formatted_address || '', price: '' }); }
       saveToStorage(); refreshPanelTabs(currentDayItem);
     }
@@ -2753,7 +2755,7 @@
         item.activityCategories = item.activities.map(function() { return 'default'; });
       }
       item.activities.forEach(function(activity, index) { tasks.push({ type: 'activity', name: activity, cat: item.activityCategories[index] || 'default', index: index, catIndex: index }); });
-      item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: f, index: index, catIndex: index }); });
+      item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: typeof f === 'string' ? f : f.name, index: index, catIndex: index }); });
       item.accommodation.forEach(function(a, index) { if (a.name) { tasks.push({ type: 'accommodation', name: a.name, index: index, catIndex: index }); } });
       var total = tasks.length, completed = 0;
       if (total === 0) { if (callback) { callback(); } return; }
@@ -2818,7 +2820,7 @@
         item.activityCategories = item.activities.map(function() { return 'default'; });
       }
       item.activities.forEach(function(activity, index) { tasks.push({ type: 'activity', name: activity, cat: item.activityCategories[index] || 'default', index: index, catIndex: index }); });
-      item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: f, index: index, catIndex: index }); });
+      item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: typeof f === 'string' ? f : f.name, index: index, catIndex: index }); });
       item.accommodation.forEach(function(a, index) { if (a.name) { tasks.push({ type: 'accommodation', name: a.name, index: index, catIndex: index }); } });
       var total = tasks.length, completed = 0;
       if (total === 0) { map.panTo({ lat: item.lat, lng: item.lng }); map.setZoom(13); return; }
@@ -2959,7 +2961,7 @@
       if (day.accommodation.length) { chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>'; }
       if (day.transport.length) { day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; }); }
       if (day.activities.length) { day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; }); }
-      if (day.food.length) { day.food.forEach(function(f, i) { var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + f.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + f + '</div>'; }); }
+      if (day.food.length) { day.food.forEach(function(f, i) { var fname = typeof f === 'string' ? f : f.name; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' Thailand'); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + fname + '</div>'; }); }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
     }
