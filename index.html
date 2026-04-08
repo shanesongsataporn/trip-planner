@@ -1682,7 +1682,7 @@
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.name + ' ' + day.city.split('>').pop().trim() + ' Thailand');
           var editId = 'food-edit-' + di + '-' + fi;
           var resBadge = f.reservationRequired
-            ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;' + (f.reservationBooked ? 'background:var(--accent-light);color:var(--accent);' : 'background:#3D1A1A;color:var(--danger);') + '">' + (f.reservationBooked ? '✅ Booked' : '⚠️ Book') + '</span>'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;' + (f.reservationBooked ? 'background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);' : 'background:#fff0f0;color:#C0392B;border:1px solid #E05555;') + '">' + (f.reservationBooked ? '✅ Booked' : '⚠️ Book') + '</span>'
             : '';
           return '<div style="border-bottom:1px solid var(--sand-dark);">' +
             '<div style="padding:12px 18px;display:flex;align-items:flex-start;gap:10px;">' +
