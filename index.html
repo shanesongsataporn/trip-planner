@@ -1948,7 +1948,7 @@
         var dayEst = 0;
         var rows = '';
 
-        function makeRow(label, emoji, key, est, act) {
+        var makeRow = function(label, emoji, key, est, act) {
           dayEst += est;
           return '<div class="budget-item-row">' +
             '<span style="font-size:14px;">' + emoji + '</span>' +
@@ -1960,7 +1960,7 @@
               '<input class="budget-cost-input" type="number" placeholder="0" value="' + (act || '') + '" onchange="updateCost(' + di + ',\'' + key + '_act\',this.value)" oninput="updateCost(' + di + ',\'' + key + '_act\',this.value)">' +
             '</div>' +
           '</div>';
-        }
+        };
 
         (day.accommodation || []).forEach(function(a, i) {
           var k = 'accom_' + i;
@@ -1985,8 +1985,8 @@
 
         if (!rows) { rows = '<div style="padding:12px 16px;font-size:12px;color:var(--ink-muted);font-style:italic;">No items to track — add activities, food, or transport to this day.</div>'; }
 
+        var dayEstBase = convertToBase(dayEst, dayCur);
         return '<div class="budget-day">' +
-          return '<div class="budget-day">' +
           '<div class="budget-day-header" onclick="toggleBudgetDay(' + di + ')">' +
             '<div><div class="budget-day-title">Day ' + day.day + ' · ' + day.city + '</div><div class="budget-day-sub">' + day.date + ' · ' + dayCur + '</div></div>' +
             '<div style="text-align:right;"><div class="budget-day-total">' + fmtLocal(dayEst, daySym) + '</div>' + (dayCur !== baseCurrency ? '<div style="font-size:10px;color:var(--ink-muted);">~' + fmtBase(dayEstBase) + ' ' + baseCurrency + '</div>' : '') + '</div>' +
