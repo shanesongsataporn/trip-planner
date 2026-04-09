@@ -2324,9 +2324,31 @@
       var isOpen = panel.style.display !== 'none';
       panel.style.display = isOpen ? 'none' : 'block';
       if (readOnly) { readOnly.style.display = isOpen ? 'block' : 'none'; }
-      if (!isOpen) { currentDayItem = currentTrip.days[dayIndex]; initInlineSortables(dayIndex); }
+      if (!isOpen) {
+        currentDayItem = currentTrip.days[dayIndex];
+        activeInlineEditIndex = dayIndex;
+        initInlineSortables(dayIndex);
+      } else {
+        activeInlineEditIndex = -1;
+      }
       if (btn) { btn.textContent = isOpen ? 'Edit' : 'Done'; btn.style.color = isOpen ? '' : 'var(--accent)'; btn.style.borderColor = isOpen ? '' : 'var(--accent)'; }
       if (body && body.classList) { body.classList.add('open'); }
+    }
+
+    function restoreActiveItinEdit() {
+      if (activeInlineEditIndex === -1) return;
+      var di = activeInlineEditIndex;
+      var body = document.getElementById('itin-day-' + (di + 1));
+      var panel = document.getElementById('itin-inline-edit-' + di);
+      var readOnly = document.getElementById('itin-readonly-' + di);
+      var btn = document.getElementById('itin-edit-btn-' + di);
+      if (!panel) return;
+      if (body) { body.classList.add('open'); }
+      panel.style.display = 'block';
+      if (readOnly) { readOnly.style.display = 'none'; }
+      if (btn) { btn.textContent = 'Done'; btn.style.color = 'var(--accent)'; btn.style.borderColor = 'var(--accent)'; }
+      currentDayItem = currentTrip.days[di];
+      initInlineSortables(di);
     }
 
     function addItinAccom(dayIndex) {
@@ -2633,6 +2655,7 @@
 
     var inlineEditDragging = false;
     var inlineSortableInstances = {};
+    var activeInlineEditIndex = -1;
 
     function initInlineSortables(dayIndex) {
       // destroy existing instances for this dayIndex
@@ -4166,7 +4189,7 @@
                 }, 100);
               }, 500);
             }
-            if (currentView === 'itinerary') { renderItinerary(); }
+            if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
             if (currentView === 'cards') { renderKanban(); }
             if (currentView === 'split') { renderSplit(); }
             if (currentView === 'budget') { renderBudget(); }
