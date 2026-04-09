@@ -2483,11 +2483,18 @@
             '<input class="inline-edit" style="flex:1;font-size:12px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:4px 8px;background:var(--sand);" value="' + a.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="inlineUpdateActivity(' + dayIndex + ',' + i + ',\'name\',this.value)" onblur="inlineUpdateActivity(' + dayIndex + ',' + i + ',\'name\',this.value)">' +
             makeDeleteBtn('inlineDeleteActivity(' + dayIndex + ',' + i + ')') +
           '</div>' +
-          '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:22px;margin-top:4px;">' +
-            Object.keys(activityCategories).map(function(c) {
-              var isSelected = c === cat;
-              return '<button onclick="inlineUpdateActivityCat(' + dayIndex + ',' + i + ',\'' + c + '\')" style="font-family:inherit;font-size:10px;padding:3px 8px;border-radius:12px;border:1px solid ' + (isSelected ? 'var(--accent)' : 'var(--sand-dark)') + ';background:' + (isSelected ? 'var(--accent)' : 'none') + ';color:' + (isSelected ? '#fff' : 'var(--ink-muted)') + ';cursor:pointer;">' + activityCategories[c].emoji + ' ' + c + '</button>';
-            }).join('') +
+          '<div style="display:flex;align-items:center;gap:6px;margin-left:22px;margin-top:4px;flex-wrap:wrap;">' +
+            '<div style="position:relative;">' +
+              '<button onclick="toggleInlineCatPicker(\'cat-picker-' + dayIndex + '-' + i + '\')" style="font-family:inherit;font-size:11px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:4px;">' +
+                activityCategories[cat].emoji + ' ' + cat + ' ▾' +
+              '</button>' +
+              '<div id="cat-picker-' + dayIndex + '-' + i + '" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);box-shadow:var(--card-shadow-hover);padding:4px;min-width:140px;margin-top:2px;">' +
+                Object.keys(activityCategories).map(function(c) {
+                  return '<button onclick="inlineUpdateActivityCat(' + dayIndex + ',' + i + ',\'' + c + '\');toggleInlineCatPicker(\'cat-picker-' + dayIndex + '-' + i + '\')" style="font-family:inherit;font-size:11px;padding:5px 10px;width:100%;text-align:left;border:none;background:none;color:var(--ink);cursor:pointer;border-radius:var(--radius-sm);display:block;" onmouseover="this.style.background=\'var(--sand)\'" onmouseout="this.style.background=\'none\'">' + activityCategories[c].emoji + ' ' + c + '</button>';
+                }).join('') +
+              '</div>' +
+            '</div>' +
+            '<input class="inline-edit" placeholder="Add note..." value="' + ((item.cardNotes && item.cardNotes[String(i)]) || '').replace(/"/g,'&quot;') + '" style="font-size:11px;color:var(--ink-muted);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:4px 8px;background:var(--sand);flex:1;min-width:80px;" onchange="inlineUpdateActivityNote(' + dayIndex + ',' + i + ',this.value)" onblur="inlineUpdateActivityNote(' + dayIndex + ',' + i + ',this.value)">' +
           '</div>' +
         '</div>';
       }).join('');
@@ -2567,6 +2574,22 @@
       refreshInlineEdit(dayIndex);
     }
 
+    function toggleInlineCatPicker(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var isOpen = el.style.display !== 'none';
+      // close all other pickers first
+      document.querySelectorAll('[id^="cat-picker-"]').forEach(function(p) { p.style.display = 'none'; });
+      el.style.display = isOpen ? 'none' : 'block';
+    }
+
+    function inlineUpdateActivityNote(dayIndex, i, value) {
+      var item = currentTrip.days[dayIndex];
+      if (!item.cardNotes) { item.cardNotes = {}; }
+      item.cardNotes[String(i)] = value.trim();
+      saveToStorage();
+    }
+
     function inlineDeleteActivity(dayIndex, i) {
       var item = currentTrip.days[dayIndex];
       item.activities.splice(i, 1);
@@ -2609,15 +2632,22 @@
     }
 
     var inlineEditDragging = false;
+    var inlineSortableInstances = {};
 
     function initInlineSortables(dayIndex) {
+      // destroy existing instances for this dayIndex
+      var key = 'day-' + dayIndex;
+      if (inlineSortableInstances[key]) {
+        inlineSortableInstances[key].forEach(function(s) { try { s.destroy(); } catch(e) {} });
+      }
+      inlineSortableInstances[key] = [];
       var accomEl = document.getElementById('inline-accom-' + dayIndex);
       var actEl = document.getElementById('inline-acts-' + dayIndex);
       var foodEl = document.getElementById('inline-food-' + dayIndex);
       var onDragEnd = function() { inlineEditDragging = false; };
       var onDragStart = function() { inlineEditDragging = true; };
       if (accomEl && accomEl.children.length > 1) {
-        Sortable.create(accomEl, { animation: 150, handle: '.drag-handle',
+        var s1 = Sortable.create(accomEl, { animation: 150, handle: '.drag-handle',
           onStart: onDragStart,
           onEnd: function(evt) {
             normaliseAccom(currentTrip.days[dayIndex]);
@@ -2627,9 +2657,10 @@
             setTimeout(onDragEnd, 150);
           }
         });
+        inlineSortableInstances[key].push(s1);
       }
       if (actEl && actEl.children.length > 1) {
-        Sortable.create(actEl, { animation: 150, handle: '.drag-handle',
+        var s2 = Sortable.create(actEl, { animation: 150, handle: '.drag-handle',
           onStart: onDragStart,
           onEnd: function(evt) {
             var item = currentTrip.days[dayIndex];
@@ -2639,9 +2670,10 @@
             setTimeout(onDragEnd, 150);
           }
         });
+        inlineSortableInstances[key].push(s2);
       }
       if (foodEl && foodEl.children.length > 1) {
-        Sortable.create(foodEl, { animation: 150, handle: '.drag-handle',
+        var s3 = Sortable.create(foodEl, { animation: 150, handle: '.drag-handle',
           onStart: onDragStart,
           onEnd: function(evt) {
             normaliseFood(currentTrip.days[dayIndex]);
@@ -2651,6 +2683,7 @@
             setTimeout(onDragEnd, 150);
           }
         });
+        inlineSortableInstances[key].push(s3);
       }
     }
 
