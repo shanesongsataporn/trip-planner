@@ -4277,7 +4277,7 @@
         return '<button onclick="setRouteDefaultMode(\'' + m + '\')" id="route-mode-' + m + '" style="font-family:inherit;font-size:13px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:' + (m === defaultMode ? 'var(--accent)' : 'var(--sand)') + ';color:' + (m === defaultMode ? '#fff' : 'var(--ink-muted)') + ';cursor:pointer;transition:all 0.15s;">' + routeModeLabels[m] + '</button>';
       }).join('');
 
-      var hasResult = item.routeOrder && item.routeOrder.length && currentRouteResult;
+      var hasResult = item.routeOrder && item.routeOrder.length && item.routeLegs && item.routeLegs.length && currentRouteResult;
 
       var setupHtml =
         '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--sand-dark);margin-bottom:14px;">' +
@@ -4580,32 +4580,7 @@
             })();
         var segEndMins = anchor ? anchor.mins : 24 * 60;
         var segDurationMins = segEndMins - segStartMins;
-        var avgStopMins = 80;
-        var maxStopsInSeg = Math.max(1, Math.floor(segDurationMins / avgStopMins));
         var totalSegs = lockedTimedStops.length + 1;
-        var allUnlockedSIs = stops.map(function(s, i) { return i; }).filter(function(i) { return !lockedByStopIndex[i]; });
-        var segStopIndices = [];
-        if (totalSegs === 1) {
-          segStopIndices = unlockedStopIndices.slice();
-        } else if (li === 0) {
-          var taken = 0;
-          unlockedStopIndices.forEach(function(si) { if (taken < maxStopsInSeg) { segStopIndices.push(si); taken++; } });
-        } else if (li === totalSegs - 1) {
-          segStopIndices = unlockedStopIndices.slice();
-        } else {
-          var taken = 0;
-          unlockedStopIndices.forEach(function(si) { if (taken < maxStopsInSeg) { segStopIndices.push(si); taken++; } });
-        }
-        segStopIndices.forEach(function(si) {
-          var idx = unlockedStopIndices.indexOf(si);
-          if (idx !== -1) { unlockedStopIndices.splice(idx, 1); }
-        });
-        if (li === totalSegs - 1 && unlockedStopIndices.length) {
-          unlockedStopIndices.forEach(function(si) { segStopIndices.push(si); });
-          unlockedStopIndices.length = 0;
-        }
-        var segEndMins = anchor ? anchor.mins : 24 * 60;
-        var segDurationMins = segEndMins - segStartMins;
 
         // calculate how many stops can realistically fit in this time window
         // use average dwell of 60min + 20min travel per stop as rough estimate
@@ -5010,6 +4985,8 @@
       if (!item) { return; }
       item.routeOrder = [];
       item.routeLegs = [];
+      item.routeStartTime = null;
+      item.routeReturnToStart = true;
       currentRouteResult = null;
       saveToStorage();
       renderRouteTab(item);
