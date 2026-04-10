@@ -384,6 +384,54 @@
     /* ===== BUDGET VIEW ===== */
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
+    #view-discovery { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; scrollbar-width: thin; flex-direction: column; }
+
+    /* ===== DISCOVERY VIEW ===== */
+    #disc-search-bar { position: sticky; top: 0; z-index: 10; background: var(--white); border-bottom: 1px solid var(--sand-dark); padding: 12px 16px; display: flex; gap: 8px; align-items: center; }
+    #disc-search-input { flex: 1; font-family: inherit; font-size: 14px; padding: 10px 14px; border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); background: var(--sand); color: var(--ink); outline: none; transition: border-color 0.15s; }
+    #disc-search-input:focus { border-color: var(--accent); background: var(--white); }
+    #disc-search-btn { font-family: inherit; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap; }
+    #disc-map { width: 100%; height: 280px; flex-shrink: 0; background: var(--sand-dark); }
+    #disc-body { padding: 16px; flex: 1; }
+    .disc-result-card { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; }
+    .disc-result-card:hover { box-shadow: var(--card-shadow-hover); }
+    .disc-result-card-body { padding: 12px 14px; }
+    .disc-result-name { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 3px; letter-spacing: -0.01em; }
+    .disc-result-address { font-size: 11px; color: var(--ink-muted); margin-bottom: 6px; line-height: 1.4; }
+    .disc-result-meta { display: flex; align-items: center; gap: 10px; }
+    .disc-result-rating { font-size: 11px; font-weight: 600; color: var(--accent); }
+    .disc-result-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .disc-closest-day { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); white-space: nowrap; display: inline-block; margin-bottom: 6px; }
+    .disc-wishlist-item { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); padding: 14px; display: flex; align-items: flex-start; gap: 10px; }
+    .disc-wishlist-icon { font-size: 22px; flex-shrink: 0; }
+    .disc-wishlist-info { flex: 1; min-width: 0; }
+    .disc-wishlist-name { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+    .disc-wishlist-address { font-size: 11px; color: var(--ink-muted); margin-bottom: 6px; }
+    .disc-wishlist-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ===== ADD TO TRIP BOTTOM SHEET ===== */
+    #disc-add-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 5500; background: var(--white); border-radius: 20px 20px 0 0; box-shadow: 0 -8px 40px rgba(0,0,0,0.3); border-top: 1px solid var(--sand-dark); max-height: 80vh; overflow-y: auto; animation: fadeInUp 0.25s ease; }
+    #disc-add-sheet.open { display: block; }
+    #disc-add-sheet-handle { width: 36px; height: 4px; background: var(--sand-dark); border-radius: 2px; margin: 12px auto 0; }
+    #disc-add-sheet-body { padding: 16px 20px 32px; }
+    #disc-add-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5400; }
+    #disc-add-overlay.open { display: block; }
+    .disc-step-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; display: block; }
+    .disc-cat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .disc-cat-btn { font-family: inherit; font-size: 12px; font-weight: 700; padding: 12px 8px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink); cursor: pointer; text-align: center; transition: all 0.15s; }
+    .disc-cat-btn:hover, .disc-cat-btn.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+    .disc-subcat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .disc-day-list { max-height: 220px; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); overflow: hidden; }
+    .disc-day-option { padding: 11px 14px; font-size: 13px; font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--sand-dark); cursor: pointer; transition: background 0.12s; display: flex; align-items: center; gap: 8px; }
+    .disc-day-option:last-child { border-bottom: none; }
+    .disc-day-option:hover, .disc-day-option.selected { background: var(--accent-light); color: var(--accent); font-weight: 700; }
+    .disc-save-btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
+    .disc-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    @media (max-width: 640px) {
+      #view-discovery { top: 54px; bottom: 0; }
+      #disc-map { height: 220px; }
+    }
     .budget-summary { background: var(--white); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); }
     .budget-summary-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.01em; }
     .budget-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
@@ -583,6 +631,7 @@
   <div id="hamburger-menu">
     <div class="menu-section">
       <div class="menu-section-label">Tools</div>
+      <button class="menu-item" onclick="setView('discovery');toggleMenu('hamburger-menu')">🔍 Discovery</button>
       <button class="menu-item" onclick="setView('food');toggleMenu('hamburger-menu')">🍽️ Food Planner</button>
       <button class="menu-item" onclick="setView('budget');toggleMenu('hamburger-menu')">💰 Budget Tracker</button>
       <button class="menu-item" onclick="showCitySettingsModal();toggleMenu('hamburger-menu')">🏙️ City Settings</button>
@@ -617,6 +666,7 @@
   <div id="mob-hamburger-menu">
     <div class="menu-section">
       <div class="menu-section-label">Tools</div>
+      <button class="menu-item" onclick="setView('discovery');toggleMenu('mob-hamburger-menu')">🔍 Discovery</button>
       <button class="menu-item" onclick="setView('food');toggleMenu('mob-hamburger-menu')">🍽️ Food Planner</button>
       <button class="menu-item" onclick="setView('budget');toggleMenu('mob-hamburger-menu')">💰 Budget Tracker</button>
       <button class="menu-item" onclick="showCitySettingsModal();toggleMenu('mob-hamburger-menu')">🏙️ City Settings</button>
@@ -686,6 +736,19 @@
   <div id="view-budget"></div>
   <div id="view-food"></div>
   <div id="view-calendar"></div>
+  <div id="view-discovery">
+    <div id="disc-search-bar">
+      <input id="disc-search-input" type="text" placeholder="Search a place, restaurant, temple..." onkeydown="if(event.key==='Enter')runDiscoverySearch()">
+      <button id="disc-search-btn" onclick="runDiscoverySearch()">Search</button>
+    </div>
+    <div id="disc-map"></div>
+    <div id="disc-body"></div>
+  </div>
+  <div id="disc-add-overlay" onclick="closeAddToTripSheet()"></div>
+  <div id="disc-add-sheet">
+    <div id="disc-add-sheet-handle"></div>
+    <div id="disc-add-sheet-body"></div>
+  </div>
   <div id="panel">
     <div id="panel-head">
       <button id="panel-close">x</button>
@@ -1407,6 +1470,8 @@
       document.getElementById('view-budget').style.display = view === 'budget' ? 'block' : 'none';
       document.getElementById('view-food').style.display = view === 'food' ? 'block' : 'none';
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
+      var discEl = document.getElementById('view-discovery');
+      if (discEl) { discEl.style.display = view === 'discovery' ? 'flex' : 'none'; }
       var mobCards = document.getElementById('mob-cards-view');
       if (mobCards) { 
         if (view === 'cards' && isMobile()) { mobCards.classList.add('active'); renderMobCards(); }
@@ -1431,6 +1496,7 @@
       if (view === 'budget') { renderBudget(); }
       if (view === 'food') { renderFood(); }
       if (view === 'calendar') { renderCalendar(); }
+      if (view === 'discovery') { renderDiscovery(); }
       if (view === 'map') { google.maps.event.trigger(map, 'resize'); }
       if (view !== 'split') { clearSplitActivityMarkers(); }
     }
@@ -3576,6 +3642,7 @@
         gestureHandling: 'greedy'
       });
 
+      loadDiscWishlist();
       loadFromStorage(function() {
         currentTrip = trips[currentTripKey];
         rebuildTimeline();
@@ -4272,13 +4339,44 @@
         }
 
         var catDef = activityCategories[stop.cat] || activityCategories['default'];
-        return legHtml +
+        var leg = legs[pos] || {};
+        var isLocked = leg.locked || false;
+        var lockedTime = leg.lockedTime || '';
+
+        // calculate free time gap if locked with a time
+        var freeTimeHtml = '';
+        if (isLocked && lockedTime && pos > 0) {
+          var ltParts = lockedTime.split(':');
+          var lockedMins = parseInt(ltParts[0]) * 60 + parseInt(ltParts[1]);
+          var gap = lockedMins - arrivalMins;
+          if (gap > 5) {
+            var gapH = Math.floor(gap / 60);
+            var gapM = gap % 60;
+            var gapLabel = gapH > 0 ? gapH + 'h ' + gapM + 'm' : gapM + 'm';
+            freeTimeHtml = '<div style="margin:0 0 4px 34px;font-size:11px;color:var(--ink-muted);font-style:italic;padding:6px 10px;background:var(--sand);border-radius:var(--radius-sm);border-left:3px solid var(--sand-dark);">🕐 ' + gapLabel + ' free before this</div>';
+            arrivalMins = lockedMins;
+            arrH = Math.floor(arrivalMins / 60) % 24;
+            arrM = arrivalMins % 60;
+            arrLabel = arrH + ':' + (arrM < 10 ? '0' : '') + arrM;
+            leaveH = Math.floor((arrivalMins + dwell) / 60) % 24;
+            leaveM = (arrivalMins + dwell) % 60;
+            leaveLabel = leaveH + ':' + (leaveM < 10 ? '0' : '') + leaveM;
+            currentMinutes = arrivalMins + dwell;
+          }
+        }
+
+        return legHtml + freeTimeHtml +
           '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;">' +
-            '<div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">' + (pos + 1) + '</div>' +
+            '<div style="width:24px;height:24px;border-radius:50%;background:' + (isLocked ? 'var(--warn)' : 'var(--accent)') + ';color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">' + (isLocked ? '🔒' : (pos + 1)) + '</div>' +
             '<div style="flex:1;">' +
               '<div style="font-size:13px;font-weight:700;color:var(--ink);">' + stop.name + '</div>' +
               '<div style="font-size:11px;color:var(--ink-muted);">' + catDef.emoji + ' ' + arrLabel + ' → ' + leaveLabel + ' (' + dwell + ' min)</div>' +
+              (isLocked ? '<div style="margin-top:6px;display:flex;align-items:center;gap:8px;">' +
+                '<span style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-muted);">Locked time</span>' +
+                '<input type="time" value="' + lockedTime + '" onchange="updateStopLockedTime(' + pos + ',this.value)" style="font-family:inherit;font-size:12px;padding:3px 8px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;">' +
+              '</div>' : '') +
             '</div>' +
+            '<button onclick="toggleStopLock(' + pos + ')" style="font-family:inherit;font-size:13px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid ' + (isLocked ? 'var(--warn)' : 'var(--sand-dark)') + ';background:none;color:' + (isLocked ? 'var(--warn)' : 'var(--ink-muted)') + ';cursor:pointer;flex-shrink:0;" title="' + (isLocked ? 'Unlock stop' : 'Lock stop') + '">' + (isLocked ? '🔒' : '🔓') + '</button>' +
           '</div>';
       }).join('');
 
@@ -4332,6 +4430,27 @@
       if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
     }
 
+    function toggleStopLock(pos) {
+      if (!currentDayItem || !currentDayItem.routeLegs) { return; }
+      var leg = currentDayItem.routeLegs[pos] || {};
+      leg.locked = !leg.locked;
+      if (!leg.locked) { leg.lockedTime = ''; }
+      currentDayItem.routeLegs[pos] = leg;
+      saveToStorage();
+      var resultsEl = document.getElementById('route-results');
+      if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
+    }
+
+    function updateStopLockedTime(pos, time) {
+      if (!currentDayItem || !currentDayItem.routeLegs) { return; }
+      var leg = currentDayItem.routeLegs[pos] || {};
+      leg.lockedTime = time;
+      currentDayItem.routeLegs[pos] = leg;
+      saveToStorage();
+      var resultsEl = document.getElementById('route-results');
+      if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
+    }
+
     function suggestRoute(item) {
       if (!item) { return; }
       var startInput = document.getElementById('route-start-input');
@@ -4353,8 +4472,18 @@
         resultsEl.innerHTML = '<div style="padding:20px;text-align:center;"><div style="width:24px;height:24px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 10px;"></div><div style="font-size:12px;color:var(--ink-muted);">Calculating best route...</div></div>';
       }
 
-      var waypoints = stops.map(function(s) {
-        return { location: s.name + ' ' + city + ' ' + getTripDestination(), stopover: true };
+      // separate locked and unlocked stops
+      var existingLegs = item.routeLegs || [];
+      var existingOrder = item.routeOrder || [];
+      var lockedPositions = {};
+      existingOrder.forEach(function(stopIndex, pos) {
+        var leg = existingLegs[pos] || {};
+        if (leg.locked) { lockedPositions[pos] = { stopIndex: stopIndex, leg: leg }; }
+      });
+
+      var unlockedStops = stops.filter(function(s, i) {
+        var posInOrder = existingOrder.indexOf(i);
+        return posInOrder === -1 || !lockedPositions[posInOrder];
       });
 
       var defaultMode = item.routeDefaultMode || 'driving';
@@ -4365,7 +4494,10 @@
       var directionsService = new google.maps.DirectionsService();
       var origin = startLoc;
       var destination = returnToStart ? startLoc : (stops[stops.length - 1].name + ' ' + city + ' ' + getTripDestination());
-      var waypointsOnly = waypoints;
+
+      var waypointsOnly = unlockedStops.map(function(s) {
+        return { location: s.name + ' ' + city + ' ' + getTripDestination(), stopover: true };
+      });
 
       directionsService.route({
         origin: origin,
@@ -4376,19 +4508,37 @@
       }, function(result, status) {
         if (status === google.maps.DirectionsStatus.OK) {
           currentRouteResult = result;
-          var order = result.routes[0].waypoint_order;
+          var optimisedUnlockedOrder = result.routes[0].waypoint_order.map(function(i) {
+            return stops.indexOf(unlockedStops[i]);
+          });
           var legs = result.routes[0].legs;
-          item.routeOrder = order;
-          item.routeLegs = order.map(function(stopIndex, pos) {
-            var leg = legs[pos];
+
+          // rebuild full order inserting locked stops back at their positions
+          var finalOrder = [];
+          var unlockedQueue = optimisedUnlockedOrder.slice();
+          var totalStops = stops.length;
+          for (var p = 0; p < totalStops; p++) {
+            if (lockedPositions[p] !== undefined) {
+              finalOrder.push(lockedPositions[p].stopIndex);
+            } else {
+              if (unlockedQueue.length) { finalOrder.push(unlockedQueue.shift()); }
+            }
+          }
+
+          item.routeOrder = finalOrder;
+          item.routeLegs = finalOrder.map(function(stopIndex, pos) {
+            var leg = legs[pos] || legs[legs.length - 1];
             var distanceM = leg ? leg.distance.value : 0;
             var durationMins = leg ? Math.ceil(leg.duration.value / 60) : 0;
+            var prevLegData = lockedPositions[pos] ? lockedPositions[pos].leg : {};
             return {
-              from: pos === 0 ? 'start' : order[pos - 1],
+              from: pos === 0 ? 'start' : finalOrder[pos - 1],
               to: stopIndex,
-              mode: recommendMode(distanceM),
+              mode: prevLegData.mode || recommendMode(distanceM),
               durationMins: durationMins,
-              distanceM: distanceM
+              distanceM: distanceM,
+              locked: prevLegData.locked || false,
+              lockedTime: prevLegData.lockedTime || ''
             };
           });
           saveToStorage();
@@ -4434,6 +4584,327 @@
       currentRouteResult = null;
       saveToStorage();
       renderRouteTab(item);
+    }
+
+    // ===== DISCOVERY =====
+    var discMap = null, discMarkers = [], discTripMarkers = [], discCurrentPlace = null;
+    var discWishlist = [];
+
+    function renderDiscovery() {
+      var body = document.getElementById('disc-body');
+      if (!body) return;
+
+      if (!discMap) {
+        var center = { lat: currentTrip.days[0].lat || 13.7563, lng: currentTrip.days[0].lng || 100.5018 };
+        discMap = new google.maps.Map(document.getElementById('disc-map'), {
+          center: center, zoom: 11, mapId: 'DEMO_MAP_ID',
+          mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+          zoomControl: true, gestureHandling: 'greedy'
+        });
+        addDiscTripMarkers();
+      } else {
+        google.maps.event.trigger(discMap, 'resize');
+      }
+
+      renderDiscBody();
+    }
+
+    function addDiscTripMarkers() {
+      discTripMarkers.forEach(function(m) { m.map = null; });
+      discTripMarkers = [];
+      currentTrip.days.forEach(function(day) {
+        day.activities.forEach(function(act, i) {
+          var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
+          var catDef = activityCategories[cat] || activityCategories['default'];
+          var el = document.createElement('div');
+          el.style.cssText = 'width:20px;height:20px;border-radius:50%;background:' + catDef.color + ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:9px;cursor:default;';
+          el.title = act + ' (Day ' + day.day + ')';
+          var m = new google.maps.marker.AdvancedMarkerElement({ position: { lat: day.lat, lng: day.lng }, map: discMap, content: el });
+          discTripMarkers.push(m);
+        });
+        day.food.forEach(function(f) {
+          var fname = typeof f === 'string' ? f : f.name;
+          var el = document.createElement('div');
+          el.style.cssText = 'width:18px;height:18px;border-radius:50%;background:#E74C3C;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);font-size:8px;display:flex;align-items:center;justify-content:center;cursor:default;';
+          el.title = fname + ' (Day ' + day.day + ')';
+          var m = new google.maps.marker.AdvancedMarkerElement({ position: { lat: day.lat, lng: day.lng }, map: discMap, content: el });
+          discTripMarkers.push(m);
+        });
+      });
+    }
+
+    function renderDiscBody() {
+      var body = document.getElementById('disc-body');
+      if (!body) return;
+      if (discWishlist.length) {
+        var wishHtml = '<div style="margin-bottom:16px;">' +
+          '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:10px;">⭐ Wishlist (' + discWishlist.length + ')</div>' +
+          discWishlist.map(function(item, idx) {
+            return '<div class="disc-wishlist-item">' +
+              '<div class="disc-wishlist-icon">📍</div>' +
+              '<div class="disc-wishlist-info">' +
+                '<div class="disc-wishlist-name">' + item.name + '</div>' +
+                '<div class="disc-wishlist-address">' + (item.address || '') + '</div>' +
+                (item.rating ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px;">★ ' + item.rating + '</div>' : '') +
+                '<div class="disc-wishlist-actions">' +
+                  '<button class="kbtn" onclick="promoteWishlistItem(' + idx + ')" style="border-color:var(--accent);color:var(--accent);">+ Add to Trip</button>' +
+                  '<button class="kbtn" onclick="showWishlistOnMap(' + idx + ')">📍 Map</button>' +
+                  '<button class="kbtn" onclick="removeFromWishlist(' + idx + ')" style="border-color:var(--danger);color:var(--danger);">✕</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+        body.innerHTML = wishHtml;
+      } else {
+        body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);">' +
+          '<div style="font-size:40px;margin-bottom:12px;">🔍</div>' +
+          '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Discover places</div>' +
+          '<div style="font-size:12px;line-height:1.6;">Search above to find restaurants, temples, beaches and more. Save them to your wishlist or add directly to a day.</div>' +
+        '</div>';
+      }
+    }
+
+    function runDiscoverySearch() {
+      var input = document.getElementById('disc-search-input');
+      if (!input || !input.value.trim()) return;
+      var query = input.value.trim();
+      var body = document.getElementById('disc-body');
+      body.innerHTML = '<div style="padding:30px;text-align:center;"><div style="width:24px;height:24px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 10px;"></div><div style="font-size:12px;color:var(--ink-muted);">Searching...</div></div>';
+
+      var service = new google.maps.places.PlacesService(discMap);
+      var destination = getTripDestination();
+      service.textSearch({ query: query + ' ' + destination }, function(results, status) {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) {
+          body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink-muted);font-size:13px;">No results found. Try a different search.</div>';
+          return;
+        }
+        discMarkers.forEach(function(m) { m.map = null; });
+        discMarkers = [];
+        var bounds = new google.maps.LatLngBounds();
+        var cards = results.slice(0, 8).map(function(place, idx) {
+          var closest = findClosestDay(place.geometry.location);
+          var closestHtml = closest ? '<div class="disc-closest-day">📅 Nearest to Day ' + closest.day + ' · ' + closest.city + '</div>' : '';
+          var ratingHtml = place.rating ? '<span class="disc-result-rating">★ ' + place.rating + '</span>' : '';
+          var el = document.createElement('div');
+          el.style.cssText = 'width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;';
+          el.textContent = (idx + 1) + '';
+          el.style.fontSize = '10px';
+          el.style.fontWeight = '700';
+          el.style.color = '#fff';
+          var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: discMap, content: el });
+          marker.addListener('gmp-click', function() { scrollToDiscResult(idx); });
+          discMarkers.push(marker);
+          bounds.extend(place.geometry.location);
+          return '<div class="disc-result-card" id="disc-result-' + idx + '" onclick="selectDiscResult(' + idx + ')">' +
+            '<div class="disc-result-card-body">' +
+              '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
+                '<div style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (idx+1) + '</div>' +
+                '<div class="disc-result-name">' + place.name + '</div>' +
+              '</div>' +
+              closestHtml +
+              '<div class="disc-result-address">' + (place.formatted_address || '') + '</div>' +
+              '<div class="disc-result-meta">' + ratingHtml + '</div>' +
+              '<div class="disc-result-actions">' +
+                '<button class="kbtn" style="border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="event.stopPropagation();showAddToTripSheet(' + idx + ')">+ Add to Trip</button>' +
+                '<button class="kbtn" onclick="event.stopPropagation();saveDiscResultToWishlist(' + idx + ')">⭐ Wishlist</button>' +
+                '<a href="https://www.google.com/maps/place/?q=place_id:' + place.place_id + '" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        });
+        discMap.fitBounds(bounds, { padding: 40 });
+        body.innerHTML = '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">' + results.length + ' results for "' + query + '"</div>' + cards.join('');
+        window._discResults = results.slice(0, 8);
+      });
+    }
+
+    function findClosestDay(latLng) {
+      var best = null, bestDist = Infinity;
+      currentTrip.days.forEach(function(day) {
+        if (!day.lat || !day.lng) return;
+        var R = 6371;
+        var dLat = (latLng.lat() - day.lat) * Math.PI / 180;
+        var dLng = (latLng.lng() - day.lng) * Math.PI / 180;
+        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(day.lat*Math.PI/180)*Math.cos(latLng.lat()*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+        var dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        if (dist < bestDist) { bestDist = dist; best = day; }
+      });
+      return best;
+    }
+
+    function selectDiscResult(idx) {
+      var results = window._discResults;
+      if (!results || !results[idx]) return;
+      var place = results[idx];
+      discMap.panTo(place.geometry.location);
+      discMap.setZoom(15);
+      document.querySelectorAll('.disc-result-card').forEach(function(c) { c.style.outline = ''; });
+      var card = document.getElementById('disc-result-' + idx);
+      if (card) { card.style.outline = '2px solid var(--accent)'; }
+    }
+
+    function scrollToDiscResult(idx) {
+      var card = document.getElementById('disc-result-' + idx);
+      if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); card.style.outline = '2px solid var(--accent)'; setTimeout(function() { card.style.outline = ''; }, 1500); }
+    }
+
+    var _discAddIdx = null;
+    var _discAddSource = null; // 'search' or 'wishlist'
+    var _discSelectedCat = null;
+    var _discSelectedSubcat = null;
+    var _discSelectedDay = null;
+
+    function showAddToTripSheet(idx, fromWishlist) {
+      _discAddIdx = idx;
+      _discAddSource = fromWishlist ? 'wishlist' : 'search';
+      _discSelectedCat = null; _discSelectedSubcat = null; _discSelectedDay = null;
+      var place = fromWishlist ? discWishlist[idx] : (window._discResults && window._discResults[idx]);
+      if (!place) return;
+      var name = place.name;
+      var subcatHtml = Object.keys(activityCategories).map(function(cat) {
+        return '<button class="disc-cat-btn" id="disc-sub-' + cat + '" onclick="selectDiscSubcat(\'' + cat + '\')">' + activityCategories[cat].emoji + '<br><span style="font-size:10px;">' + cat + '</span></button>';
+      }).join('');
+      var dayHtml = currentTrip.days.map(function(day, di) {
+        var closest = !fromWishlist && place.geometry ? findClosestDay(place.geometry.location) : null;
+        var isClosest = closest && closest.day === day.day;
+        return '<div class="disc-day-option" id="disc-day-opt-' + di + '" onclick="selectDiscDay(' + di + ')">' +
+          '<span style="font-size:16px;">' + getCityEmoji(day.city) + '</span>' +
+          '<div style="flex:1;"><div style="font-size:13px;font-weight:600;">Day ' + day.day + ' · ' + day.city + '</div><div style="font-size:10px;color:var(--ink-muted);">' + day.date + '</div></div>' +
+          (isClosest ? '<span style="font-size:9px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:2px 6px;border-radius:10px;">nearest</span>' : '') +
+        '</div>';
+      }).join('');
+      document.getElementById('disc-add-sheet-body').innerHTML =
+        '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.02em;">' + name + '</div>' +
+        '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:16px;">' + (place.formatted_address || place.address || '') + '</div>' +
+        '<span class="disc-step-label">1. What type?</span>' +
+        '<div class="disc-cat-grid">' +
+          '<button class="disc-cat-btn" id="disc-cat-stay" onclick="selectDiscCat(\'stay\')">🏨<br><span style="font-size:10px;">Stay</span></button>' +
+          '<button class="disc-cat-btn" id="disc-cat-activity" onclick="selectDiscCat(\'activity\')">📍<br><span style="font-size:10px;">Activity</span></button>' +
+          '<button class="disc-cat-btn" id="disc-cat-food" onclick="selectDiscCat(\'food\')">🍽️<br><span style="font-size:10px;">Food</span></button>' +
+        '</div>' +
+        '<div id="disc-subcat-section" style="display:none;">' +
+          '<span class="disc-step-label">2. Activity type?</span>' +
+          '<div class="disc-subcat-grid">' + subcatHtml + '</div>' +
+        '</div>' +
+        '<span class="disc-step-label" id="disc-day-step-label">2. Which day?</span>' +
+        '<div class="disc-day-list">' + dayHtml + '</div>' +
+        '<button class="disc-save-btn" id="disc-save-btn" onclick="confirmAddToTrip()" disabled>Save to Trip</button>';
+      document.getElementById('disc-add-overlay').classList.add('open');
+      document.getElementById('disc-add-sheet').classList.add('open');
+    }
+
+    function selectDiscCat(cat) {
+      _discSelectedCat = cat;
+      _discSelectedSubcat = null;
+      document.querySelectorAll('.disc-cat-btn[id^="disc-cat-"]').forEach(function(b) { b.classList.remove('selected'); });
+      var btn = document.getElementById('disc-cat-' + cat);
+      if (btn) { btn.classList.add('selected'); }
+      var subcatSection = document.getElementById('disc-subcat-section');
+      var dayLabel = document.getElementById('disc-day-step-label');
+      if (cat === 'activity') {
+        subcatSection.style.display = 'block';
+        if (dayLabel) { dayLabel.textContent = '3. Which day?'; }
+      } else {
+        subcatSection.style.display = 'none';
+        if (dayLabel) { dayLabel.textContent = '2. Which day?'; }
+      }
+      updateDiscSaveBtn();
+    }
+
+    function selectDiscSubcat(cat) {
+      _discSelectedSubcat = cat;
+      document.querySelectorAll('[id^="disc-sub-"]').forEach(function(b) { b.classList.remove('selected'); });
+      var btn = document.getElementById('disc-sub-' + cat);
+      if (btn) { btn.classList.add('selected'); }
+      updateDiscSaveBtn();
+    }
+
+    function selectDiscDay(di) {
+      _discSelectedDay = di;
+      document.querySelectorAll('.disc-day-option').forEach(function(d) { d.classList.remove('selected'); });
+      var opt = document.getElementById('disc-day-opt-' + di);
+      if (opt) { opt.classList.add('selected'); }
+      updateDiscSaveBtn();
+    }
+
+    function updateDiscSaveBtn() {
+      var btn = document.getElementById('disc-save-btn');
+      if (!btn) return;
+      var catOk = _discSelectedCat !== null;
+      var subcatOk = _discSelectedCat !== 'activity' || _discSelectedSubcat !== null;
+      var dayOk = _discSelectedDay !== null;
+      btn.disabled = !(catOk && subcatOk && dayOk);
+    }
+
+    function confirmAddToTrip() {
+      var place = _discAddSource === 'wishlist' ? discWishlist[_discAddIdx] : (window._discResults && window._discResults[_discAddIdx]);
+      if (!place || _discSelectedDay === null || !_discSelectedCat) return;
+      var day = currentTrip.days[_discSelectedDay];
+      var name = place.name;
+      if (_discSelectedCat === 'stay') {
+        normaliseAccom(day);
+        day.accommodation.push({ name: name, notes: place.formatted_address || place.address || '', price: '' });
+      } else if (_discSelectedCat === 'food') {
+        normaliseFood(day);
+        day.food.push({ name: name, link: '', bookingUrl: '', reservationRequired: false, reservationBooked: false, notes: place.formatted_address || place.address || '', mustOrder: '' });
+      } else if (_discSelectedCat === 'activity') {
+        day.activities.push(name);
+        if (!day.activityCategories) { day.activityCategories = []; }
+        day.activityCategories.push(_discSelectedSubcat || 'default');
+      }
+      saveToStorage();
+      closeAddToTripSheet();
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:20px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.3);animation:fadeInUp 0.2s ease;white-space:nowrap;';
+      toast.textContent = '✅ Added to Day ' + day.day + ' · ' + day.city;
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, 2500);
+    }
+
+    function closeAddToTripSheet() {
+      document.getElementById('disc-add-sheet').classList.remove('open');
+      document.getElementById('disc-add-overlay').classList.remove('open');
+    }
+
+    function saveDiscResultToWishlist(idx) {
+      var results = window._discResults;
+      if (!results || !results[idx]) return;
+      var place = results[idx];
+      var already = discWishlist.some(function(w) { return w.place_id === place.place_id; });
+      if (already) { return; }
+      discWishlist.push({ name: place.name, address: place.formatted_address || '', rating: place.rating || 0, place_id: place.place_id, lat: place.geometry.location.lat(), lng: place.geometry.location.lng() });
+      saveDiscWishlist();
+      var btn = document.querySelectorAll('.disc-result-card')[idx];
+      var wbtn = btn ? btn.querySelector('button:nth-child(2)') : null;
+      if (wbtn) { wbtn.textContent = '⭐ Saved!'; wbtn.style.color = 'var(--accent)'; wbtn.style.borderColor = 'var(--accent)'; }
+    }
+
+    function removeFromWishlist(idx) {
+      discWishlist.splice(idx, 1);
+      saveDiscWishlist();
+      renderDiscBody();
+    }
+
+    function promoteWishlistItem(idx) {
+      showAddToTripSheet(idx, true);
+    }
+
+    function showWishlistOnMap(idx) {
+      var item = discWishlist[idx];
+      if (!item || !discMap) return;
+      discMap.panTo({ lat: item.lat, lng: item.lng });
+      discMap.setZoom(15);
+      var el = document.getElementById('disc-map');
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    }
+
+    function saveDiscWishlist() {
+      try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
+    }
+
+    function loadDiscWishlist() {
+      try { var s = localStorage.getItem('disc_wishlist'); if (s) { discWishlist = JSON.parse(s); } } catch(e) {}
     }
 
     // ===== STORAGE =====
