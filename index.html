@@ -4350,7 +4350,7 @@
 
         // calculate free time gap if locked with a time
         var freeTimeHtml = '';
-        if (isLocked && lockedTime && pos > 0) {
+        if (isLocked && lockedTime) {
           var ltParts = lockedTime.split(':');
           var lockedMins = parseInt(ltParts[0]) * 60 + parseInt(ltParts[1]);
           var gap = lockedMins - arrivalMins;
@@ -4359,15 +4359,17 @@
             var gapM = gap % 60;
             var gapLabel = gapH > 0 ? gapH + 'h ' + gapM + 'm' : gapM + 'm';
             freeTimeHtml = '<div style="margin:0 0 4px 34px;font-size:11px;color:var(--ink-muted);font-style:italic;padding:6px 10px;background:var(--sand);border-radius:var(--radius-sm);border-left:3px solid var(--sand-dark);">🕐 ' + gapLabel + ' free before this</div>';
-            arrivalMins = lockedMins;
-            arrH = Math.floor(arrivalMins / 60) % 24;
-            arrM = arrivalMins % 60;
-            arrLabel = arrH + ':' + (arrM < 10 ? '0' : '') + arrM;
-            leaveH = Math.floor((arrivalMins + dwell) / 60) % 24;
-            leaveM = (arrivalMins + dwell) % 60;
-            leaveLabel = leaveH + ':' + (leaveM < 10 ? '0' : '') + leaveM;
-            currentMinutes = arrivalMins + dwell;
           }
+          // snap arrival to locked time regardless of gap direction
+          arrivalMins = lockedMins;
+          arrH = Math.floor(arrivalMins / 60) % 24;
+          arrM = arrivalMins % 60;
+          arrLabel = arrH + ':' + (arrM < 10 ? '0' : '') + arrM;
+          leaveH = Math.floor((arrivalMins + dwell) / 60) % 24;
+          leaveM = (arrivalMins + dwell) % 60;
+          leaveLabel = leaveH + ':' + (leaveM < 10 ? '0' : '') + leaveM;
+          // everything after flows from locked time + dwell
+          currentMinutes = arrivalMins + dwell;
         }
 
         return legHtml + freeTimeHtml +
