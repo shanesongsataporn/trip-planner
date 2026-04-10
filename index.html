@@ -4480,15 +4480,21 @@
       // separate locked and unlocked stops
       var existingLegs = item.routeLegs || [];
       var existingOrder = item.routeOrder || [];
+
+      // build a map of position -> { stopIndex, leg } for locked stops
       var lockedPositions = {};
+      var lockedStopIndices = {};
       existingOrder.forEach(function(stopIndex, pos) {
         var leg = existingLegs[pos] || {};
-        if (leg.locked) { lockedPositions[pos] = { stopIndex: stopIndex, leg: leg }; }
+        if (leg.locked) {
+          lockedPositions[pos] = { stopIndex: stopIndex, leg: leg };
+          lockedStopIndices[stopIndex] = true;
+        }
       });
 
+      // unlocked stops are those whose stop index is not in lockedStopIndices
       var unlockedStops = stops.filter(function(s, i) {
-        var posInOrder = existingOrder.indexOf(i);
-        return posInOrder === -1 || !lockedPositions[posInOrder];
+        return !lockedStopIndices[i];
       });
 
       var defaultMode = item.routeDefaultMode || 'driving';
