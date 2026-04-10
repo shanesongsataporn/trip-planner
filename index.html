@@ -4254,6 +4254,10 @@
 
     function renderRouteTab(item) {
       normaliseAccom(item); normaliseFood(item);
+      var pill = document.getElementById('mob-day-pill');
+      if (pill && isMobile() && document.getElementById('panel').classList.contains('open')) {
+        pill.classList.remove('active');
+      }
       var stops = getRouteStops(item);
       var startLoc = getRouteStartLocation(item);
       var startTime = item.routeStartTime || '09:00';
