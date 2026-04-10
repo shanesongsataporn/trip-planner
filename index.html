@@ -4524,15 +4524,21 @@
           });
           var legs = result.routes[0].legs;
 
-          // rebuild full order inserting locked stops back at their positions
-          var finalOrder = [];
-          var unlockedQueue = optimisedUnlockedOrder.slice();
+          // rebuild full order — locked stops stay at their original positions
+          // unlockedQueue fills the remaining slots in optimised order
           var totalStops = stops.length;
+          var finalOrder = new Array(totalStops);
+
+          // place locked stops first
+          Object.keys(lockedPositions).forEach(function(pos) {
+            finalOrder[parseInt(pos)] = lockedPositions[pos].stopIndex;
+          });
+
+          // fill remaining slots with optimised unlocked order
+          var unlockedQueue = optimisedUnlockedOrder.slice();
           for (var p = 0; p < totalStops; p++) {
-            if (lockedPositions[p] !== undefined) {
-              finalOrder.push(lockedPositions[p].stopIndex);
-            } else {
-              if (unlockedQueue.length) { finalOrder.push(unlockedQueue.shift()); }
+            if (finalOrder[p] === undefined) {
+              if (unlockedQueue.length) { finalOrder[p] = unlockedQueue.shift(); }
             }
           }
 
@@ -4541,6 +4547,7 @@
             var leg = legs[pos] || legs[legs.length - 1];
             var distanceM = leg ? leg.distance.value : 0;
             var durationMins = leg ? Math.ceil(leg.duration.value / 60) : 0;
+            // preserve locked leg data if this position was locked
             var prevLegData = lockedPositions[pos] ? lockedPositions[pos].leg : {};
             return {
               from: pos === 0 ? 'start' : finalOrder[pos - 1],
