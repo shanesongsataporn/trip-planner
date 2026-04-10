@@ -5121,7 +5121,8 @@
             }
             if (isMobile() && currentView === 'map') {
               var pill = document.getElementById('mob-day-pill');
-              if (pill) { pill.classList.add('active'); }
+              var panelOpen = document.getElementById('panel').classList.contains('open');
+              if (pill && !panelOpen) { pill.classList.add('active'); }
             }
             if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
             if (currentView === 'cards') { renderKanban(); }
