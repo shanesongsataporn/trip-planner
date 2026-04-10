@@ -5018,7 +5018,7 @@
 
     function addWishlistLink(idx) {
       showModal('Add link',
-        '<div class="modal-field"><label>Instagram, TikTok, website...</label><input type="text" id="wishlist-link-input" placeholder="https://..." value="' + (discWishlist[idx].link || '') + '"></div>',
+        '<div class="modal-field"><label>Instagram, TikTok, website...</label><input type="text" id="wishlist-link-input" placeholder="https://..." value="' + (discWishlist[idx].link || '') + '" autofocus></div>',
         function() {
           var val = document.getElementById('wishlist-link-input').value.trim();
           discWishlist[idx].link = val;
