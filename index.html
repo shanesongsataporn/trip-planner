@@ -5012,7 +5012,9 @@
               '<div class="disc-wishlist-actions">' +
                 '<button class="kbtn" onclick="closeWishlistDrawer();setTimeout(function(){showAddToTripSheet(' + idx + ',true);},200);" style="border-color:var(--accent);color:var(--accent);font-weight:700;">+ Add to Trip</button>' +
                 '<button class="kbtn" onclick="showWishlistOnMap(' + idx + ');closeWishlistDrawer();">📍 Map</button>' +
-                (item.link ? '<a href="' + item.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn">🔗 Link</button></a>' : '') +
+                (item.link
+                  ? '<a href="' + item.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn">🔗 Link</button></a>'
+                  : '<button class="kbtn" onclick="addWishlistLink(' + idx + ')">🔗 Add link</button>') +
                 '<button class="kbtn" onclick="removeFromWishlist(' + idx + ')" style="border-color:var(--danger);color:var(--danger);">✕</button>' +
               '</div>' +
             '</div>' +
@@ -5034,6 +5036,19 @@
       var overlay = document.getElementById('disc-wishlist-overlay');
       if (drawer) { drawer.remove(); }
       if (overlay) { overlay.remove(); }
+    }
+
+    function addWishlistLink(idx) {
+      showModal('Add link',
+        '<div class="modal-field"><label>Instagram, TikTok, website...</label><input type="text" id="wishlist-link-input" placeholder="https://..." value="' + (discWishlist[idx].link || '') + '"></div>',
+        function() {
+          var val = document.getElementById('wishlist-link-input').value.trim();
+          discWishlist[idx].link = val;
+          saveDiscWishlist();
+          closeWishlistDrawer();
+          openWishlistDrawer();
+        }
+      );
     }
 
     function saveDiscWishlist() {
