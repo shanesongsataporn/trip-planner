@@ -3666,9 +3666,7 @@
           if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          google.maps.event.addListenerOnce(map, 'idle', function() {
-            addCityMarkers();
-          });
+          addCityMarkers();
           fetchExchangeRates(function() {
             if (currentView === 'budget') { renderBudget(); }
           });
@@ -5092,9 +5090,7 @@
             rebuildTimeline();
             rebuildMobStrip();
             if (cityMarkerObjs.length === 0) {
-              google.maps.event.addListenerOnce(map, 'idle', function() {
-                addCityMarkers();
-              });
+              addCityMarkers();
             }
             if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
             if (currentView === 'cards') { renderKanban(); }
