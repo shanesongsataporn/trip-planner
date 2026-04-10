@@ -5098,7 +5098,14 @@
             rebuildTimeline();
             rebuildMobStrip();
             if (cityMarkerObjs.length === 0) {
-              addCityMarkers();
+              (function retryMarkers(n) {
+                addCityMarkers();
+                if (cityMarkerObjs.length === 0 && n > 0) { setTimeout(function() { retryMarkers(n - 1); }, 500); }
+              })(10);
+            }
+            if (isMobile() && currentView === 'map') {
+              var pill = document.getElementById('mob-day-pill');
+              if (pill) { pill.classList.add('active'); }
             }
             if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
             if (currentView === 'cards') { renderKanban(); }
