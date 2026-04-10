@@ -3666,7 +3666,15 @@
           if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
           setupRealtimeSync();
           if (isMobile()) { initMobPill(); updateMobPill(); }
-          addCityMarkers();
+          function retryAddCityMarkers(attempts) {
+            addCityMarkers();
+            if (cityMarkerObjs.length === 0 && attempts > 0) {
+              setTimeout(function() { retryAddCityMarkers(attempts - 1); }, 500);
+            }
+          }
+          retryAddCityMarkers(10);
+          var pill = document.getElementById('mob-day-pill');
+          if (pill && isMobile()) { pill.classList.add('active'); }
           fetchExchangeRates(function() {
             if (currentView === 'budget') { renderBudget(); }
           });
