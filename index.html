@@ -1005,54 +1005,35 @@
     function initMobCardsSwipe() {
       var wrap = document.getElementById('mob-cards-track-wrap');
       if (!wrap) return;
-      var startX, startY, diffX = 0, isDragging = false, isHorizontal = null;
-      var velocitySamples = [], lastX, lastTime;
+      var startX, startY, isHorizontal = null;
 
       wrap.addEventListener('touchstart', function(e) {
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
-        lastX = startX; lastTime = Date.now();
-        diffX = 0; isDragging = true; isHorizontal = null;
-        velocitySamples = [];
-        var track = document.getElementById('mob-cards-track');
-        track.style.transition = 'none';
+        isHorizontal = null;
       }, { passive: true });
 
       wrap.addEventListener('touchmove', function(e) {
-        if (!isDragging) return;
-        var currentX = e.touches[0].clientX;
-        diffX = currentX - startX;
-        var diffY = e.touches[0].clientY - startY;
-        if (isHorizontal === null) { isHorizontal = Math.abs(diffX) > Math.abs(diffY); }
-        if (!isHorizontal) return;
-        e.preventDefault();
-        var now = Date.now();
-        var dt = now - lastTime;
-        if (dt > 0) {
-          velocitySamples.push((currentX - lastX) / dt);
-          if (velocitySamples.length > 5) { velocitySamples.shift(); }
+        if (isHorizontal === null) {
+          var dx = Math.abs(e.touches[0].clientX - startX);
+          var dy = Math.abs(e.touches[0].clientY - startY);
+          isHorizontal = dx > dy;
         }
-        lastX = currentX; lastTime = now;
-        var track = document.getElementById('mob-cards-track');
-        track.style.transform = 'translateX(calc(-' + (mobCardsCurrentIndex * 100) + '% + ' + diffX + 'px))';
+        if (isHorizontal) { e.preventDefault(); }
       }, { passive: false });
 
-      wrap.addEventListener('touchend', function() {
-        if (!isDragging || !isHorizontal) { isDragging = false; return; }
-        isDragging = false;
+      wrap.addEventListener('touchend', function(e) {
+        if (!isHorizontal) return;
+        var diffX = e.changedTouches[0].clientX - startX;
         var total = currentTrip.days.length;
-        var slideWidth = wrap.offsetWidth;
-        var threshold = slideWidth * 0.25;
-        var avgVelocity = 0;
-        if (velocitySamples.length > 0) {
-          avgVelocity = velocitySamples.reduce(function(a, b) { return a + b; }, 0) / velocitySamples.length;
-        }
+        var threshold = 50;
         var delta = 0;
-        if (Math.abs(avgVelocity) > 0.3 || Math.abs(diffX) > threshold) {
-          delta = (avgVelocity < 0 || diffX < 0) ? 1 : -1;
+        if (diffX < -threshold) { delta = 1; }
+        else if (diffX > threshold) { delta = -1; }
+        if (delta !== 0) {
+          var target = Math.max(0, Math.min(total - 1, mobCardsCurrentIndex + delta));
+          mobCardsGoTo(target, true);
         }
-        var target = Math.max(0, Math.min(total - 1, mobCardsCurrentIndex + delta));
-        mobCardsGoTo(target, true);
       });
     }
 
@@ -3987,16 +3968,16 @@
 
       document.getElementById('mob-pill-prev').addEventListener('click', function() {
         if (mobPillIndex > 0) {
-          var summaryWasOpen = document.getElementById('mob-day-summary').classList.contains('open');
           mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
-          if (summaryWasOpen) { toggleMobDaySummary(); }
+          closeMobDaySummary();
+          toggleMobDaySummary();
         }
       });
       document.getElementById('mob-pill-next').addEventListener('click', function() {
         if (mobPillIndex < currentTrip.days.length - 1) {
-          var summaryWasOpen = document.getElementById('mob-day-summary').classList.contains('open');
           mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
-          if (summaryWasOpen) { toggleMobDaySummary(); }
+          closeMobDaySummary();
+          toggleMobDaySummary();
         }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
@@ -4064,10 +4045,45 @@
       }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
+      initMobSummarySwipe();
     }
 
     function closeMobDaySummary() {
       document.getElementById('mob-day-summary').classList.remove('open');
+    }
+
+    var mobSummarySwipeInited = false;
+    function initMobSummarySwipe() {
+      if (mobSummarySwipeInited) return;
+      mobSummarySwipeInited = true;
+      var el = document.getElementById('mob-day-summary');
+      if (!el) return;
+      var startX, startY, isHorizontal = null;
+      el.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isHorizontal = null;
+      }, { passive: true });
+      el.addEventListener('touchmove', function(e) {
+        if (isHorizontal === null) {
+          var dx = Math.abs(e.touches[0].clientX - startX);
+          var dy = Math.abs(e.touches[0].clientY - startY);
+          isHorizontal = dx > dy;
+        }
+        if (isHorizontal) { e.preventDefault(); }
+      }, { passive: false });
+      el.addEventListener('touchend', function(e) {
+        if (!isHorizontal) return;
+        var diffX = e.changedTouches[0].clientX - startX;
+        var threshold = 50;
+        if (diffX < -threshold && mobPillIndex < currentTrip.days.length - 1) {
+          mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
+          closeMobDaySummary(); toggleMobDaySummary();
+        } else if (diffX > threshold && mobPillIndex > 0) {
+          mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
+          closeMobDaySummary(); toggleMobDaySummary();
+        }
+      });
     }
 
     function showMobPinSheet(name, photoUrl, note, mapsUrl) {
