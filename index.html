@@ -3563,6 +3563,17 @@
     }
 
     // ===== CITY SETTINGS =====
+    var anthropicApiKey = null;
+
+    function loadApiKeys() {
+      firebase.firestore().collection('config').doc('api_keys').get().then(function(doc) {
+        if (doc.exists && doc.data().anthropic) {
+          anthropicApiKey = doc.data().anthropic;
+          console.log('API keys loaded from Firestore');
+        }
+      }).catch(function(e) { console.warn('Could not load API keys:', e); });
+    }
+
     var citySettings = {
       "Bangkok":    { emoji: "\uD83C\uDFD9\uFE0F", color: "#E67E22", code: "BKK" },
       "Chiang Rai": { emoji: "\u26E9\uFE0F", color: "#9B59B6", code: "CEI" },
@@ -3623,6 +3634,7 @@
       });
 
       loadDiscWishlist();
+      loadApiKeys();
       loadFromStorage(function() {
         currentTrip = trips[currentTripKey];
         rebuildTimeline();
@@ -4849,7 +4861,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_API_KEY,
+          'x-api-key': anthropicApiKey,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true'
         },
@@ -5551,7 +5563,6 @@
       </div>
     </div>
   </div>
-  <script src="config.js"></script>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDXFs5TVkOdKJciflCTQmX2vH9FwWTqfz8&callback=initMap&loading=async&libraries=places,marker" async defer></script>
 </body>
 </html>
