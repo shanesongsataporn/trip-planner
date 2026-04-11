@@ -2869,27 +2869,7 @@
     }
 
     // ===== KANBAN =====
-    function renderKanban() {
-      kanbanSortables.forEach(function(s) { s.destroy(); });
-      kanbanSortables = [];
-      var board = document.getElementById('kanban-board');
-      board.innerHTML = '';
-      currentTrip.days.forEach(function(item, dayIndex) {
-        var col = document.createElement('div');
-        col.className = 'kanban-col';
-        var colHeader = document.createElement('div');
-        colHeader.className = 'kanban-col-header';
-        colHeader.innerHTML = '<span style="font-size:18px;">' + getCityEmoji(item.city) + '</span><div><div style="font-size:10px;color:var(--ink-muted);letter-spacing:0.07em;text-transform:uppercase;">Day ' + item.day + ' | ' + item.date + '</div><div style="font-size:13px;font-weight:700;">' + item.city + '</div></div>';
-        col.appendChild(colHeader);
-        var colBody = document.createElement('div');
-        colBody.className = 'kanban-col-body';
-        colBody.dataset.dayIndex = dayIndex;
-        item.activities.forEach(function(activity, actIndex) { colBody.appendChild(buildKanbanCard(item, dayIndex, activity, actIndex)); });
-        col.appendChild(colBody);
-        board.appendChild(col);
-      });
-      if (!isMobile()) { initKanbanDragScroll(); }
-    }
+    // (renderKanban defined earlier with full implementation including isMobile guard)
 
     function initKanbanDragScroll() {
       var board = document.getElementById('view-cards');
