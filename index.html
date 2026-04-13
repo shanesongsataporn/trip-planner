@@ -807,6 +807,7 @@
 
     // ===== KANBAN MOBILE =====
     function getInitialCardDay() {
+      if (!currentTrip || !currentTrip.days) { return 0; }
       var today = new Date();
       today.setHours(0, 0, 0, 0);
       var months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
@@ -936,7 +937,6 @@
       });
 
       mobCardsGoTo(mobCardsCurrentIndex, false);
-      resetMobCardsSwipe();
       initMobCardsSwipe();
       initMobDotsSwipe();
     }
@@ -1004,7 +1004,6 @@
     }
 
     var mobCardsSwipeInited = false;
-    function resetMobCardsSwipe() { mobCardsSwipeInited = false; }
     function initMobCardsSwipe() {
       var wrap = document.getElementById('mob-cards-track-wrap');
       if (!wrap) return;
@@ -5170,15 +5169,8 @@
               closestHtml +
               '<div class="disc-result-address">' + (place.formatted_address || '') + '</div>' +
               '<div class="disc-result-meta">' + ratingHtml + '</div>' +
-              '<div style="margin-top:10px;" onclick="event.stopPropagation();">' +
-                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Link <span style="font-weight:400;text-transform:none;letter-spacing:0;">(Instagram, TikTok, website...)</span></div>' +
-                '<input id="disc-link-input-' + idx + '" type="text" placeholder="https://..." style="width:100%;font-family:inherit;font-size:12px;padding:7px 10px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;transition:border-color 0.15s;" onfocus="this.style.borderColor=\'var(--accent)\'" onblur="this.style.borderColor=\'var(--sand-dark)\'" onclick="event.stopPropagation();">' +
               '</div>' +
-              '<div style="margin-top:10px;" onclick="event.stopPropagation();">' +
-                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Link <span style="font-weight:400;text-transform:none;letter-spacing:0;">(Instagram, TikTok, website...)</span></div>' +
-                '<input id="disc-link-input-' + idx + '" type="text" placeholder="https://..." style="width:100%;font-family:inherit;font-size:12px;padding:7px 10px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;transition:border-color 0.15s;" onfocus="this.style.borderColor=\'var(--accent)\'" onblur="this.style.borderColor=\'var(--sand-dark)\'" onclick="event.stopPropagation();">' +
-              '</div>' +
-              '<div class="disc-result-actions">' +
+              '<div class="disc-result-actions">'
                 '<button class="kbtn" style="border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="event.stopPropagation();showAddToTripSheet(' + idx + ')">+ Add to Trip</button>' +
                 '<button class="kbtn" onclick="event.stopPropagation();saveDiscResultToWishlist(' + idx + ')">⭐ Wishlist</button>' +
                 '<a href="https://www.google.com/maps/place/?q=place_id:' + place.place_id + '" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
