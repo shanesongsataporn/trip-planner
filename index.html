@@ -5444,7 +5444,9 @@
 
     function saveDiscWishlist() {
       try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
-      try { db.collection('trips').doc(currentTripKey).update({ wishlist: JSON.stringify(discWishlist) }); } catch(e) {}
+      db.collection('trips').doc(currentTripKey).update({ wishlist: JSON.stringify(discWishlist) })
+        .then(function() { console.log('Wishlist saved to Firestore', discWishlist.length, 'items'); })
+        .catch(function(e) { console.warn('Wishlist Firestore save failed:', e); });
     }
 
     function loadDiscWishlist() {
