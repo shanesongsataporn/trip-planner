@@ -3015,6 +3015,7 @@
           var remote = JSON.parse(doc.data().cardPhotos);
           Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
           try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+          if (currentView === 'cards') { renderKanban(); }
         }
         if (callback) { callback(); }
       }).catch(function(e) {
