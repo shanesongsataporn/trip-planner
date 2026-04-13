@@ -936,6 +936,7 @@
       });
 
       mobCardsGoTo(mobCardsCurrentIndex, false);
+      resetMobCardsSwipe();
       initMobCardsSwipe();
       initMobDotsSwipe();
     }
@@ -1003,6 +1004,7 @@
     }
 
     var mobCardsSwipeInited = false;
+    function resetMobCardsSwipe() { mobCardsSwipeInited = false; }
     function initMobCardsSwipe() {
       var wrap = document.getElementById('mob-cards-track-wrap');
       if (!wrap) return;
@@ -3016,6 +3018,7 @@
           Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
           try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
           if (currentView === 'cards') { renderKanban(); }
+          else { var mobCards = document.getElementById('mob-cards-view'); if (mobCards && mobCards.classList.contains('active')) { renderMobCards(); } }
         }
         if (callback) { callback(); }
       }).catch(function(e) {
