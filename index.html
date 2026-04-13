@@ -5444,10 +5444,17 @@
 
     function saveDiscWishlist() {
       try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
+      try { db.collection('trips').doc(currentTripKey).update({ wishlist: JSON.stringify(discWishlist) }); } catch(e) {}
     }
 
     function loadDiscWishlist() {
       try { var s = localStorage.getItem('disc_wishlist'); if (s) { discWishlist = JSON.parse(s); } } catch(e) {}
+      db.collection('trips').doc(currentTripKey).get().then(function(doc) {
+        if (doc.exists && doc.data().wishlist) {
+          discWishlist = JSON.parse(doc.data().wishlist);
+          try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
+        }
+      }).catch(function(e) { console.warn('Could not load wishlist:', e); });
     }
 
     // ===== STORAGE =====
@@ -5499,6 +5506,10 @@
               var remote = JSON.parse(data.cardPhotos);
               Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
               try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+            }
+            if (data.wishlist) {
+              discWishlist = JSON.parse(data.wishlist);
+              try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
             }
             rebuildTimeline();
             rebuildMobStrip();
