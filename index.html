@@ -4037,9 +4037,10 @@
             var dayIdx2 = currentTrip.days.indexOf(item);
             var doneKey = task.type === 'food' ? 'food_' + task.index : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + task.index;
             var isDone = item.done && item.done[doneKey];
+            var pinDelay = (Math.random() * 0.15).toFixed(2);
             var el = document.createElement('div');
-            el.className = 'map-pin-wrap' + (isDone ? ' done-pin' : '');
-            el.innerHTML = '<div class="map-pin-bubble" id="pinbubble-' + dayIdx2 + '-' + doneKey + '" style="background:' + pinColor + ';width:' + pinSize + 'px;height:' + pinSize + 'px;font-size:' + (pinSize*0.5) + 'px;">' + (isDone ? '✓' : pinEmoji) + '<span class="pin-label"></span></div><div class="map-pin-tail"></div>';
+            el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;animation:pinDrop 0.35s cubic-bezier(0.34,1.56,0.64,1) ' + pinDelay + 's both;' + (isDone ? 'opacity:0.45;filter:grayscale(0.6);' : '');
+            el.innerHTML = '<div id="pinbubble-' + dayIdx2 + '-' + doneKey + '" style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2.5px solid rgba(255,255,255,0.9);transition:transform 0.15s ease;"><span>' + (isDone ? '✓' : pinEmoji) + '</span></div><div style="width:2px;height:6px;background:rgba(0,0,0,0.2);border-radius:0 0 2px 2px;"></div>';
             var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: map, title: task.name, content: el });
             var cardContent = '<div style="width:' + (isMobile() ? '150px' : '260px') + ';font-family:system-ui,sans-serif;font-size:' + (isMobile() ? '11px' : '13px') + ';">';
             if (details && detailStatus === google.maps.places.PlacesServiceStatus.OK) {
