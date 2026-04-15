@@ -3150,8 +3150,11 @@
     function renderSplit() {
       document.getElementById('split-list').innerHTML = currentTrip.days.map(function(item, index) {
         normaliseAccom(item); normaliseDayTransport(item);
-        var todayStr = new Date().toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
-        var isToday = item.date && item.date.indexOf(todayStr.split(' ')[0]) !== -1 && item.date.indexOf(todayStr.split(' ')[2]) !== -1;
+        var now = new Date();
+        var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var todayStr = days[now.getDay()] + ' ' + months[now.getMonth()] + ' ' + now.getDate();
+        var isToday = item.date && item.date === todayStr;
         return '<div class="split-day-item" id="split-item-' + index + '" onclick="selectSplitDay(' + index + ')">' +
           '<div class="split-day-num" style="display:flex;align-items:center;gap:6px;">Day ' + item.day + ' | ' + item.date +
             (isToday ? '<span style="background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;letter-spacing:0.05em;">TODAY</span>' : '') +
@@ -3166,9 +3169,12 @@
       } else { google.maps.event.trigger(splitMap, 'resize'); }
       setTimeout(function() {
         var todayIdx = 0;
-        var todayStr = new Date().toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
+        var now = new Date();
+        var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var todayStr = days[now.getDay()] + ' ' + months[now.getMonth()] + ' ' + now.getDate();
         currentTrip.days.forEach(function(d, i) {
-          if (d.date && d.date.indexOf(todayStr.split(' ')[0]) !== -1 && d.date.indexOf(todayStr.split(' ')[2]) !== -1) { todayIdx = i; }
+          if (d.date && d.date === todayStr) { todayIdx = i; }
         });
         selectSplitDay(todayIdx);
       }, 100);
