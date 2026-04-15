@@ -577,7 +577,67 @@
       #mob-day-summary-daynum { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 2px; }
       #mob-day-summary-city { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
       #mob-day-summary-body { padding: 10px 16px 14px; display: flex; gap: 6px; flex-wrap: wrap; }
-      .mob-day-summary-chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: var(--sand); color: var(--ink-muted); border: 1px solid var(--sand-dark); white-space: nowrap; }
+      @keyframes pinDrop {
+  0%   { opacity: 0; transform: translateY(-8px) scale(0.85); }
+  60%  { opacity: 1; transform: translateY(2px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pinPillExpand {
+  0%   { max-width: 36px; opacity: 0.7; }
+  100% { max-width: 200px; opacity: 1; }
+}
+.map-pin-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  animation: pinDrop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.map-pin-wrap.done-pin {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+.map-pin-bubble {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  border: 2.5px solid rgba(255,255,255,0.9);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.map-pin-wrap:hover .map-pin-bubble,
+.map-pin-wrap:active .map-pin-bubble {
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.map-pin-bubble.expanded {
+  border-radius: 20px;
+  padding: 0 10px;
+  animation: pinPillExpand 0.2s ease-out both;
+}
+.map-pin-bubble .pin-label {
+  display: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  margin-left: 5px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-pin-bubble.expanded .pin-label {
+  display: inline;
+}
+.map-pin-tail {
+  width: 2px;
+  height: 6px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 0 0 2px 2px;
+}
+.mob-day-summary-chip { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: var(--sand); color: var(--ink-muted); border: 1px solid var(--sand-dark); white-space: nowrap; }
       #mob-day-summary-edit { margin: 0 16px 14px; width: calc(100% - 32px); font-family: inherit; font-size: 13px; font-weight: 700; padding: 10px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; }
     }
   </style>
@@ -3565,6 +3625,35 @@
       if (!day.currencySymbol) { day.currencySymbol = currentTrip.baseCurrencySymbol || '$'; }
     }
 
+    function toggleDone(dayIndex, doneKey, btnEl) {
+      var day = currentTrip.days[dayIndex];
+      if (!day) return;
+      if (!day.done) day.done = {};
+      day.done[doneKey] = !day.done[doneKey];
+      var isDone = day.done[doneKey];
+      saveToStorage();
+      if (btnEl) {
+        btnEl.textContent = isDone ? '✓ Done' : 'Mark done';
+        btnEl.style.background = isDone ? 'var(--accent)' : 'var(--sand-dark)';
+        btnEl.style.color = isDone ? '#fff' : 'var(--ink-light)';
+      }
+      var bubble = document.getElementById('pinbubble-' + dayIndex + '-' + doneKey);
+      if (bubble) {
+        var wrap = bubble.closest('.map-pin-wrap');
+        var emojiSpan = bubble.childNodes[0];
+        if (isDone) {
+          if (wrap) wrap.classList.add('done-pin');
+          if (emojiSpan) emojiSpan.textContent = '✓';
+        } else {
+          if (wrap) wrap.classList.remove('done-pin');
+        }
+      }
+      if (typeof loadMobPillDay === 'function' && document.getElementById('mob-day-summary').classList.contains('open')) {
+        toggleMobDaySummary();
+        toggleMobDaySummary();
+      }
+    }
+
     function normaliseAccom(item) { if (!Array.isArray(item.accommodation)) { item.accommodation = item.accommodation && item.accommodation.name ? [item.accommodation] : []; } }
     function updateAccomName(index, value) { if (!currentDayItem || !value.trim()) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].name = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
@@ -3945,9 +4034,12 @@
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           var place = results[0];
           service.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_address', 'opening_hours', 'photos', 'url'] }, function(details, detailStatus) {
+            var dayIdx2 = currentTrip.days.indexOf(item);
+            var doneKey = task.type === 'food' ? 'food_' + task.index : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + task.index;
+            var isDone = item.done && item.done[doneKey];
             var el = document.createElement('div');
-            el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
-            el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + pinEmoji + '</div>';
+            el.className = 'map-pin-wrap' + (isDone ? ' done-pin' : '');
+            el.innerHTML = '<div class="map-pin-bubble" id="pinbubble-' + dayIdx2 + '-' + doneKey + '" style="background:' + pinColor + ';width:' + pinSize + 'px;height:' + pinSize + 'px;font-size:' + (pinSize*0.5) + 'px;">' + (isDone ? '✓' : pinEmoji) + '<span class="pin-label"></span></div><div class="map-pin-tail"></div>';
             var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: map, title: task.name, content: el });
             var cardContent = '<div style="width:' + (isMobile() ? '150px' : '260px') + ';font-family:system-ui,sans-serif;font-size:' + (isMobile() ? '11px' : '13px') + ';">';
             if (details && detailStatus === google.maps.places.PlacesServiceStatus.OK) {
@@ -3970,20 +4062,18 @@
               if (cardPhotos[pk]) { photoUrl = cardPhotos[pk]; }
             }
             var userNote = (task.type === 'activity' && item.cardNotes && item.cardNotes[String(task.index)]) ? item.cardNotes[String(task.index)] : '';
-            (function(dn, pu, un, mu, t, idx, dayIdx) {
+            (function(dn, pu, un, mu, t, idx, dayIdx, dk) {
               var handler = function(e) {
                 if (e && e.stopPropagation) { e.stopPropagation(); }
                 document.getElementById('panel').classList.remove('open');
                 if (t === 'activity') { highlightPanelActivity(idx); }
                 if (t === 'food') { highlightPanelFood(idx); }
                 if (t === 'accommodation') { highlightPanelAccom(idx); }
-                var di = (t === 'activity') ? dayIdx : undefined;
-                var ai = (t === 'activity') ? idx : undefined;
-                showMapFloatCard(dn, pu, un, mu, di, ai);
+                showMapFloatCard(dn, pu, un, mu, dayIdx, idx, t, dk);
               };
               marker.addListener('gmp-click', handler);
               el.addEventListener('click', handler);
-            })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index, currentTrip.days.indexOf(item));
+            })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index, currentTrip.days.indexOf(item), doneKey);
             activityMarkers.push({ marker: marker, index: task.index, type: task.type, position: place.geometry.location });
             if (callback) { callback(); }
           });
@@ -4067,9 +4157,16 @@
       var divider = function(label) {
         return '<div style="width:100%;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);padding:6px 2px 2px;flex-basis:100%;">' + label + '</div>';
       };
+      var dIdx = currentTrip.days.indexOf(day);
       if (day.accommodation.length) {
         chips += divider('Stay');
-        chips += '<div class="mob-day-summary-chip">🏨 ' + day.accommodation[0].name + '</div>';
+        day.accommodation.forEach(function(ac, i) {
+          var dk = 'accom_' + i;
+          var isDone = day.done && day.done[dk];
+          var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent((ac.name||'') + ' ' + day.city.split('>').pop().trim());
+          chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + (ac.name||'').replace(/'/g,"\\'") + '\',\'\',\'' + (ac.notes||'').replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',undefined,\'accom\',' + '\'' + dk + '\')">🏨 ' + (ac.name||'') + '</div>';
+        });
       }
       if (day.transport.length) {
         chips += divider('Transport');
@@ -4077,11 +4174,32 @@
       }
       if (day.activities.length) {
         chips += divider('Activities');
-        day.activities.forEach(function(a, i) { var cat = (day.activityCategories && day.activityCategories[i]) || 'default'; var emoji = (activityCategories[cat]||activityCategories['default']).emoji; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination()); var photoKey = 'day' + day.day + '_act' + i; var photo = cardPhotos[photoKey] || ''; var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : ''; var dIdx = currentTrip.days.indexOf(day); chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g, "\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ')">' + emoji + ' ' + a + '</div>'; });
+        day.activities.forEach(function(a, i) {
+          var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
+          var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+          var photoKey = 'day' + day.day + '_act' + i;
+          var photo = cardPhotos[photoKey] || '';
+          var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : '';
+          var dk = 'act_' + i;
+          var isDone = day.done && day.done[dk];
+          var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
+          chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ',\'activity\',\'' + dk + '\')">' + emoji + ' ' + a + '</div>';
+        });
       }
       if (day.food.length) {
         chips += divider('Food & Drinks');
-        day.food.forEach(function(f, i) { var fname = typeof f === 'string' ? f : f.name; var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination()); var photoKey = 'day' + day.day + '_food' + i; var photo = cardPhotos[photoKey] || ''; chips += '<div class="mob-day-summary-chip" style="cursor:pointer;" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g, "\\'") + '\',\'' + photo + '\',\'\',\'' + mapsUrl + '\')">' + '\uD83C\uDF7D\uFE0F ' + fname + '</div>'; });
+        day.food.forEach(function(f, i) {
+          var fname = typeof f === 'string' ? f : f.name;
+          var fnote = (typeof f === 'object' && f.notes) ? f.notes : '';
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+          var photoKey = 'day' + day.day + '_food' + i;
+          var photo = cardPhotos[photoKey] || '';
+          var dk = 'food_' + i;
+          var isDone = day.done && day.done[dk];
+          var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
+          chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + fnote.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ',\'food\',\'' + dk + '\')">\uD83C\uDF7D\uFE0F ' + fname + '</div>';
+        });
       }
       document.getElementById('mob-day-summary-body').innerHTML = chips;
       summary.classList.add('open');
@@ -4126,7 +4244,7 @@
       });
     }
 
-    function showMobPinSheet(name, photoUrl, note, mapsUrl) {
+    function showMobPinSheet(name, photoUrl, note, mapsUrl, dayIndex, doneKey) {
       closeMobDaySummary();
       var sheet = document.getElementById('mob-pin-sheet');
       var img = document.getElementById('mob-pin-sheet-img');
@@ -4136,6 +4254,20 @@
       document.getElementById('mob-pin-sheet-maps').href = mapsUrl;
       if (photoUrl) { img.src = photoUrl; img.style.display = 'block'; }
       else { img.style.display = 'none'; }
+      var doneBtn = document.getElementById('mob-pin-sheet-done');
+      if (doneBtn) {
+        if (dayIndex !== undefined && doneKey) {
+          var day = currentTrip.days[dayIndex];
+          var isDone = day && day.done && day.done[doneKey];
+          doneBtn.textContent = isDone ? '✓ Done' : 'Mark done';
+          doneBtn.style.background = isDone ? 'var(--accent)' : 'var(--sand-dark)';
+          doneBtn.style.color = isDone ? '#fff' : 'var(--ink-light)';
+          doneBtn.onclick = function() { toggleDone(dayIndex, doneKey, doneBtn); };
+          doneBtn.style.display = 'inline-flex';
+        } else {
+          doneBtn.style.display = 'none';
+        }
+      }
       sheet.classList.add('open');
     }
 
@@ -4146,7 +4278,7 @@
     // ===== MAP FLOAT CARD =====
     var mapFloatCardItem = null;
 
-    function showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex, itemType) {
+    function showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex, itemType, doneKey) {
       mapFloatCardItem = (dayIndex !== undefined && actIndex !== undefined) ? { dayIndex: dayIndex, actIndex: actIndex, type: itemType || 'activity' } : null;
       var card = document.getElementById('map-float-card');
       var img = document.getElementById('map-float-card-img');
@@ -4169,6 +4301,20 @@
       linkEl.href = mapsUrl;
       if (photoUrl) { img.src = photoUrl; img.style.display = 'block'; }
       else { img.style.display = 'none'; }
+      var doneBtn = document.getElementById('map-float-card-done');
+      if (doneBtn) {
+        if (dayIndex !== undefined && doneKey) {
+          var day = currentTrip.days[dayIndex];
+          var isDone = day && day.done && day.done[doneKey];
+          doneBtn.textContent = isDone ? '✓ Done' : 'Mark done';
+          doneBtn.style.background = isDone ? 'var(--accent)' : 'var(--sand-dark)';
+          doneBtn.style.color = isDone ? '#fff' : 'var(--ink-light)';
+          doneBtn.onclick = function() { toggleDone(dayIndex, doneKey, doneBtn); };
+          doneBtn.style.display = 'inline-flex';
+        } else {
+          doneBtn.style.display = 'none';
+        }
+      }
       card.classList.remove('open');
       void card.offsetWidth;
       card.classList.add('open');
@@ -5611,6 +5757,7 @@
       <div id="mob-pin-sheet-note"></div>
       <div id="mob-pin-sheet-actions">
         <a id="mob-pin-sheet-maps" href="" target="_blank" class="mob-pin-action primary">📍 Open in Maps</a>
+        <button id="mob-pin-sheet-done" class="mob-pin-action" style="display:none;align-items:center;gap:4px;border-radius:20px;font-weight:600;transition:background 0.2s,color 0.2s;">Mark done</button>
         <button class="mob-pin-action" onclick="closeMobPinSheet()">✕ Close</button>
       </div>
     </div>
@@ -5624,6 +5771,7 @@
       <div id="map-float-card-note"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
         <a id="map-float-card-link" href="" target="_blank" style="flex:1;">📍 Open in Maps</a>
+        <button id="map-float-card-done" style="display:none;align-items:center;font-family:inherit;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;transition:background 0.2s,color 0.2s;">Mark done</button>
         <button id="map-float-card-edit" onclick="openFloatCardEdit()" style="font-family:inherit;font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;white-space:nowrap;display:none;">✏️ Edit</button>
       </div>
     </div>
