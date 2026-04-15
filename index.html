@@ -338,27 +338,6 @@
     .drag-handle:active { cursor: grabbing; opacity: 0.8; }
     .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--ink-muted); border-radius: 1px; }
 
-    /* ===== BACK TO MAP BUTTON ===== */
-    #back-to-map-btn {
-      display: none;
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 900;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 999px;
-      padding: 10px 22px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      letter-spacing: 0.02em;
-    }
-    #back-to-map-btn.visible { display: block; }
-
     /* ===== SPLIT VIEW ===== */
     #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; }
     #split-map { position: absolute; top: 0; left: 0; width: 55%; bottom: 0; overflow: hidden; }
@@ -703,6 +682,7 @@
 
   <!-- MOBILE HEADER -->
   <div id="mob-hdr">
+    <button id="mob-back-btn" onclick="goBack()" style="display:none;background:none;border:none;color:var(--ink);font-size:22px;font-weight:300;padding:0 10px 0 4px;cursor:pointer;line-height:1;">‹</button>
     <div class="mob-brand">Shane &amp; Cheryl's <span>Trip Planner</span></div>
     <button class="mob-grid-btn" onclick="toggleMenu('mob-view-menu')" id="mob-grid-btn">⊞</button>
     <button class="mob-hamburger-btn" onclick="toggleMenu('mob-hamburger-menu')" id="mob-ham-btn">
@@ -790,8 +770,6 @@
       <button class="menu-item danger" onclick="confirmReset();toggleMenu('mob-hamburger-menu')">⚠️ Reset all data</button>
     </div>
   </div>
-
-  <button id="back-to-map-btn" onclick="setView('map')">← Map</button>
 
   <div id="modal-overlay">
     <div id="modal">
@@ -890,7 +868,7 @@
     var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var activityMarkers = [], cityMarkerObjs = [], openInfoWindow = null;
     var splitActivityMarkers = [], splitOpenInfoWindow = null;
-    var currentDayItem = null, currentView = 'map';
+    var currentDayItem = null, currentView = 'map', lastView = 'map';
     var kanbanSortables = [], cardPhotos = {}, tlDragged = false;
     var isMobile = function() { return window.innerWidth <= 640; };
 
@@ -1601,10 +1579,10 @@
       closeMobDaySummary();
       closeMapFloatCard();
       closeSplitFloatCard();
-      var backBtn = document.getElementById('back-to-map-btn');
-      if (backBtn) {
-        if (view !== 'map') { backBtn.classList.add('visible'); }
-        else { backBtn.classList.remove('visible'); }
+      lastView = currentView === view ? lastView : currentView;
+      var mobBackBtn = document.getElementById('mob-back-btn');
+      if (mobBackBtn) {
+        mobBackBtn.style.display = view !== 'map' ? 'block' : 'none';
       }
 
       document.querySelectorAll('.view-btn').forEach(function(btn) { btn.classList.remove('active'); });
@@ -3172,8 +3150,12 @@
     function renderSplit() {
       document.getElementById('split-list').innerHTML = currentTrip.days.map(function(item, index) {
         normaliseAccom(item); normaliseDayTransport(item);
+        var todayStr = new Date().toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
+        var isToday = item.date && item.date.indexOf(todayStr.split(' ')[0]) !== -1 && item.date.indexOf(todayStr.split(' ')[2]) !== -1;
         return '<div class="split-day-item" id="split-item-' + index + '" onclick="selectSplitDay(' + index + ')">' +
-          '<div class="split-day-num">Day ' + item.day + ' | ' + item.date + '</div>' +
+          '<div class="split-day-num" style="display:flex;align-items:center;gap:6px;">Day ' + item.day + ' | ' + item.date +
+            (isToday ? '<span style="background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;letter-spacing:0.05em;">TODAY</span>' : '') +
+          '</div>' +
           '<div class="split-day-city">' + item.city + '</div>' +
           '<div class="split-day-note">' + item.note + '</div>' +
         '</div>' +
@@ -3182,7 +3164,14 @@
       if (!splitMap) {
         splitMap = new google.maps.Map(document.getElementById('split-map'), { center: { lat: 15.5, lng: 100.5 }, zoom: 6, mapTypeId: 'roadmap', disableDefaultUI: false, mapId: 'DEMO_MAP_ID', gestureHandling: 'greedy' });
       } else { google.maps.event.trigger(splitMap, 'resize'); }
-      setTimeout(function() { selectSplitDay(0); }, 100);
+      setTimeout(function() {
+        var todayIdx = 0;
+        var todayStr = new Date().toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
+        currentTrip.days.forEach(function(d, i) {
+          if (d.date && d.date.indexOf(todayStr.split(' ')[0]) !== -1 && d.date.indexOf(todayStr.split(' ')[2]) !== -1) { todayIdx = i; }
+        });
+        selectSplitDay(todayIdx);
+      }, 100);
     }
 
     function showSplitFloatCard(name, photoUrl, note, mapsUrl, position, itemContext) {
@@ -4264,7 +4253,11 @@ var pinDelay = Math.floor(Math.random() * 150);
       initMobSummarySwipe();
     }
 
-    function closeMobDaySummary() {
+    function goBack() {
+      setView(lastView === currentView ? 'map' : lastView);
+    }
+
+  function closeMobDaySummary() {
       document.getElementById('mob-day-summary').classList.remove('open');
     }
 
