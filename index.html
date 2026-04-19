@@ -2025,15 +2025,20 @@
         }
         grid.style.userSelect = 'none';
         grid.style.webkitUserSelect = 'none';
+        grid.style.touchAction = 'none';
+        grid.addEventListener('contextmenu', function(e) { e.preventDefault(); }, { passive: false });
         grid.addEventListener('touchstart', function(e) {
           var t = e.touches[0];
           startPress(t.clientX, t.clientY);
-        }, { passive: true });
-        grid.addEventListener('touchend', function() { clearTimeout(pressTimer); }, { passive: true });
+        }, { passive: false });
+        grid.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          clearTimeout(pressTimer);
+        }, { passive: false });
         grid.addEventListener('touchmove', function(e) {
           var t = e.touches[0];
           cancelPress(t.clientX, t.clientY);
-        }, { passive: true });
+        }, { passive: false });
         grid.addEventListener('mousedown', function(e) { startPress(e.clientX, e.clientY); });
         grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
         grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
