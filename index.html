@@ -2013,7 +2013,7 @@
           startX = x; startY = y;
           pressTimer = setTimeout(function() {
             enterHomeTileEdit();
-          }, 600);
+          }, 400);
         }
         function cancelPress(x, y) {
           if (x !== undefined && startX !== undefined) {
@@ -2023,6 +2023,8 @@
           }
           clearTimeout(pressTimer);
         }
+        grid.style.userSelect = 'none';
+        grid.style.webkitUserSelect = 'none';
         grid.addEventListener('touchstart', function(e) {
           var t = e.touches[0];
           startPress(t.clientX, t.clientY);
