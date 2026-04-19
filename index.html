@@ -2248,6 +2248,7 @@
         item.classList.toggle('active', item.textContent.toLowerCase().indexOf(view) !== -1);
       });
 
+      localStorage.setItem('last_view', view);
       if (view === 'home') { renderHome(); }
       if (view === 'itinerary') { renderItinerary(); }
       if (view === 'cards') { renderKanban(); }
@@ -4465,7 +4466,8 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         } else {
           setTheme(savedTheme);
         }
-        setView('home');
+        var savedView = localStorage.getItem('last_view') || 'home';
+        setView(savedView);
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
         if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
@@ -4797,7 +4799,7 @@ var pinDelay = Math.floor(Math.random() * 150);
     function initMobPill() {
       if (!isMobile()) return;
       var pill = document.getElementById('mob-day-pill');
-      if (pill) { pill.classList.add('active'); }
+      if (pill && currentView === 'map') { pill.classList.add('active'); }
       mobPillIndex = 0;
       updateMobPill();
 
