@@ -434,7 +434,27 @@
       #view-discovery { top: 54px; bottom: 0; }
       #disc-map { height: 220px; }
     }
-/* ===== HOME VIEW ===== */
+
+    /* ===== HOME VIEW ===== */
+    @keyframes homeTileWiggle {
+      0%,100% { transform: rotate(-1.5deg); }
+      50% { transform: rotate(1.5deg); }
+    }
+    .home-tile-editing { animation: homeTileWiggle 0.3s infinite; overflow: visible !important; }
+    .home-tile-remove-btn { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 13px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; }
+    .home-tile-add-btn { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; }
+    .home-edit-trigger { position: absolute; top: 16px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 5; }
+    .home-edit-trigger:hover { border-color: var(--accent); color: var(--accent); }
+    .home-edit-trigger.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .home-tile-tray { margin-top: 16px; padding: 14px; background: var(--white); border-radius: var(--radius); border: 1px solid var(--sand-dark); }
+    .home-tile-tray-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; }
+    .home-tile-tray-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .home-tile-tray-item { background: var(--sand); border-radius: var(--radius-sm); padding: 10px; border: 1px solid var(--sand-dark); display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; opacity: 0.7; min-height: 70px; justify-content: center; }
+    .home-tile-tray-emoji { font-size: 18px; }
+    .home-tile-tray-label-text { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; }
+    .home-sortable-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .home-sortable-grid .home-tile { min-height: 90px; cursor: grab; }
+    .home-sortable-grid .home-tile:active { cursor: grabbing; }
     #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     @media (max-width: 640px) { #view-home { top: 54px; bottom: 0; } }
 
@@ -1841,130 +1861,145 @@
       var firstDay = currentTrip.days[0];
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
 
+      // ---- Build individual tile HTML by ID ----
+      var weatherTileId = 'home-weather-tile-val';
+
+      function buildTileHtml(id) {
+        switch(id) {
+          case 'dates':
+            return '<div class="home-tile" data-tile-id="dates" onclick="">' +
+              '<div class="home-tile-emoji">📅</div>' +
+              '<div class="home-tile-label">Dates</div>' +
+              '<div class="home-tile-value" style="font-size:13px;font-weight:800;">' + firstDay.date + '</div>' +
+              '<div class="home-tile-sub">to ' + lastDay.date + ' · ' + currentTrip.days.length + ' days</div>' +
+            '</div>';
+          case 'weather':
+            return '<div class="home-tile" data-tile-id="weather" onclick="">' +
+              '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
+              '<div class="home-tile-label">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
+              '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
+              '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
+            '</div>';
+          case 'flight':
+            return nextFlight
+              ? '<div class="home-tile" data-tile-id="flight" onclick="showNextFlightModal()">' +
+                  '<div class="home-tile-emoji">✈️</div>' +
+                  '<div class="home-tile-label">Next flight</div>' +
+                  '<div class="home-tile-value" style="font-size:14px;">' + (nextFlight.flight.from||'') + ' → ' + (nextFlight.flight.to||'') + '</div>' +
+                  '<div class="home-tile-sub">' + nextFlight.day.date + (nextFlight.flight.depart ? ' · ' + nextFlight.flight.depart : '') + '</div>' +
+                '</div>'
+              : '<div class="home-tile" data-tile-id="flight" onclick="">' +
+                  '<div class="home-tile-emoji">✈️</div>' +
+                  '<div class="home-tile-label">Next flight</div>' +
+                  '<div class="home-tile-value" style="font-size:13px;color:var(--ink-muted);">None</div>' +
+                  '<div class="home-tile-sub">No flights upcoming</div>' +
+                '</div>';
+          case 'visa':
+            var visaDots = visa.travellers.length
+              ? visa.travellers.map(function(t) {
+                  return '<div class="home-visa-person"><div class="home-visa-dot" style="background:' + visaStatusDot(t.visaStatus) + '"></div>' + (t.name || 'Traveller') + '</div>';
+                }).join('')
+              : '<div style="font-size:11px;color:var(--ink-muted);">Tap to add</div>';
+            return '<div class="home-tile" data-tile-id="visa" onclick="showVisaSheet()">' +
+              '<div class="home-tile-emoji">🛂</div>' +
+              '<div class="home-tile-label">Visa & Entry</div>' +
+              '<div class="home-visa-travellers">' + visaDots + '</div>' +
+              '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
+            '</div>';
+          case 'stay':
+            var stayColor = stay.missing > 0 ? 'warn' : 'accent';
+            var stayVal = stay.missing > 0 ? stay.missing + ' unbooked' : stay.booked + ' booked';
+            return '<div class="home-tile" data-tile-id="stay" onclick="setView(\'budget\')">' +
+              '<div class="home-tile-emoji">🏨</div>' +
+              '<div class="home-tile-label">Stay</div>' +
+              '<div class="home-tile-value ' + stayColor + '">' + stayVal + '</div>' +
+              '<div class="home-tile-sub">' + stay.booked + ' of ' + (stay.booked + stay.missing) + ' nights</div>' +
+            '</div>';
+          case 'food':
+            var foodColor = food.unbooked > 0 ? 'warn' : 'accent';
+            var foodVal = food.unbooked > 0 ? food.unbooked + ' to book' : (food.booked > 0 ? food.booked + ' booked' : 'All good');
+            return '<div class="home-tile" data-tile-id="food" onclick="setView(\'food\')">' +
+              '<div class="home-tile-emoji">🍜</div>' +
+              '<div class="home-tile-label">Reservations</div>' +
+              '<div class="home-tile-value ' + foodColor + '">' + foodVal + '</div>' +
+              '<div class="home-tile-sub">' + (food.booked + food.unbooked) + ' requiring booking</div>' +
+            '</div>';
+          case 'budget':
+            var budgetVal = budget.total > 0 ? budget.sym + Math.round(budget.total).toLocaleString() : 'Not set';
+            return '<div class="home-tile" data-tile-id="budget" onclick="setView(\'budget\')">' +
+              '<div class="home-tile-emoji">💰</div>' +
+              '<div class="home-tile-label">Budget est.</div>' +
+              '<div class="home-tile-value accent">' + budgetVal + '</div>' +
+              '<div class="home-tile-sub">' + (currentTrip.baseCurrency || 'AUD') + ' estimated</div>' +
+            '</div>';
+          case 'map':
+            return '<div class="home-tile" data-tile-id="map" onclick="setView(\'map\')">' +
+              '<div class="home-tile-emoji">🗺️</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Map</div>' +
+            '</div>';
+          case 'calendar':
+            return '<div class="home-tile" data-tile-id="calendar" onclick="setView(\'calendar\')">' +
+              '<div class="home-tile-emoji">🗓</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Calendar</div>' +
+            '</div>';
+          case 'split':
+            return '<div class="home-tile" data-tile-id="split" onclick="setView(\'split\')">' +
+              '<div class="home-tile-emoji">⬛</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Split</div>' +
+            '</div>';
+          case 'itinerary':
+            return '<div class="home-tile" data-tile-id="itinerary" onclick="setView(\'itinerary\')">' +
+              '<div class="home-tile-emoji">📋</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Itinerary</div>' +
+            '</div>';
+          case 'cards':
+            return '<div class="home-tile" data-tile-id="cards" onclick="setView(\'cards\')">' +
+              '<div class="home-tile-emoji">🃏</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Cards</div>' +
+            '</div>';
+          case 'discovery':
+            return '<div class="home-tile" data-tile-id="discovery" onclick="setView(\'discovery\')">' +
+              '<div class="home-tile-emoji">🔍</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Discovery</div>' +
+            '</div>';
+          default: return '';
+        }
+      }
+
+      // ---- Locked row 1: countdown (always visible) ----
       var row1Html =
-        '<div class="home-tile-row home-tile-row-2">' +
+        '<div class="home-tile-row home-tile-row-2" style="margin-bottom:10px;">' +
           '<div class="home-tile home-tile-countdown" onclick="">' +
             '<div class="home-tile-emoji">🛫</div>' +
             '<div class="home-tile-label">Countdown</div>' +
             '<div class="home-tile-value">' + countdownVal + '</div>' +
             '<div class="home-tile-sub">' + status.sub + '</div>' +
           '</div>' +
-          '<div class="home-tile" onclick="">' +
-            '<div class="home-tile-emoji">📅</div>' +
-            '<div class="home-tile-label">Dates</div>' +
-            '<div class="home-tile-value" style="font-size:13px;font-weight:800;">' + firstDay.date + '</div>' +
-            '<div class="home-tile-sub">to ' + lastDay.date + ' · ' + currentTrip.days.length + ' days</div>' +
+          '<div style="display:flex;align-items:center;justify-content:flex-end;">' +
+            '<button class="home-edit-trigger" id="home-edit-btn" onclick="toggleHomeTileEdit()">✏️ Edit</button>' +
           '</div>' +
         '</div>';
 
-      // ---- TILE ROW 2: Weather + Next Flight + Visa ----
-      // Weather tile — fetch async, render spinner first then update
-      var weatherTileId = 'home-weather-tile-val';
-      var weatherHtml =
-        '<div class="home-tile" onclick="">' +
-          '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
-          '<div class="home-tile-label">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
-          '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
-          '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
-        '</div>';
+      // ---- Sortable tile grid (config-driven) ----
+      var cfg = getHomeTileOrder();
+      var visibleTiles = cfg.order.filter(function(id) { return cfg.hidden.indexOf(id) === -1; });
+      var sortableHtml = '<div class="home-sortable-grid" id="home-sortable-grid">' +
+        visibleTiles.map(buildTileHtml).join('') +
+      '</div>';
 
-      var flightHtml = nextFlight
-        ? '<div class="home-tile" onclick="showNextFlightModal()">' +
-            '<div class="home-tile-emoji">✈️</div>' +
-            '<div class="home-tile-label">Next flight</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">' + (nextFlight.flight.from||'') + ' → ' + (nextFlight.flight.to||'') + '</div>' +
-            '<div class="home-tile-sub">' + nextFlight.day.date + (nextFlight.flight.depart ? ' · ' + nextFlight.flight.depart : '') + '</div>' +
-          '</div>'
-        : '<div class="home-tile" onclick="">' +
-            '<div class="home-tile-emoji">✈️</div>' +
-            '<div class="home-tile-label">Next flight</div>' +
-            '<div class="home-tile-value" style="font-size:13px;color:var(--ink-muted);">None</div>' +
-            '<div class="home-tile-sub">No flights upcoming</div>' +
-          '</div>';
+      // ---- Hidden tiles tray (only shown in edit mode) ----
+      var trayHtml = '<div class="home-tile-tray" id="home-tile-tray" style="display:none;">' +
+        '<div class="home-tile-tray-label">Hidden tiles — tap + to restore</div>' +
+        '<div class="home-tile-tray-grid" id="home-tile-tray-grid"></div>' +
+      '</div>';
 
-      // Visa tile
-      var visaTravellerDotsHtml = visa.travellers.length
-        ? visa.travellers.map(function(t) {
-            return '<div class="home-visa-person"><div class="home-visa-dot" style="background:' + visaStatusDot(t.visaStatus) + '"></div>' + (t.name || 'Traveller') + '</div>';
-          }).join('')
-        : '<div style="font-size:11px;color:var(--ink-muted);">Tap to add</div>';
-
-      var visaHtml =
-        '<div class="home-tile" onclick="showVisaSheet()">' +
-          '<div class="home-tile-emoji">🛂</div>' +
-          '<div class="home-tile-label">Visa & Entry</div>' +
-          '<div class="home-visa-travellers">' + visaTravellerDotsHtml + '</div>' +
-          '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
-        '</div>';
-
-      var row2Html = '<div class="home-tile-row home-tile-row-3">' + weatherHtml + flightHtml + visaHtml + '</div>';
-
-      // ---- TILE ROW 3: Stay + Food + Budget ----
-      var stayColor = stay.missing > 0 ? 'warn' : 'accent';
-      var stayVal = stay.missing > 0 ? stay.missing + ' unbooked' : stay.booked + ' booked';
-      var foodColor = food.unbooked > 0 ? 'warn' : 'accent';
-      var foodVal = food.unbooked > 0 ? food.unbooked + ' to book' : (food.booked > 0 ? food.booked + ' booked' : 'All good');
-      var budgetVal = budget.total > 0 ? budget.sym + Math.round(budget.total).toLocaleString() : 'Not set';
-
-      var row3Html =
-        '<div class="home-tile-row home-tile-row-3">' +
-          '<div class="home-tile" onclick="setView(\'budget\')">' +
-            '<div class="home-tile-emoji">🏨</div>' +
-            '<div class="home-tile-label">Stay</div>' +
-            '<div class="home-tile-value ' + stayColor + '">' + stayVal + '</div>' +
-            '<div class="home-tile-sub">' + stay.booked + ' of ' + (stay.booked + stay.missing) + ' nights</div>' +
-          '</div>' +
-          '<div class="home-tile" onclick="setView(\'food\')">' +
-            '<div class="home-tile-emoji">🍜</div>' +
-            '<div class="home-tile-label">Reservations</div>' +
-            '<div class="home-tile-value ' + foodColor + '">' + foodVal + '</div>' +
-            '<div class="home-tile-sub">' + (food.booked + food.unbooked) + ' requiring booking</div>' +
-          '</div>' +
-          '<div class="home-tile" onclick="setView(\'budget\')">' +
-            '<div class="home-tile-emoji">💰</div>' +
-            '<div class="home-tile-label">Budget est.</div>' +
-            '<div class="home-tile-value accent">' + budgetVal + '</div>' +
-            '<div class="home-tile-sub">' + (currentTrip.baseCurrency || 'AUD') + ' estimated</div>' +
-          '</div>' +
-        '</div>';
-
-var row4Html =
-        '<div class="home-tile-row home-tile-row-3">' +
-          '<div class="home-tile" onclick="setView(\'map\')">' +
-            '<div class="home-tile-emoji">🗺️</div>' +
-            '<div class="home-tile-label">View</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">Map</div>' +
-          '</div>' +
-          '<div class="home-tile" onclick="setView(\'calendar\')">' +
-            '<div class="home-tile-emoji">🗓</div>' +
-            '<div class="home-tile-label">View</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">Calendar</div>' +
-          '</div>' +
-          '<div class="home-tile" onclick="setView(\'split\')">' +
-            '<div class="home-tile-emoji">⬛</div>' +
-            '<div class="home-tile-label">View</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">Split</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="home-tile-row home-tile-row-3">' +
-          '<div class="home-tile" onclick="setView(\'itinerary\')">' +
-            '<div class="home-tile-emoji">📋</div>' +
-            '<div class="home-tile-label">View</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">Itinerary</div>' +
-          '</div>' +
-          '<div class="home-tile" onclick="setView(\'cards\')">' +
-            '<div class="home-tile-emoji">🃏</div>' +
-            '<div class="home-tile-label">View</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">Cards</div>' +
-          '</div>' +
-          '<div class="home-tile" onclick="setView(\'discovery\')">' +
-            '<div class="home-tile-emoji">🔍</div>' +
-            '<div class="home-tile-label">View</div>' +
-            '<div class="home-tile-value" style="font-size:14px;">Discovery</div>' +
-          '</div>' +
-        '</div>';
-
-      var tilesHtml = '<div class="home-tiles">' + row1Html + row2Html + row3Html + row4Html + '</div>';
+      var tilesHtml = '<div class="home-tiles">' + row1Html + sortableHtml + trayHtml + '</div>';
       // gaps bar
       var gapsHtml = '';
 
@@ -2171,6 +2206,145 @@ var row4Html =
 
     function homeCollapseAll() {
       document.querySelectorAll('.home-day-body').forEach(function(b) { b.classList.remove('open'); });
+    }
+
+    function toggleHomeTileEdit() {
+      var grid = document.getElementById('home-sortable-grid');
+      var tray = document.getElementById('home-tile-tray');
+      var btn = document.getElementById('home-edit-btn');
+      if (!grid) return;
+      var isEditing = grid.classList.contains('is-editing');
+      if (isEditing) {
+        exitHomeTileEdit();
+      } else {
+        enterHomeTileEdit();
+      }
+    }
+
+    function enterHomeTileEdit() {
+      var grid = document.getElementById('home-sortable-grid');
+      var tray = document.getElementById('home-tile-tray');
+      var trayGrid = document.getElementById('home-tile-tray-grid');
+      var btn = document.getElementById('home-edit-btn');
+      if (!grid) return;
+
+      grid.classList.add('is-editing');
+      if (btn) { btn.textContent = '✓ Done'; btn.classList.add('active'); }
+
+      // Add wiggle + remove badge to each visible tile
+      grid.querySelectorAll('.home-tile').forEach(function(tile) {
+        tile.classList.add('home-tile-editing');
+        if (!tile.querySelector('.home-tile-remove-btn')) {
+          var id = tile.getAttribute('data-tile-id');
+          var rmBtn = document.createElement('div');
+          rmBtn.className = 'home-tile-remove-btn';
+          rmBtn.textContent = '−';
+          rmBtn.onclick = function(e) { e.stopPropagation(); hideHomeTile(id); };
+          tile.appendChild(rmBtn);
+        }
+      });
+
+      // Render tray
+      var cfg = loadHomeTileConfig();
+      renderHomeTileTray(cfg.hidden);
+      if (tray) { tray.style.display = cfg.hidden.length ? 'block' : 'none'; }
+
+      // Init Sortable
+      if (homeTileSortable) { homeTileSortable.destroy(); homeTileSortable = null; }
+      homeTileSortable = Sortable.create(grid, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: function() {
+          var newOrder = [];
+          grid.querySelectorAll('.home-tile[data-tile-id]').forEach(function(t) {
+            newOrder.push(t.getAttribute('data-tile-id'));
+          });
+          var cfg = loadHomeTileConfig();
+          // Merge: hidden tiles keep their relative position at end
+          cfg.hidden.forEach(function(id) { if (newOrder.indexOf(id) === -1) newOrder.push(id); });
+          saveHomeTileConfig(newOrder, cfg.hidden);
+        }
+      });
+    }
+
+    function exitHomeTileEdit() {
+      var grid = document.getElementById('home-sortable-grid');
+      var tray = document.getElementById('home-tile-tray');
+      var btn = document.getElementById('home-edit-btn');
+      if (!grid) return;
+
+      grid.classList.remove('is-editing');
+      if (btn) { btn.textContent = '✏️ Edit'; btn.classList.remove('active'); }
+      if (tray) { tray.style.display = 'none'; }
+
+      grid.querySelectorAll('.home-tile').forEach(function(tile) {
+        tile.classList.remove('home-tile-editing');
+        var rmBtn = tile.querySelector('.home-tile-remove-btn');
+        if (rmBtn) rmBtn.remove();
+      });
+
+      if (homeTileSortable) { homeTileSortable.destroy(); homeTileSortable = null; }
+
+      // Re-fetch weather in case tile was re-added
+      var nextCity = getNextTripCity();
+      fetchHomeWeather(nextCity.day.lat, nextCity.day.lng, function(w) {
+        var emojiEl = document.getElementById('home-weather-emoji');
+        var valEl = document.getElementById('home-weather-tile-val');
+        var subEl = document.getElementById('home-weather-sub');
+        if (!emojiEl || !valEl) return;
+        if (w) {
+          emojiEl.textContent = w.emoji;
+          valEl.textContent = w.max + '°/' + w.min + '°';
+          subEl.textContent = 'Today in ' + nextCity.day.city.split('>').pop().trim();
+        }
+      });
+    }
+
+    function hideHomeTile(id) {
+      var cfg = loadHomeTileConfig();
+      if (cfg.hidden.indexOf(id) === -1) { cfg.hidden.push(id); }
+      saveHomeTileConfig(cfg.order, cfg.hidden);
+
+      // Remove tile from grid
+      var grid = document.getElementById('home-sortable-grid');
+      if (grid) {
+        var tile = grid.querySelector('[data-tile-id="' + id + '"]');
+        if (tile) { tile.remove(); }
+      }
+
+      // Show tray and re-render it
+      var tray = document.getElementById('home-tile-tray');
+      if (tray) { tray.style.display = 'block'; }
+      renderHomeTileTray(cfg.hidden);
+    }
+
+    function restoreHomeTile(id) {
+      var cfg = loadHomeTileConfig();
+      cfg.hidden = cfg.hidden.filter(function(h) { return h !== id; });
+      saveHomeTileConfig(cfg.order, cfg.hidden);
+
+      // Re-render tray
+      renderHomeTileTray(cfg.hidden);
+      var tray = document.getElementById('home-tile-tray');
+      if (tray) { tray.style.display = cfg.hidden.length ? 'block' : 'none'; }
+
+      // Rebuild entire home to get the tile back cleanly, then re-enter edit mode
+      renderHome();
+      setTimeout(function() { enterHomeTileEdit(); }, 50);
+    }
+
+    function renderHomeTileTray(hiddenIds) {
+      var trayGrid = document.getElementById('home-tile-tray-grid');
+      if (!trayGrid) return;
+      if (!hiddenIds.length) { trayGrid.innerHTML = ''; return; }
+      trayGrid.innerHTML = hiddenIds.map(function(id) {
+        var meta = HOME_TILE_META[id] || { emoji: '▪️', label: id };
+        return '<div class="home-tile-tray-item">' +
+          '<div class="home-tile-add-btn" onclick="restoreHomeTile(\'' + id + '\')">+</div>' +
+          '<div class="home-tile-tray-emoji">' + meta.emoji + '</div>' +
+          '<div class="home-tile-tray-label-text">' + meta.label + '</div>' +
+        '</div>';
+      }).join('');
     }
 
     function showNextFlightModal() {
@@ -3539,6 +3713,44 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
 
     var inlineEditDragging = false;
     var inlineSortableInstances = {};
+    var homeTileSortable = null;
+
+    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','calendar','split','itinerary','cards','discovery'];
+    var HOME_TILE_META = {
+      dates:      { emoji: '📅', label: 'Dates' },
+      weather:    { emoji: '🌤️', label: 'Weather' },
+      flight:     { emoji: '✈️', label: 'Next Flight' },
+      visa:       { emoji: '🛂', label: 'Visa & Entry' },
+      stay:       { emoji: '🏨', label: 'Stay' },
+      food:       { emoji: '🍜', label: 'Reservations' },
+      budget:     { emoji: '💰', label: 'Budget' },
+      map:        { emoji: '🗺️', label: 'Map' },
+      calendar:   { emoji: '🗓', label: 'Calendar' },
+      split:      { emoji: '⬛', label: 'Split' },
+      itinerary:  { emoji: '📋', label: 'Itinerary' },
+      cards:      { emoji: '🃏', label: 'Cards' },
+      discovery:  { emoji: '🔍', label: 'Discovery' }
+    };
+
+    function loadHomeTileConfig() {
+      try {
+        var raw = localStorage.getItem('home_tile_config');
+        if (raw) {
+          var cfg = JSON.parse(raw);
+          if (cfg.order && cfg.hidden) return cfg;
+        }
+      } catch(e) {}
+      return { order: HOME_TILE_DEFAULTS.slice(), hidden: [] };
+    }
+
+    function saveHomeTileConfig(order, hidden) {
+      localStorage.setItem('home_tile_config', JSON.stringify({ order: order, hidden: hidden }));
+    }
+
+    function getHomeTileOrder() {
+      var cfg = loadHomeTileConfig();
+      return { order: cfg.order, hidden: cfg.hidden };
+    }
     var activeInlineEditIndex = -1;
 
     function initInlineSortables(dayIndex) {
