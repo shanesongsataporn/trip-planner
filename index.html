@@ -435,9 +435,7 @@
       #disc-map { height: 220px; }
     }
 /* ===== HOME VIEW ===== */
-    #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow: hidden; background: var(--sand); z-index: 1; flex-direction: column; }
-    #home-tiles-sticky { padding: 20px 20px 0; flex-shrink: 0; }
-    #home-days-scroll { flex: 1; overflow-y: auto; padding: 0 20px 20px; scrollbar-width: thin; }
+    #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     @media (max-width: 640px) { #view-home { top: 54px; bottom: 0; } }
 
     /* Tile grid */
@@ -1930,144 +1928,143 @@
           '</div>' +
         '</div>';
 
-      var tilesHtml = '<div class="home-tiles">' + row1Html + row2Html + row3Html + '</div>';
-
-      // gaps bar
-      var gapsHtml = '';
-
-      // expand/collapse bar
-      var expandBarHtml =
-        '<div class="home-expand-bar">' +
-          '<span class="home-expand-bar-label">All days · ' + currentTrip.days.length + ' total</span>' +
-          '<div style="display:flex;gap:6px;">' +
-            '<button class="home-expand-btn" onclick="homeExpandAll()">Expand All</button>' +
-            '<button class="home-expand-btn" onclick="homeCollapseAll()">Collapse All</button>' +
+var row4Html =
+        '<div class="home-tile-row home-tile-row-3">' +
+          '<div class="home-tile" onclick="setView(\'map\')">' +
+            '<div class="home-tile-emoji">🗺️</div>' +
+            '<div class="home-tile-label">View</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">Map</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="setView(\'calendar\')">' +
+            '<div class="home-tile-emoji">🗓</div>' +
+            '<div class="home-tile-label">View</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">Calendar</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="setView(\'split\')">' +
+            '<div class="home-tile-emoji">⬛</div>' +
+            '<div class="home-tile-label">View</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">Split</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="home-tile-row home-tile-row-3">' +
+          '<div class="home-tile" onclick="setView(\'itinerary\')">' +
+            '<div class="home-tile-emoji">📋</div>' +
+            '<div class="home-tile-label">View</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">Itinerary</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="setView(\'cards\')">' +
+            '<div class="home-tile-emoji">🃏</div>' +
+            '<div class="home-tile-label">View</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">Cards</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="setView(\'discovery\')">' +
+            '<div class="home-tile-emoji">🔍</div>' +
+            '<div class="home-tile-label">View</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">Discovery</div>' +
           '</div>' +
         '</div>';
 
-      // day cards grouped by city
-      var groups = [], currentGroup = null;
-      currentTrip.days.forEach(function(day, di) {
-        var base = day.city.split('>').pop().trim();
-        if (!currentGroup || currentGroup.city !== base) {
-          currentGroup = { city: base, days: [] };
-          groups.push(currentGroup);
-        }
-        currentGroup.days.push({ day: day, index: di });
-      });
+      var tilesHtml = '<div class="home-tiles">' + row1Html + row2Html + row3Html + row4Html + '</div>';
+      // gaps bar
+      var gapsHtml = '';
 
-      var daysHtml = groups.map(function(group) {
-        var s = citySettings[group.city] || { emoji: '📍', color: '#2D9E75' };
-        var groupHeader = '<div class="home-city-group-header">' + s.emoji + ' ' + group.city + '</div>';
+      // expand/collapse bar — only shown during trip
+      var expandBarHtml = '';
 
-        var cardsHtml = group.days.map(function(entry) {
-          var day = entry.day;
-          var di = entry.index;
-          var isToday = di === todayDayIndex;
-          normaliseAccom(day); normaliseFood(day); normaliseDayTransport(day);
+      // day cards — only show today's card during trip, nothing otherwise
+      var daysHtml = '';
+      if (status.mode === 'during' && todayDayIndex >= 0) {
+        var day = currentTrip.days[todayDayIndex];
+        var di = todayDayIndex;
+        normaliseAccom(day); normaliseFood(day); normaliseDayTransport(day);
 
-          var flights = (day.transport || []).filter(function(t) { return t.type === 'Flight'; });
-          var hasUnplanned = !day.activities.length && !day.accommodation.length;
+        var flights = (day.transport || []).filter(function(t) { return t.type === 'Flight'; });
 
-          var badge = '';
-          if (isToday) { badge = '<span class="home-day-badge">TODAY</span>'; }
-          else if (hasUnplanned) { badge = '<span class="home-day-badge warn">⚠️</span>'; }
-          else if (flights.length && flights[0].depart) { badge = '<span style="font-size:11px;color:var(--accent);font-weight:700;flex-shrink:0;">✈️ ' + flights[0].depart + '</span>'; }
+        var bodyParts = [];
 
-          // body — itinerary style
-          var bodyParts = [];
-
-          if (flights.length) {
-            var fc = flights.map(function(f) {
-              return '<div class="home-flight-card">' +
-                '<div class="home-flight-route">✈️ ' + (f.from||'') + ' → ' + (f.to||'') + '</div>' +
-                '<div class="home-flight-detail">' + (f.carrier||'') + (f.flightNum?' · '+f.flightNum:'') + (f.depart?' · Departs '+f.depart:'') + (f.arrive?' · Arrives '+f.arrive:'') + (f.notes?'<br>'+f.notes:'') + '</div>' +
-              '</div>';
-            }).join('');
-            bodyParts.push('<div class="home-section-label">Flight</div>' + fc);
-          }
-
-          if (day.accommodation.length) {
-            var ah = day.accommodation.map(function(a) {
-              return '<div class="home-item-row"><span>🏨</span><span class="home-item-row-main">' + (a.name||'') + '</span></div>';
-            }).join('');
-            bodyParts.push('<div class="home-section-label">Stay</div>' + ah);
-          }
-
-          if (day.activities.length) {
-            var acH = day.activities.map(function(a, i) {
-              var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
-              var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-              var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
-              var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
-              return '<div class="home-item-row">' +
-                '<span>' + emoji + '</span>' +
-                '<span class="home-item-row-main">' + a + (note ? '<br><span style="font-size:10px;color:var(--accent);font-style:italic;">' + note + '</span>' : '') + '</span>' +
-                '<a href="' + mapsUrl + '" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--accent);text-decoration:none;flex-shrink:0;">📍</a>' +
-              '</div>';
-            }).join('');
-            bodyParts.push('<div class="home-section-label">Activities</div>' + acH);
-          }
-
-          if (day.food.length) {
-            var fH = day.food.map(function(f) {
-              var fname = typeof f === 'string' ? f : f.name;
-              var needsRes = typeof f === 'object' && f.reservationRequired && !f.reservationBooked;
-              var isBooked = typeof f === 'object' && f.reservationRequired && f.reservationBooked;
-              var resBadge = needsRes
-                ? ' <span style="font-size:9px;font-weight:700;color:var(--danger);">⚠️ book</span>'
-                : isBooked ? ' <span style="font-size:9px;font-weight:700;color:var(--accent);">✅</span>' : '';
-              return '<div class="home-item-row"><span>🍜</span><span class="home-item-row-main">' + fname + resBadge + '</span></div>';
-            }).join('');
-            bodyParts.push('<div class="home-section-label">Food & Drinks</div>' + fH);
-          }
-
-          if (!bodyParts.length) {
-            bodyParts.push('<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">Nothing planned yet.</div>');
-          }
-
-          var actionsHtml =
-            '<div class="home-day-actions">' +
-              '<button class="home-action-btn primary" id="home-edit-btn-' + di + '" onclick="event.stopPropagation();toggleHomeInlineEdit(' + di + ')">✏️ Edit</button>' +
-            '</div>' +
-            '<div id="home-inline-edit-' + di + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--sand-dark);">' +
-              '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Accommodation</div>' +
-              '<div id="home-inline-accom-' + di + '">' + renderInlineAccom(di) + '</div>' +
-              '<button class="add-btn" onclick="addItinAccom(' + di + ');refreshHomeInlineEdit(' + di + ')">+ Add accommodation</button>' +
-              '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Activities</div>' +
-              '<div id="home-inline-acts-' + di + '">' + renderInlineActivities(di) + '</div>' +
-              buildSearchBox('activities') +
-              '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Food</div>' +
-              '<div id="home-inline-food-' + di + '">' + renderInlineFood(di) + '</div>' +
-              buildSearchBox('food') +
+        if (flights.length) {
+          var fc = flights.map(function(f) {
+            return '<div class="home-flight-card">' +
+              '<div class="home-flight-route">✈️ ' + (f.from||'') + ' → ' + (f.to||'') + '</div>' +
+              '<div class="home-flight-detail">' + (f.carrier||'') + (f.flightNum?' · '+f.flightNum:'') + (f.depart?' · Departs '+f.depart:'') + (f.arrive?' · Arrives '+f.arrive:'') + (f.notes?'<br>'+f.notes:'') + '</div>' +
             '</div>';
+          }).join('');
+          bodyParts.push('<div class="home-section-label">Flight</div>' + fc);
+        }
 
-          var bodyId = 'home-day-body-' + di;
-          var isOpen = isToday || (status.mode === 'pre' && di === 0);
+        if (day.accommodation.length) {
+          var ah = day.accommodation.map(function(a) {
+            return '<div class="home-item-row"><span>🏨</span><span class="home-item-row-main">' + (a.name||'') + '</span></div>';
+          }).join('');
+          bodyParts.push('<div class="home-section-label">Stay</div>' + ah);
+        }
 
-          return '<div class="home-day-card' + (isToday ? ' is-today' : '') + '" id="home-day-card-' + di + '">' +
-            '<div class="home-day-header" onclick="toggleHomeDayBody(\'' + bodyId + '\')">' +
-              '<span style="font-size:20px;">' + getCityEmoji(day.city) + '</span>' +
-              '<div class="home-day-meta">' +
-                '<div class="home-day-num">Day ' + day.day + (isToday ? ' · TODAY' : '') + '</div>' +
-                '<div class="home-day-city">' + day.city + '</div>' +
-              '</div>' +
-              '<div class="home-day-date">' + day.date + '</div>' +
-              badge +
-            '</div>' +
-            '<div class="home-day-body' + (isOpen ? ' open' : '') + '" id="' + bodyId + '">' +
-              bodyParts.join('') + actionsHtml +
-            '</div>' +
+        if (day.activities.length) {
+          var acH = day.activities.map(function(a, i) {
+            var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
+            var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
+            var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
+            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+            return '<div class="home-item-row">' +
+              '<span>' + emoji + '</span>' +
+              '<span class="home-item-row-main">' + a + (note ? '<br><span style="font-size:10px;color:var(--accent);font-style:italic;">' + note + '</span>' : '') + '</span>' +
+              '<a href="' + mapsUrl + '" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--accent);text-decoration:none;flex-shrink:0;">📍</a>' +
+            '</div>';
+          }).join('');
+          bodyParts.push('<div class="home-section-label">Activities</div>' + acH);
+        }
+
+        if (day.food.length) {
+          var fH = day.food.map(function(f) {
+            var fname = typeof f === 'string' ? f : f.name;
+            var needsRes = typeof f === 'object' && f.reservationRequired && !f.reservationBooked;
+            var isBooked = typeof f === 'object' && f.reservationRequired && f.reservationBooked;
+            var resBadge = needsRes
+              ? ' <span style="font-size:9px;font-weight:700;color:var(--danger);">⚠️ book</span>'
+              : isBooked ? ' <span style="font-size:9px;font-weight:700;color:var(--accent);">✅</span>' : '';
+            return '<div class="home-item-row"><span>🍜</span><span class="home-item-row-main">' + fname + resBadge + '</span></div>';
+          }).join('');
+          bodyParts.push('<div class="home-section-label">Food & Drinks</div>' + fH);
+        }
+
+        if (!bodyParts.length) {
+          bodyParts.push('<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">Nothing planned yet.</div>');
+        }
+
+        var actionsHtml =
+          '<div class="home-day-actions">' +
+            '<button class="home-action-btn primary" id="home-edit-btn-' + di + '" onclick="event.stopPropagation();toggleHomeInlineEdit(' + di + ')">✏️ Edit</button>' +
+          '</div>' +
+          '<div id="home-inline-edit-' + di + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--sand-dark);">' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Accommodation</div>' +
+            '<div id="home-inline-accom-' + di + '">' + renderInlineAccom(di) + '</div>' +
+            '<button class="add-btn" onclick="addItinAccom(' + di + ');refreshHomeInlineEdit(' + di + ')">+ Add accommodation</button>' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Activities</div>' +
+            '<div id="home-inline-acts-' + di + '">' + renderInlineActivities(di) + '</div>' +
+            buildSearchBox('activities') +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Food</div>' +
+            '<div id="home-inline-food-' + di + '">' + renderInlineFood(di) + '</div>' +
+            buildSearchBox('food') +
           '</div>';
-        }).join('');
 
-        return groupHeader + cardsHtml;
-      }).join('');
+        daysHtml = '<div class="home-day-card is-today" id="home-day-card-' + di + '">' +
+          '<div class="home-day-header" onclick="toggleHomeDayBody(\'home-day-body-' + di + '\')">' +
+            '<span style="font-size:20px;">' + getCityEmoji(day.city) + '</span>' +
+            '<div class="home-day-meta">' +
+              '<div class="home-day-num">Day ' + day.day + ' · TODAY</div>' +
+              '<div class="home-day-city">' + day.city + '</div>' +
+            '</div>' +
+            '<div class="home-day-date">' + day.date + '</div>' +
+            '<span class="home-day-badge">TODAY</span>' +
+          '</div>' +
+          '<div class="home-day-body open" id="home-day-body-' + di + '">' +
+            bodyParts.join('') + actionsHtml +
+          '</div>' +
+        '</div>';
+      }
 
-      el.style.display = 'flex';
-      el.innerHTML =
-        '<div id="home-tiles-sticky">' + tilesHtml + gapsHtml + '</div>' +
-        '<div id="home-days-scroll">' + expandBarHtml + daysHtml + '</div>';
+      el.style.display = 'block';
+      el.innerHTML = tilesHtml + gapsHtml + expandBarHtml + daysHtml;
 
       // fetch weather async and update tile
       fetchHomeWeather(nextCity.day.lat, nextCity.day.lng, function(w) {
