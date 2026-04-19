@@ -434,8 +434,74 @@
       #view-discovery { top: 54px; bottom: 0; }
       #disc-map { height: 220px; }
     }
-    .budget-summary { background: var(--white); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); }
-    .budget-summary-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.01em; }
+/* ===== HOME VIEW ===== */
+    #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
+    @media (max-width: 640px) { #view-home { top: 54px; bottom: 0; } }
+
+    /* Tile grid */
+    .home-tiles { margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .home-tile-row { display: grid; gap: 10px; }
+    .home-tile-row-2 { grid-template-columns: 2fr 1fr; }
+    .home-tile-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .home-tile { background: var(--white); border-radius: var(--radius); padding: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; min-height: 90px; display: flex; flex-direction: column; justify-content: space-between; }
+    .home-tile:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-1px); }
+    .home-tile:active { transform: translateY(0); }
+    .home-tile-emoji { font-size: 22px; margin-bottom: 6px; line-height: 1; }
+    .home-tile-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+    .home-tile-value { font-size: 20px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.1; }
+    .home-tile-sub { font-size: 10px; color: var(--ink-muted); margin-top: 3px; font-weight: 500; }
+    .home-tile-value.accent { color: var(--accent); }
+    .home-tile-value.warn { color: var(--warn); }
+    .home-tile-value.danger { color: var(--danger); }
+    .home-tile.wide { grid-column: span 1; }
+    .home-tile-countdown { background: linear-gradient(135deg, var(--accent-light) 0%, var(--white) 100%); border-color: var(--accent); }
+    .home-tile-countdown .home-tile-value { font-size: 26px; color: var(--accent); }
+
+    /* Visa traveller dots */
+    .home-visa-travellers { display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+    .home-visa-person { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--ink); }
+    .home-visa-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Gaps bar */
+    .home-gaps { font-size: 11px; color: var(--warn); font-weight: 600; padding: 8px 12px; background: rgba(230,126,34,0.08); border-radius: var(--radius-sm); border: 1px solid rgba(230,126,34,0.2); margin-bottom: 16px; }
+
+    /* Expand/collapse bar */
+    .home-expand-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .home-expand-bar-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
+    .home-expand-btn { font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
+    .home-expand-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Day cards */
+    .home-city-group-header { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); padding: 6px 2px 8px; display: flex; align-items: center; gap: 8px; }
+    .home-city-group-header::after { content: ''; flex: 1; height: 1px; background: var(--sand-dark); }
+    .home-day-card { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); transition: box-shadow 0.15s; }
+    .home-day-card:hover { box-shadow: var(--card-shadow-hover); }
+    .home-day-card.is-today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--card-shadow); }
+    .home-day-header { padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .home-day-header:hover { background: var(--sand); }
+    .home-day-meta { flex: 1; min-width: 0; }
+    .home-day-num { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 2px; }
+    .home-day-city { font-size: 14px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .home-day-date { font-size: 11px; color: var(--ink-muted); flex-shrink: 0; font-weight: 500; }
+    .home-day-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: var(--accent); color: #fff; flex-shrink: 0; }
+    .home-day-badge.warn { background: var(--warn); }
+    .home-day-body { border-top: 1px solid var(--sand-dark); padding: 12px 16px; display: none; }
+    .home-day-body.open { display: block; }
+    .home-section-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; margin-top: 12px; }
+    .home-section-label:first-child { margin-top: 0; }
+    .home-item-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--sand-dark); font-size: 12px; color: var(--ink-light); }
+    .home-item-row:last-child { border-bottom: none; }
+    .home-item-row-main { flex: 1; }
+    .home-flight-card { background: var(--accent-light); border-radius: var(--radius-sm); padding: 10px 14px; border: 1px solid var(--accent); margin-bottom: 4px; }
+    .home-flight-route { font-size: 14px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 2px; }
+    .home-flight-detail { font-size: 11px; color: var(--ink-muted); }
+    .home-day-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sand-dark); flex-wrap: wrap; }
+    .home-action-btn { font-family: inherit; font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
+    .home-action-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .home-action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .home-action-btn.primary:hover { opacity: 0.85; }
+
+    .budget-summary { background: var(--white); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); }    .budget-summary-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.01em; }
     .budget-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .budget-total-box { background: var(--sand); border-radius: var(--radius-sm); padding: 14px; text-align: center; border: 1px solid var(--sand-dark); }
     .budget-total-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 6px; font-weight: 700; }
@@ -659,7 +725,8 @@
     </div>
     <div class="hdr-right">
       <div class="view-switcher">
-        <button class="view-btn active" onclick="setView('map')">🗺 Map</button>
+        <button class="view-btn active" onclick="setView('home')">🏠 Home</button>
+        <button class="view-btn" onclick="setView('map')">🗺 Map</button>
         <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
         <button class="view-btn" onclick="setView('calendar')">🗓 Calendar</button>
         <button class="view-btn" onclick="setView('split')">⬛ Split</button>
@@ -731,6 +798,7 @@
   <!-- MOBILE VIEW PICKER -->
   <div id="mob-view-menu">
     <div class="menu-section">
+      <button class="menu-item" onclick="setView('home');toggleMenu('mob-view-menu')">🏠 Home</button>
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
       <button class="menu-item" onclick="setView('calendar');toggleMenu('mob-view-menu')">🗓 Calendar</button>
       <button class="menu-item" onclick="setView('split');toggleMenu('mob-view-menu')">⬛ Split</button>
@@ -810,6 +878,7 @@
       </div>
     </div>
   </div>
+  <div id="view-home"></div>
   <div id="view-budget"></div>
   <div id="view-food"></div>
   <div id="view-calendar"></div>
@@ -1548,6 +1617,736 @@
       if (cards[idx]) { cards[idx].classList.add('active'); }
     }
 
+    // ===== HOME VIEW =====
+    var homeWeatherCache = null;
+
+    function fetchHomeWeather(lat, lng, callback) {
+      if (homeWeatherCache && homeWeatherCache.lat === lat && homeWeatherCache.lng === lng) {
+        callback(homeWeatherCache); return;
+      }
+      var today = new Date();
+      var dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng + '&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=' + dateStr + '&end_date=' + dateStr;
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        var code = data.daily && data.daily.weathercode ? data.daily.weathercode[0] : 0;
+        var max = data.daily && data.daily.temperature_2m_max ? Math.round(data.daily.temperature_2m_max[0]) : '--';
+        var min = data.daily && data.daily.temperature_2m_min ? Math.round(data.daily.temperature_2m_min[0]) : '--';
+        var emoji = code <= 1 ? '☀️' : code <= 3 ? '⛅' : code <= 51 ? '🌥️' : code <= 67 ? '🌧️' : code <= 77 ? '❄️' : code <= 82 ? '🌦️' : '⛈️';
+        var result = { lat: lat, lng: lng, emoji: emoji, max: max, min: min, code: code };
+        homeWeatherCache = result;
+        callback(result);
+      }).catch(function() { callback(null); });
+    }
+
+    function getNextTripCity() {
+      var today = new Date(); today.setHours(0,0,0,0);
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      for (var i = 0; i < currentTrip.days.length; i++) {
+        var day = currentTrip.days[i];
+        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0);
+        if (d >= today) { return { day: day, index: i }; }
+      }
+      return { day: currentTrip.days[0], index: 0 };
+    }
+
+    function getNextFlight() {
+      var today = new Date(); today.setHours(0,0,0,0);
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      for (var i = 0; i < currentTrip.days.length; i++) {
+        var day = currentTrip.days[i];
+        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0);
+        if (d >= today && day.transport) {
+          var flights = day.transport.filter(function(t) { return t.type === 'Flight'; });
+          if (flights.length) { return { flight: flights[0], day: day }; }
+        }
+      }
+      return null;
+    }
+
+    function getVisaStatus() {
+      if (!currentTrip.visaInfo || !currentTrip.visaInfo.travellers || !currentTrip.visaInfo.travellers.length) {
+        return { overall: 'none', travellers: [] };
+      }
+      var travellers = currentTrip.visaInfo.travellers;
+      var statusRank = { approved: 0, applied: 1, not_started: 2 };
+      var worstRank = 0;
+      travellers.forEach(function(t) { var r = statusRank[t.visaStatus] || 0; if (r > worstRank) { worstRank = r; } });
+      var overall = worstRank === 2 ? 'not_started' : worstRank === 1 ? 'applied' : 'approved';
+      return { overall: overall, travellers: travellers };
+    }
+
+    function visaStatusDot(status) {
+      return status === 'approved' ? '#2D9E75' : status === 'applied' ? '#E67E22' : '#E05555';
+    }
+
+    function visaStatusLabel(status) {
+      return status === 'approved' ? '🟢' : status === 'applied' ? '🟡' : '🔴';
+    }
+
+    function getBudgetTotal() {
+      var baseCurrency = currentTrip.baseCurrency || 'AUD';
+      var baseSym = currentTrip.baseCurrencySymbol || '$';
+      var tot = 0;
+      currentTrip.days.forEach(function(day) {
+        normaliseDayCurrency(day);
+        if (!day.costs) return;
+        var dayCur = day.currency || baseCurrency;
+        Object.keys(day.costs).forEach(function(k) {
+          if (k.indexOf('_est') !== -1) { tot += convertToBase(parseFloat(day.costs[k]) || 0, dayCur); }
+        });
+      });
+      return { total: tot, sym: baseSym };
+    }
+
+    function getStayHealth() {
+      var booked = 0, missing = 0;
+      currentTrip.days.forEach(function(day) {
+        normaliseAccom(day);
+        var base = day.city.split('>').pop().trim();
+        var s = citySettings[base];
+        if (s && s.noMarker) return; // skip home city
+        if (day.accommodation.length && day.accommodation[0].name) { booked++; } else { missing++; }
+      });
+      return { booked: booked, missing: missing };
+    }
+
+    function getFoodBookings() {
+      var booked = 0, unbooked = 0;
+      currentTrip.days.forEach(function(day) {
+        normaliseFood(day);
+        day.food.forEach(function(f) {
+          if (f.reservationRequired) { if (f.reservationBooked) { booked++; } else { unbooked++; } }
+        });
+      });
+      return { booked: booked, unbooked: unbooked };
+    }
+
+    function showVisaSheet() {
+      if (!currentTrip.visaInfo) { currentTrip.visaInfo = { travellers: [] }; }
+      var travellers = currentTrip.visaInfo.travellers;
+      function renderSheet() {
+        var tHtml = travellers.length ? travellers.map(function(t, i) {
+          var dot = visaStatusDot(t.visaStatus);
+          var monthsToTrip = (function() {
+            if (!t.passportExpiry) return null;
+            var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+            var yr = currentTrip.year || new Date().getFullYear();
+            var firstDay = currentTrip.days[0];
+            var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+            var tripStart = new Date(yr, months[p[0]], parseInt(p[1]));
+            var exp = new Date(t.passportExpiry);
+            var diff = (exp - tripStart) / (1000 * 60 * 60 * 24 * 30);
+            return diff;
+          })();
+          var passportWarn = monthsToTrip !== null && monthsToTrip < 6 ? '<div style="font-size:10px;color:var(--danger);margin-top:4px;">⚠️ Passport expires within 6 months of travel</div>' : '';
+          return '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;border:1px solid var(--sand-dark);">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
+              '<div style="width:10px;height:10px;border-radius:50%;background:' + dot + ';flex-shrink:0;"></div>' +
+              '<div style="font-size:14px;font-weight:800;color:var(--ink);flex:1;">' + (t.name || 'Traveller') + '</div>' +
+              '<button onclick="removeVisaTraveller(' + i + ')" style="font-family:inherit;font-size:10px;padding:2px 8px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">Remove</button>' +
+            '</div>' +
+            '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Name</div>' +
+            '<input class="inline-edit" style="font-size:13px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (t.name||'').replace(/"/g,'&quot;') + '" onchange="updateVisaField(' + i + ',\'name\',this.value)" onblur="updateVisaField(' + i + ',\'name\',this.value)"></div>' +
+            '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Visa type</div>' +
+            '<input class="inline-edit" style="font-size:13px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (t.visaType||'').replace(/"/g,'&quot;') + '" placeholder="e.g. Visa on Arrival" onchange="updateVisaField(' + i + ',\'visaType\',this.value)" onblur="updateVisaField(' + i + ',\'visaType\',this.value)"></div>' +
+            '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Status</div>' +
+            '<select onchange="updateVisaField(' + i + ',\'visaStatus\',this.value)" style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--white);color:var(--ink);">' +
+              '<option value="not_started"' + (t.visaStatus==='not_started'?' selected':'') + '>🔴 Not started</option>' +
+              '<option value="applied"' + (t.visaStatus==='applied'?' selected':'') + '>🟡 Applied</option>' +
+              '<option value="approved"' + (t.visaStatus==='approved'?' selected':'') + '>🟢 Approved</option>' +
+            '</select></div>' +
+            '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Passport expiry</div>' +
+            '<input type="date" onchange="updateVisaField(' + i + ',\'passportExpiry\',this.value)" value="' + (t.passportExpiry||'') + '" style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--white);color:var(--ink);">' +
+            passportWarn + '</div>' +
+            '<div><div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Entry notes</div>' +
+            '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (t.entryNotes||'').replace(/"/g,'&quot;') + '" placeholder="Vaccinations, insurance, requirements..." onchange="updateVisaField(' + i + ',\'entryNotes\',this.value)" onblur="updateVisaField(' + i + ',\'entryNotes\',this.value)"></div>' +
+          '</div>';
+        }).join('') : '<div style="text-align:center;padding:20px;color:var(--ink-muted);font-size:13px;">No travellers added yet.</div>';
+
+        var sheet = document.getElementById('visa-sheet-body');
+        if (sheet) { sheet.innerHTML = tHtml + '<button onclick="addVisaTraveller()" style="width:100%;font-family:inherit;font-size:13px;font-weight:700;padding:10px;border-radius:var(--radius-sm);border:1px dashed var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;margin-top:4px;">+ Add traveller</button>'; }
+      }
+
+      var existing = document.getElementById('visa-sheet');
+      if (existing) { existing.remove(); document.getElementById('visa-overlay').remove(); return; }
+
+      var overlay = document.createElement('div');
+      overlay.id = 'visa-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:5400;';
+      overlay.onclick = function() { document.getElementById('visa-sheet').remove(); overlay.remove(); if (currentView==='home'){renderHome();} };
+      document.body.appendChild(overlay);
+
+      var sheet = document.createElement('div');
+      sheet.id = 'visa-sheet';
+      sheet.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:5500;background:var(--white);border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,0.3);border-top:1px solid var(--sand-dark);max-height:80vh;display:flex;flex-direction:column;animation:fadeInUp 0.25s ease;';
+      sheet.innerHTML = '<div style="width:36px;height:4px;background:var(--sand-dark);border-radius:2px;margin:12px auto 0;flex-shrink:0;"></div>' +
+        '<div style="padding:14px 20px 10px;border-bottom:1px solid var(--sand-dark);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">' +
+          '<div style="font-size:15px;font-weight:800;color:var(--ink);">🛂 Visa & Entry · ' + getTripDestination() + '</div>' +
+          '<button onclick="document.getElementById(\'visa-sheet\').remove();document.getElementById(\'visa-overlay\').remove();if(currentView===\'home\'){renderHome();}" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--sand-dark);background:var(--sand);cursor:pointer;font-size:14px;color:var(--ink-muted);">×</button>' +
+        '</div>' +
+        '<div id="visa-sheet-body" style="overflow-y:auto;flex:1;padding:16px 20px 32px;"></div>';
+      document.body.appendChild(sheet);
+      renderSheet();
+
+      window.addVisaTraveller = function() {
+        if (!currentTrip.visaInfo) { currentTrip.visaInfo = { travellers: [] }; }
+        currentTrip.visaInfo.travellers.push({ name: '', visaType: '', visaStatus: 'not_started', passportExpiry: '', entryNotes: '' });
+        saveToStorage(); renderSheet();
+      };
+      window.removeVisaTraveller = function(i) {
+        currentTrip.visaInfo.travellers.splice(i, 1);
+        saveToStorage(); renderSheet();
+      };
+      window.updateVisaField = function(i, field, value) {
+        currentTrip.visaInfo.travellers[i][field] = value;
+        saveToStorage();
+      };
+    }
+
+    function renderHome() {
+      var el = document.getElementById('view-home');
+      if (!el) return;
+
+      var status = getTripStatus();
+      var gaps = getPlanningGaps();
+      var nextCity = getNextTripCity();
+      var nextFlight = getNextFlight();
+      var visa = getVisaStatus();
+      var budget = getBudgetTotal();
+      var stay = getStayHealth();
+      var food = getFoodBookings();
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      function parseDate(day) {
+        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0); return d;
+      }
+
+      var todayDayIndex = -1;
+      if (status.mode === 'during') { todayDayIndex = status.dayIndex; }
+
+      // ---- TILE ROW 1: Countdown + Dates ----
+      var countdownVal = status.mode === 'pre'
+        ? status.text
+        : status.mode === 'during'
+          ? status.text
+          : 'Complete 🎉';
+
+      var firstDay = currentTrip.days[0];
+      var lastDay = currentTrip.days[currentTrip.days.length - 1];
+
+      var row1Html =
+        '<div class="home-tile-row home-tile-row-2">' +
+          '<div class="home-tile home-tile-countdown" onclick="">' +
+            '<div class="home-tile-emoji">🛫</div>' +
+            '<div class="home-tile-label">Countdown</div>' +
+            '<div class="home-tile-value">' + countdownVal + '</div>' +
+            '<div class="home-tile-sub">' + status.sub + '</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="">' +
+            '<div class="home-tile-emoji">📅</div>' +
+            '<div class="home-tile-label">Dates</div>' +
+            '<div class="home-tile-value" style="font-size:13px;font-weight:800;">' + firstDay.date + '</div>' +
+            '<div class="home-tile-sub">to ' + lastDay.date + ' · ' + currentTrip.days.length + ' days</div>' +
+          '</div>' +
+        '</div>';
+
+      // ---- TILE ROW 2: Weather + Next Flight + Visa ----
+      // Weather tile — fetch async, render spinner first then update
+      var weatherTileId = 'home-weather-tile-val';
+      var weatherHtml =
+        '<div class="home-tile" onclick="">' +
+          '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
+          '<div class="home-tile-label">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
+          '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
+          '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
+        '</div>';
+
+      var flightHtml = nextFlight
+        ? '<div class="home-tile" onclick="showNextFlightModal()">' +
+            '<div class="home-tile-emoji">✈️</div>' +
+            '<div class="home-tile-label">Next flight</div>' +
+            '<div class="home-tile-value" style="font-size:14px;">' + (nextFlight.flight.from||'') + ' → ' + (nextFlight.flight.to||'') + '</div>' +
+            '<div class="home-tile-sub">' + nextFlight.day.date + (nextFlight.flight.depart ? ' · ' + nextFlight.flight.depart : '') + '</div>' +
+          '</div>'
+        : '<div class="home-tile" onclick="">' +
+            '<div class="home-tile-emoji">✈️</div>' +
+            '<div class="home-tile-label">Next flight</div>' +
+            '<div class="home-tile-value" style="font-size:13px;color:var(--ink-muted);">None</div>' +
+            '<div class="home-tile-sub">No flights upcoming</div>' +
+          '</div>';
+
+      // Visa tile
+      var visaTravellerDotsHtml = visa.travellers.length
+        ? visa.travellers.map(function(t) {
+            return '<div class="home-visa-person"><div class="home-visa-dot" style="background:' + visaStatusDot(t.visaStatus) + '"></div>' + (t.name || 'Traveller') + '</div>';
+          }).join('')
+        : '<div style="font-size:11px;color:var(--ink-muted);">Tap to add</div>';
+
+      var visaHtml =
+        '<div class="home-tile" onclick="showVisaSheet()">' +
+          '<div class="home-tile-emoji">🛂</div>' +
+          '<div class="home-tile-label">Visa & Entry</div>' +
+          '<div class="home-visa-travellers">' + visaTravellerDotsHtml + '</div>' +
+          '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
+        '</div>';
+
+      var row2Html = '<div class="home-tile-row home-tile-row-3">' + weatherHtml + flightHtml + visaHtml + '</div>';
+
+      // ---- TILE ROW 3: Stay + Food + Budget ----
+      var stayColor = stay.missing > 0 ? 'warn' : 'accent';
+      var stayVal = stay.missing > 0 ? stay.missing + ' unbooked' : stay.booked + ' booked';
+      var foodColor = food.unbooked > 0 ? 'warn' : 'accent';
+      var foodVal = food.unbooked > 0 ? food.unbooked + ' to book' : (food.booked > 0 ? food.booked + ' booked' : 'All good');
+      var budgetVal = budget.total > 0 ? budget.sym + Math.round(budget.total).toLocaleString() : 'Not set';
+
+      var row3Html =
+        '<div class="home-tile-row home-tile-row-3">' +
+          '<div class="home-tile" onclick="setView(\'budget\')">' +
+            '<div class="home-tile-emoji">🏨</div>' +
+            '<div class="home-tile-label">Stay</div>' +
+            '<div class="home-tile-value ' + stayColor + '">' + stayVal + '</div>' +
+            '<div class="home-tile-sub">' + stay.booked + ' of ' + (stay.booked + stay.missing) + ' nights</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="setView(\'food\')">' +
+            '<div class="home-tile-emoji">🍜</div>' +
+            '<div class="home-tile-label">Reservations</div>' +
+            '<div class="home-tile-value ' + foodColor + '">' + foodVal + '</div>' +
+            '<div class="home-tile-sub">' + (food.booked + food.unbooked) + ' requiring booking</div>' +
+          '</div>' +
+          '<div class="home-tile" onclick="setView(\'budget\')">' +
+            '<div class="home-tile-emoji">💰</div>' +
+            '<div class="home-tile-label">Budget est.</div>' +
+            '<div class="home-tile-value accent">' + budgetVal + '</div>' +
+            '<div class="home-tile-sub">' + (currentTrip.baseCurrency || 'AUD') + ' estimated</div>' +
+          '</div>' +
+        '</div>';
+
+      var tilesHtml = '<div class="home-tiles">' + row1Html + row2Html + row3Html + '</div>';
+
+      // gaps bar
+      var gapsHtml = gaps.length ? '<div class="home-gaps">⚠️ ' + gaps.join(' · ') + '</div>' : '';
+
+      // expand/collapse bar
+      var expandBarHtml =
+        '<div class="home-expand-bar">' +
+          '<span class="home-expand-bar-label">All days · ' + currentTrip.days.length + ' total</span>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button class="home-expand-btn" onclick="homeExpandAll()">Expand All</button>' +
+            '<button class="home-expand-btn" onclick="homeCollapseAll()">Collapse All</button>' +
+          '</div>' +
+        '</div>';
+
+      // day cards grouped by city
+      var groups = [], currentGroup = null;
+      currentTrip.days.forEach(function(day, di) {
+        var base = day.city.split('>').pop().trim();
+        if (!currentGroup || currentGroup.city !== base) {
+          currentGroup = { city: base, days: [] };
+          groups.push(currentGroup);
+        }
+        currentGroup.days.push({ day: day, index: di });
+      });
+
+      var daysHtml = groups.map(function(group) {
+        var s = citySettings[group.city] || { emoji: '📍', color: '#2D9E75' };
+        var groupHeader = '<div class="home-city-group-header">' + s.emoji + ' ' + group.city + '</div>';
+
+        var cardsHtml = group.days.map(function(entry) {
+          var day = entry.day;
+          var di = entry.index;
+          var isToday = di === todayDayIndex;
+          normaliseAccom(day); normaliseFood(day); normaliseDayTransport(day);
+
+          var flights = (day.transport || []).filter(function(t) { return t.type === 'Flight'; });
+          var hasUnplanned = !day.activities.length && !day.accommodation.length;
+
+          var badge = '';
+          if (isToday) { badge = '<span class="home-day-badge">TODAY</span>'; }
+          else if (hasUnplanned) { badge = '<span class="home-day-badge warn">⚠️</span>'; }
+          else if (flights.length && flights[0].depart) { badge = '<span style="font-size:11px;color:var(--accent);font-weight:700;flex-shrink:0;">✈️ ' + flights[0].depart + '</span>'; }
+
+          // body — itinerary style
+          var bodyParts = [];
+
+          if (flights.length) {
+            var fc = flights.map(function(f) {
+              return '<div class="home-flight-card">' +
+                '<div class="home-flight-route">✈️ ' + (f.from||'') + ' → ' + (f.to||'') + '</div>' +
+                '<div class="home-flight-detail">' + (f.carrier||'') + (f.flightNum?' · '+f.flightNum:'') + (f.depart?' · Departs '+f.depart:'') + (f.arrive?' · Arrives '+f.arrive:'') + (f.notes?'<br>'+f.notes:'') + '</div>' +
+              '</div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Flight</div>' + fc);
+          }
+
+          if (day.accommodation.length) {
+            var ah = day.accommodation.map(function(a) {
+              return '<div class="home-item-row"><span>🏨</span><span class="home-item-row-main">' + (a.name||'') + '</span></div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Stay</div>' + ah);
+          }
+
+          if (day.activities.length) {
+            var acH = day.activities.map(function(a, i) {
+              var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
+              var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
+              var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
+              var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+              return '<div class="home-item-row">' +
+                '<span>' + emoji + '</span>' +
+                '<span class="home-item-row-main">' + a + (note ? '<br><span style="font-size:10px;color:var(--accent);font-style:italic;">' + note + '</span>' : '') + '</span>' +
+                '<a href="' + mapsUrl + '" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--accent);text-decoration:none;flex-shrink:0;">📍</a>' +
+              '</div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Activities</div>' + acH);
+          }
+
+          if (day.food.length) {
+            var fH = day.food.map(function(f) {
+              var fname = typeof f === 'string' ? f : f.name;
+              var needsRes = typeof f === 'object' && f.reservationRequired && !f.reservationBooked;
+              var isBooked = typeof f === 'object' && f.reservationRequired && f.reservationBooked;
+              var resBadge = needsRes
+                ? ' <span style="font-size:9px;font-weight:700;color:var(--danger);">⚠️ book</span>'
+                : isBooked ? ' <span style="font-size:9px;font-weight:700;color:var(--accent);">✅</span>' : '';
+              return '<div class="home-item-row"><span>🍜</span><span class="home-item-row-main">' + fname + resBadge + '</span></div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Food & Drinks</div>' + fH);
+          }
+
+          if (!bodyParts.length) {
+            bodyParts.push('<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">Nothing planned yet.</div>');
+          }
+
+          var actionsHtml =
+            '<div class="home-day-actions">' +
+              '<button class="home-action-btn primary" onclick="event.stopPropagation();toggleItinEdit(' + di + ');setView(\'itinerary\');">✏️ Edit</button>' +
+              '<button class="home-action-btn" onclick="event.stopPropagation();openDayPanelOnTab(currentTrip.days[' + di + '],\'activities\')">+ Activity</button>' +
+              '<button class="home-action-btn" onclick="event.stopPropagation();openDayPanelOnTab(currentTrip.days[' + di + '],\'food\')">+ Food</button>' +
+            '</div>';
+
+          var bodyId = 'home-day-body-' + di;
+          var isOpen = isToday || (status.mode === 'pre' && di === 0);
+
+          return '<div class="home-day-card' + (isToday ? ' is-today' : '') + '" id="home-day-card-' + di + '">' +
+            '<div class="home-day-header" onclick="toggleHomeDayBody(\'' + bodyId + '\')">' +
+              '<span style="font-size:20px;">' + getCityEmoji(day.city) + '</span>' +
+              '<div class="home-day-meta">' +
+                '<div class="home-day-num">Day ' + day.day + (isToday ? ' · TODAY' : '') + '</div>' +
+                '<div class="home-day-city">' + day.city + '</div>' +
+              '</div>' +
+              '<div class="home-day-date">' + day.date + '</div>' +
+              badge +
+            '</div>' +
+            '<div class="home-day-body' + (isOpen ? ' open' : '') + '" id="' + bodyId + '">' +
+              bodyParts.join('') + actionsHtml +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        return groupHeader + cardsHtml;
+      }).join('');
+
+      el.innerHTML = tilesHtml + gapsHtml + expandBarHtml + daysHtml;
+
+      // fetch weather async and update tile
+      fetchHomeWeather(nextCity.day.lat, nextCity.day.lng, function(w) {
+        var emojiEl = document.getElementById('home-weather-emoji');
+        var valEl = document.getElementById(weatherTileId);
+        var subEl = document.getElementById('home-weather-sub');
+        if (!emojiEl || !valEl) return;
+        if (w) {
+          emojiEl.textContent = w.emoji;
+          valEl.textContent = w.max + '°/' + w.min + '°';
+          subEl.textContent = 'Today in ' + nextCity.day.city.split('>').pop().trim();
+        } else {
+          emojiEl.textContent = '🌤️';
+          valEl.textContent = '--°';
+          subEl.textContent = 'Unavailable';
+        }
+      });
+
+      // scroll today into view
+      var scrollTarget = todayDayIndex >= 0 ? todayDayIndex : 0;
+      setTimeout(function() {
+        var card = document.getElementById('home-day-card-' + scrollTarget);
+        if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      }, 100);
+    }
+
+    function toggleHomeDayBody(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.toggle('open'); }
+    }
+
+    function homeExpandAll() {
+      document.querySelectorAll('.home-day-body').forEach(function(b) { b.classList.add('open'); });
+    }
+
+    function homeCollapseAll() {
+      document.querySelectorAll('.home-day-body').forEach(function(b) { b.classList.remove('open'); });
+    }
+
+    function showNextFlightModal() {
+      var nf = getNextFlight();
+      if (!nf) return;
+      var f = nf.flight;
+      showModal('✈️ Next Flight',
+        '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:14px;">' +
+          '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:8px;">' + (f.from||'') + ' → ' + (f.to||'') + '</div>' +
+          '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:4px;">' + nf.day.date + '</div>' +
+          (f.carrier ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">' + f.carrier + (f.flightNum?' · '+f.flightNum:'') + '</div>' : '') +
+          (f.depart ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Departs: ' + f.depart + '</div>' : '') +
+          (f.arrive ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Arrives: ' + f.arrive + '</div>' : '') +
+          (f.notes ? '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-top:8px;">' + f.notes + '</div>' : '') +
+        '</div>',
+        function() {}
+      );
+    }
+
+    function getTripStatus() {
+      var today = new Date(); today.setHours(0,0,0,0);
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      var firstDay = currentTrip.days[0];
+      var lastDay = currentTrip.days[currentTrip.days.length - 1];
+      function parseDate(d) {
+        var p = d.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var dt = new Date(yr, months[p[0]], parseInt(p[1])); dt.setHours(0,0,0,0); return dt;
+      }
+      var start = parseDate(firstDay);
+      var end = parseDate(lastDay);
+      var totalDays = currentTrip.days.length;
+      if (today < start) {
+        var diff = Math.round((start - today) / (1000 * 60 * 60 * 24));
+        return { mode: 'pre', text: diff + ' days until ' + getTripDestination() + ' 🛫', sub: firstDay.date + ' – ' + lastDay.date + ' · ' + totalDays + ' days' };
+      }
+      if (today > end) {
+        return { mode: 'post', text: 'Trip complete 🎉', sub: 'Hope it was amazing!' };
+      }
+      for (var i = 0; i < currentTrip.days.length; i++) {
+        var d = parseDate(currentTrip.days[i]);
+        if (d.getTime() === today.getTime()) {
+          return { mode: 'during', dayIndex: i, text: 'DAY ' + currentTrip.days[i].day + ' of ' + totalDays, sub: currentTrip.days[i].city + ' · ' + currentTrip.days[i].date };
+        }
+      }
+      return { mode: 'pre', text: 'Trip coming up 🛫', sub: firstDay.date + ' – ' + lastDay.date };
+    }
+
+    function getPlanningGaps() {
+      var emptyDays = 0, noAccom = 0, unbooked = 0;
+      currentTrip.days.forEach(function(day) {
+        normaliseAccom(day); normaliseFood(day);
+        if (!day.activities.length && !day.accommodation.length) { emptyDays++; }
+        if (!day.accommodation.length) { noAccom++; }
+        day.food.forEach(function(f) { if (f.reservationRequired && !f.reservationBooked) { unbooked++; } });
+      });
+      var gaps = [];
+      if (emptyDays > 0) { gaps.push(emptyDays + ' day' + (emptyDays > 1 ? 's' : '') + ' with nothing planned'); }
+      if (noAccom > 0) { gaps.push(noAccom + ' night' + (noAccom > 1 ? 's' : '') + ' without accommodation'); }
+      if (unbooked > 0) { gaps.push(unbooked + ' restaurant' + (unbooked > 1 ? 's' : '') + ' needing a reservation'); }
+      return gaps;
+    }
+
+    function renderHome() {
+      var el = document.getElementById('view-home');
+      if (!el) return;
+
+      var status = getTripStatus();
+      var gaps = getPlanningGaps();
+
+      // hero
+      var heroColor = status.mode === 'during' ? 'var(--accent)' : status.mode === 'post' ? 'var(--ink-muted)' : 'var(--ink)';
+      var heroHtml =
+        '<div class="home-hero">' +
+          '<div class="home-hero-status" style="color:' + heroColor + ';">' + status.text + '</div>' +
+          '<div class="home-hero-sub">' + status.sub + '</div>' +
+          // city pills
+          '<div class="home-city-pills">' +
+            (function() {
+              var seen = {}, pills = [];
+              currentTrip.days.forEach(function(day) {
+                var base = day.city.split('>').pop().trim();
+                if (!seen[base] && citySettings[base] && !citySettings[base].noMarker) {
+                  seen[base] = true;
+                  var s = citySettings[base];
+                  pills.push('<span class="home-city-pill" style="background:' + s.color + ';">' + s.emoji + ' ' + base + '</span>');
+                }
+              });
+              return pills.join('');
+            })() +
+          '</div>' +
+          (gaps.length ? '<div class="home-gaps">⚠️ ' + gaps.join(' · ') + '</div>' : '') +
+        '</div>';
+
+      // toggles
+      var toggleHtml =
+        '<div class="home-toggles">' +
+          '<button class="home-toggle-btn' + (homeToggles.stay ? ' active' : '') + '" onclick="toggleHomeSection(\'stay\')">🏨 Stay</button>' +
+          '<button class="home-toggle-btn' + (homeToggles.activities ? ' active' : '') + '" onclick="toggleHomeSection(\'activities\')">⚡ Activities</button>' +
+          '<button class="home-toggle-btn' + (homeToggles.food ? ' active' : '') + '" onclick="toggleHomeSection(\'food\')">🍜 Food</button>' +
+          '<button class="home-toggle-btn' + (homeToggles.transport ? ' active' : '') + '" onclick="toggleHomeSection(\'transport\')">✈️ Transport</button>' +
+        '</div>';
+
+      // day cards grouped by city
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      function parseDate(day) {
+        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0); return d;
+      }
+
+      var todayDayIndex = -1;
+      if (status.mode === 'during') { todayDayIndex = status.dayIndex; }
+
+      // group days by destination city
+      var groups = [], currentGroup = null;
+      currentTrip.days.forEach(function(day, di) {
+        var base = day.city.split('>').pop().trim();
+        if (!currentGroup || currentGroup.city !== base) {
+          currentGroup = { city: base, days: [] };
+          groups.push(currentGroup);
+        }
+        currentGroup.days.push({ day: day, index: di });
+      });
+
+      var daysHtml = groups.map(function(group) {
+        var s = citySettings[group.city] || { emoji: '📍', color: '#2D9E75' };
+        var groupHeader = '<div class="home-city-group-header">' + s.emoji + ' ' + group.city + '</div>';
+
+        var cardsHtml = group.days.map(function(entry) {
+          var day = entry.day;
+          var di = entry.index;
+          var isToday = di === todayDayIndex;
+          var dayDate = parseDate(day);
+          normaliseAccom(day); normaliseFood(day); normaliseDayTransport(day);
+
+          // flight detection
+          var flights = (day.transport || []).filter(function(t) { return t.type === 'Flight'; });
+          var hasUnplanned = !day.activities.length && !day.accommodation.length;
+
+          // badge
+          var badge = '';
+          if (isToday) { badge = '<span class="home-day-badge">TODAY</span>'; }
+          else if (hasUnplanned) { badge = '<span class="home-day-badge warn">⚠️</span>'; }
+          else if (flights.length) {
+            var f = flights[0];
+            badge = '<span style="font-size:11px;color:var(--accent);font-weight:700;flex-shrink:0;">✈️ ' + (f.depart || '') + '</span>';
+          }
+
+          // body content
+          var bodyParts = [];
+
+          // transport section — flights get a card, shown regardless of toggle if it's a flight day
+          if (flights.length) {
+            var flightCards = flights.map(function(f) {
+              return '<div class="home-flight-card">' +
+                '<div class="home-flight-route">✈️ ' + (f.from || '') + ' → ' + (f.to || '') + '</div>' +
+                '<div class="home-flight-detail">' +
+                  (f.carrier ? f.carrier + ' ' : '') + (f.flightNum ? f.flightNum : '') +
+                  (f.depart ? ' · Departs ' + f.depart : '') +
+                  (f.arrive ? ' · Arrives ' + f.arrive : '') +
+                  (f.notes ? '<br>' + f.notes : '') +
+                '</div>' +
+              '</div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Flight</div>' + flightCards);
+          } else if (homeToggles.transport && day.transport.length) {
+            var transHtml = day.transport.map(function(t) {
+              return '<div class="home-item-row"><span>🚌</span>' + (t.from || '') + (t.to ? ' → ' + t.to : '') + '</div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Transport</div>' + transHtml);
+          }
+
+          if (homeToggles.stay) {
+            var accomHtml = day.accommodation.length
+              ? day.accommodation.map(function(a) { return '<div class="home-item-row"><span>🏨</span>' + (a.name || '') + '</div>'; }).join('')
+              : '<div class="home-item-row" style="color:var(--ink-muted);font-style:italic;"><span>🏨</span>No accommodation added</div>';
+            bodyParts.push('<div class="home-section-label">Stay</div>' + accomHtml);
+          }
+
+          if (homeToggles.activities && day.activities.length) {
+            var actsHtml = day.activities.map(function(a, i) {
+              var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
+              var emoji = (activityCategories[cat] || activityCategories['default']).emoji;
+              return '<div class="home-item-row"><span>' + emoji + '</span>' + a + '</div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Activities</div>' + actsHtml);
+          }
+
+          if (homeToggles.food && day.food.length) {
+            var foodHtml = day.food.map(function(f) {
+              var fname = typeof f === 'string' ? f : f.name;
+              var needsRes = typeof f === 'object' && f.reservationRequired && !f.reservationBooked;
+              var badge2 = needsRes ? ' <span style="font-size:9px;font-weight:700;color:var(--danger);">⚠️ book</span>' : '';
+              return '<div class="home-item-row"><span>🍜</span>' + fname + badge2 + '</div>';
+            }).join('');
+            bodyParts.push('<div class="home-section-label">Food & Drinks</div>' + foodHtml);
+          }
+
+          var bodyHtml = bodyParts.length
+            ? bodyParts.join('')
+            : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">Nothing planned yet.</div>';
+
+          // actions row
+          var actionsHtml =
+            '<div class="home-day-actions">' +
+              '<button class="home-action-btn primary" onclick="event.stopPropagation();openDayPanel(currentTrip.days[' + di + '])">Edit day →</button>' +
+              '<button class="home-action-btn" onclick="event.stopPropagation();openDayPanelOnTab(currentTrip.days[' + di + '],\'activities\')">+ Activities</button>' +
+              '<button class="home-action-btn" onclick="event.stopPropagation();openDayPanelOnTab(currentTrip.days[' + di + '],\'food\')">+ Food</button>' +
+            '</div>';
+
+          var bodyId = 'home-day-body-' + di;
+          var isOpen = isToday || (status.mode === 'pre' && di === 0);
+
+          return '<div class="home-day-card' + (isToday ? ' is-today' : '') + '" id="home-day-card-' + di + '">' +
+            '<div class="home-day-header" onclick="toggleHomeDayBody(\'' + bodyId + '\')">' +
+              '<span style="font-size:20px;">' + getCityEmoji(day.city) + '</span>' +
+              '<div class="home-day-meta">' +
+                '<div class="home-day-num">Day ' + day.day + (isToday ? ' · TODAY' : '') + '</div>' +
+                '<div class="home-day-city">' + day.city + '</div>' +
+              '</div>' +
+              '<div class="home-day-date">' + day.date + '</div>' +
+              badge +
+            '</div>' +
+            '<div class="home-day-body' + (isOpen ? ' open' : '') + '" id="' + bodyId + '">' +
+              bodyHtml + actionsHtml +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        return groupHeader + cardsHtml;
+      }).join('');
+
+      el.innerHTML = heroHtml + toggleHtml + daysHtml;
+
+      // scroll today into view
+      if (todayDayIndex >= 0) {
+        setTimeout(function() {
+          var todayCard = document.getElementById('home-day-card-' + todayDayIndex);
+          if (todayCard) { todayCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }, 80);
+      } else if (status.mode === 'pre') {
+        setTimeout(function() {
+          var firstCard = document.getElementById('home-day-card-0');
+          if (firstCard) { firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        }, 80);
+      }
+    }
+
+    function toggleHomeDayBody(id) {
+      var el = document.getElementById(id);
+      if (el) { el.classList.toggle('open'); }
+    }
+
     // ===== VIEW SWITCHING =====
     function setView(view) {
       currentView = view;
@@ -1562,6 +2361,7 @@
         else { fab.classList.remove('active'); }
       }
       document.body.className = document.body.className.replace(/\bview-\S+/g, '').trim() + ' view-' + view;
+      document.getElementById('view-home').style.display = view === 'home' ? 'block' : 'none';
       document.getElementById('map').style.display = view === 'map' ? 'block' : 'none';
       document.getElementById('view-itinerary').style.display = view === 'itinerary' ? 'block' : 'none';
       document.getElementById('view-cards').style.display = (view === 'cards' && !isMobile()) ? 'block' : 'none';
@@ -1594,6 +2394,7 @@
         item.classList.toggle('active', item.textContent.toLowerCase().indexOf(view) !== -1);
       });
 
+      if (view === 'home') { renderHome(); }
       if (view === 'itinerary') { renderItinerary(); }
       if (view === 'cards') { renderKanban(); }
       if (view === 'split') { renderSplit(); }
@@ -1603,6 +2404,7 @@
       if (view === 'discovery') { renderDiscovery(); }
       if (view === 'map') { google.maps.event.trigger(map, 'resize'); }
       if (view !== 'split') { clearSplitActivityMarkers(); }
+      lastView = view;
     }
 
     function setTheme(theme) {
@@ -1872,8 +2674,7 @@
               normaliseAccom(sd); normaliseDayTransport(sd);
               var accomHtml = sd.accommodation.length ? sd.accommodation.map(function(a) { return '<div class="cal-detail-item">🏨 ' + a.name + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
               var actHtml = sd.activities.length ? sd.activities.map(function(a, i) { var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return '<div class="cal-detail-item">' + (activityCategories[cat]||activityCategories['default']).emoji + ' ' + a + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
-              var foodHtml = sd.food.length ? sd.food.map(function(f) { return '<div class="cal-detail-item">🍽️ ' + f + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
-              var dayIndex = sd.day - 1;
+var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 'string' ? f : f.name; return '<div class="cal-detail-item">🍽️ ' + fn + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';              var dayIndex = sd.day - 1;
               var makeCalItinItem = function(emoji, text, type, itemIndex) {
                 var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + sd.city.split('>').pop().trim() + ' ' + getTripDestination());
                 var detailId = 'cal-detail-' + sd.day + '-' + type + '-' + itemIndex;
@@ -3609,8 +4410,7 @@
 
     function addFromSearch(type, place) {
       if (type === 'activities') { currentDayItem.activities.push(place.name); currentDayItem.activityCategories.push('default'); }
-      else if (type === 'food') { currentDayItem.food.push({ name: place.name, link: '', reservationRequired: false, reservationBooked: false, notes: '', mustOrder: '' }); }
-      else if (type === 'accommodation') { normaliseAccom(currentDayItem); currentDayItem.accommodation.push({ name: place.name, notes: place.formatted_address || '', price: '' }); }
+else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.push({ name: place.name, link: '', bookingUrl: '', reservationRequired: false, reservationBooked: false, notes: '', mustOrder: '' }); }      else if (type === 'accommodation') { normaliseAccom(currentDayItem); currentDayItem.accommodation.push({ name: place.name, notes: place.formatted_address || '', price: '' }); }
       saveToStorage(); refreshPanelTabs(currentDayItem);
     }
 
@@ -3811,7 +4611,7 @@
         } else {
           setTheme(savedTheme);
         }
-        setView('map');
+        setView('home');
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
         if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
@@ -5778,6 +6578,7 @@ var pinDelay = Math.floor(Math.random() * 150);
               var panelOpen = document.getElementById('panel').classList.contains('open');
               if (pill && !panelOpen) { pill.classList.add('active'); }
             }
+            if (currentView === 'home') { renderHome(); }
             if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
             if (currentView === 'cards') { renderKanban(); }
             if (currentView === 'split') { renderSplit(); }
