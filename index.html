@@ -443,7 +443,8 @@
     .home-tile-editing { animation: homeTileWiggle 0.3s infinite; overflow: visible !important; }
     .home-tile-remove-btn { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 13px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; }
     .home-tile-add-btn { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; }
-    .home-edit-trigger { position: absolute; top: 16px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 5; }
+    .home-edit-trigger { position: fixed; top: 64px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 20; box-shadow: var(--card-shadow); }
+    @media (max-width: 640px) { .home-edit-trigger { top: 62px; } }
     .home-edit-trigger:hover { border-color: var(--accent); color: var(--accent); }
     .home-edit-trigger.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     .home-tile-tray { margin-top: 16px; padding: 14px; background: var(--white); border-radius: var(--radius); border: 1px solid var(--sand-dark); }
@@ -1972,6 +1973,9 @@
         }
       }
 
+      // ---- Floating edit button (fixed, outside grid) ----
+      var editBtnHtml = '<button class="home-edit-trigger" id="home-edit-btn" onclick="toggleHomeTileEdit()">✏️ Edit</button>';
+
       // ---- Locked row 1: countdown (always visible) ----
       var row1Html =
         '<div class="home-tile-row home-tile-row-2" style="margin-bottom:10px;">' +
@@ -1980,9 +1984,6 @@
             '<div class="home-tile-label">Countdown</div>' +
             '<div class="home-tile-value">' + countdownVal + '</div>' +
             '<div class="home-tile-sub">' + status.sub + '</div>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;justify-content:flex-end;">' +
-            '<button class="home-edit-trigger" id="home-edit-btn" onclick="toggleHomeTileEdit()">✏️ Edit</button>' +
           '</div>' +
         '</div>';
 
@@ -1999,7 +2000,21 @@
         '<div class="home-tile-tray-grid" id="home-tile-tray-grid"></div>' +
       '</div>';
 
-      var tilesHtml = '<div class="home-tiles">' + row1Html + sortableHtml + trayHtml + '</div>';
+      var tilesHtml = editBtnHtml + '<div class="home-tiles">' + row1Html + sortableHtml + trayHtml + '</div>';
+
+      // ---- Long-press on grid to enter edit mode ----
+      setTimeout(function() {
+        var grid = document.getElementById('home-sortable-grid');
+        if (!grid) return;
+        var pressTimer;
+        grid.addEventListener('pointerdown', function() {
+          pressTimer = setTimeout(function() {
+            if (!grid.classList.contains('is-editing')) { enterHomeTileEdit(); }
+          }, 600);
+        });
+        grid.addEventListener('pointerup', function() { clearTimeout(pressTimer); });
+        grid.addEventListener('pointermove', function() { clearTimeout(pressTimer); });
+      }, 100);
       // gaps bar
       var gapsHtml = '';
 
