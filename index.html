@@ -441,9 +441,10 @@
       50% { transform: rotate(1.5deg); }
     }
     .home-tile-editing { animation: homeTileWiggle 0.3s infinite; overflow: visible !important; }
-    .home-tile-remove-btn { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 13px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; }
-    .home-tile-add-btn { position: absolute; top: -7px; left: -7px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; line-height: 1; }
-    .home-edit-trigger { position: fixed; top: 64px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 20; box-shadow: var(--card-shadow); }
+.home-tile-remove-btn { position: absolute; top: -10px; left: -10px; width: 28px; height: 28px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .home-tile-add-btn { position: absolute; top: -10px; left: -10px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 18px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .home-sortable-drag { opacity: 1 !important; transform: scale(1.06) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; z-index: 999 !important; cursor: grabbing !important; }
+    .home-sortable-ghost { opacity: 0 !important; }    .home-edit-trigger { position: fixed; top: 64px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 20; box-shadow: var(--card-shadow); }
     @media (max-width: 640px) { .home-edit-trigger { top: 62px; } }
     .home-edit-trigger:hover { border-color: var(--accent); color: var(--accent); }
     .home-edit-trigger.active { background: var(--accent); color: #fff; border-color: var(--accent); }
@@ -2253,8 +2254,9 @@
           var id = tile.getAttribute('data-tile-id');
           var rmBtn = document.createElement('div');
           rmBtn.className = 'home-tile-remove-btn';
+          rmBtn.setAttribute('data-tile-id', id);
           rmBtn.textContent = '−';
-          rmBtn.onclick = function(e) { e.stopPropagation(); hideHomeTile(id); };
+          rmBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); hideHomeTile(id); };
           tile.appendChild(rmBtn);
         }
       });
@@ -2267,18 +2269,33 @@
       // Init Sortable
       if (homeTileSortable) { homeTileSortable.destroy(); homeTileSortable = null; }
       homeTileSortable = Sortable.create(grid, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
+        animation: 0,
+        ghostClass: 'home-sortable-ghost',
+        dragClass: 'home-sortable-drag',
+        delay: 120,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 4,
+        filter: '.home-tile-remove-btn',
+        preventOnFilter: false,
         onEnd: function() {
           var newOrder = [];
           grid.querySelectorAll('.home-tile[data-tile-id]').forEach(function(t) {
             newOrder.push(t.getAttribute('data-tile-id'));
           });
           var cfg = loadHomeTileConfig();
-          // Merge: hidden tiles keep their relative position at end
           cfg.hidden.forEach(function(id) { if (newOrder.indexOf(id) === -1) newOrder.push(id); });
           saveHomeTileConfig(newOrder, cfg.hidden);
         }
+      });
+
+      // Fix delete tap on mobile — use touchend directly on badges
+      grid.querySelectorAll('.home-tile-remove-btn').forEach(function(btn) {
+        btn.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var id = btn.getAttribute('data-tile-id');
+          if (id) { hideHomeTile(id); }
+        }, { passive: false });
       });
     }
 
