@@ -1993,8 +1993,20 @@ var row4Html =
         }
 
         if (day.accommodation.length) {
-          var ah = day.accommodation.map(function(a) {
-            return '<div class="home-item-row"><span>🏨</span><span class="home-item-row-main">' + (a.name||'') + '</span></div>';
+          var ah = day.accommodation.map(function(a, i) {
+            var detailId = 'home-accom-detail-' + i;
+            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent((a.name||'') + ' ' + day.city.split('>').pop().trim());
+            return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleHomeDayBody(\'' + detailId + '\')">' +
+                '<span>🏨</span>' +
+                '<span class="home-item-row-main">' + (a.name||'') + '</span>' +
+                '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
+              '</div>' +
+              '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
+                (a.notes ? '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">' + a.notes + '</div>' : '') +
+                '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+              '</div>' +
+            '</div>';
           }).join('');
           bodyParts.push('<div class="home-section-label">Stay</div>' + ah);
         }
@@ -2005,24 +2017,53 @@ var row4Html =
             var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
             var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
             var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
-            return '<div class="home-item-row">' +
-              '<span>' + emoji + '</span>' +
-              '<span class="home-item-row-main">' + a + (note ? '<br><span style="font-size:10px;color:var(--accent);font-style:italic;">' + note + '</span>' : '') + '</span>' +
-              '<a href="' + mapsUrl + '" target="_blank" onclick="event.stopPropagation()" style="font-size:10px;color:var(--accent);text-decoration:none;flex-shrink:0;">📍</a>' +
+            var detailId = 'home-act-detail-' + i;
+            return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleHomeDayBody(\'' + detailId + '\')">' +
+                '<span>' + emoji + '</span>' +
+                '<span class="home-item-row-main">' + a + '</span>' +
+                '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
+              '</div>' +
+              '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
+                (note ? '<div style="font-size:12px;color:var(--accent);font-style:italic;margin-bottom:8px;">' + note + '</div>' : '') +
+                '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+                  '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+                  '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim()) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink-muted);text-decoration:none;">🧭 Directions</a>' +
+                '</div>' +
+              '</div>' +
             '</div>';
           }).join('');
           bodyParts.push('<div class="home-section-label">Activities</div>' + acH);
         }
 
         if (day.food.length) {
-          var fH = day.food.map(function(f) {
+          var fH = day.food.map(function(f, i) {
             var fname = typeof f === 'string' ? f : f.name;
+            var fnotes = typeof f === 'object' ? (f.notes || '') : '';
+            var flink = typeof f === 'object' ? (f.link || '') : '';
+            var fbookingUrl = typeof f === 'object' ? (f.bookingUrl || '') : '';
             var needsRes = typeof f === 'object' && f.reservationRequired && !f.reservationBooked;
             var isBooked = typeof f === 'object' && f.reservationRequired && f.reservationBooked;
             var resBadge = needsRes
-              ? ' <span style="font-size:9px;font-weight:700;color:var(--danger);">⚠️ book</span>'
-              : isBooked ? ' <span style="font-size:9px;font-weight:700;color:var(--accent);">✅</span>' : '';
-            return '<div class="home-item-row"><span>🍜</span><span class="home-item-row-main">' + fname + resBadge + '</span></div>';
+              ? '<span style="font-size:9px;font-weight:700;color:var(--danger);margin-left:6px;">⚠️ book</span>'
+              : isBooked ? '<span style="font-size:9px;font-weight:700;color:var(--accent);margin-left:6px;">✅</span>' : '';
+            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+            var detailId = 'home-food-detail-' + i;
+            return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleHomeDayBody(\'' + detailId + '\')">' +
+                '<span>🍜</span>' +
+                '<span class="home-item-row-main">' + fname + resBadge + '</span>' +
+                '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
+              '</div>' +
+              '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
+                (fnotes ? '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">' + fnotes + '</div>' : '') +
+                '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+                  '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+                  (flink ? '<a href="' + flink + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink-muted);text-decoration:none;">🔗 Link</a>' : '') +
+                  (fbookingUrl && needsRes ? '<a href="' + fbookingUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--warn);text-decoration:none;">🔖 Book now</a>' : '') +
+                '</div>' +
+              '</div>' +
+            '</div>';
           }).join('');
           bodyParts.push('<div class="home-section-label">Food & Drinks</div>' + fH);
         }
@@ -2195,7 +2236,13 @@ var row4Html =
 
     function toggleHomeDayBody(id) {
       var el = document.getElementById(id);
-      if (el) { el.classList.toggle('open'); }
+      if (!el) return;
+      // day body uses class, detail divs use inline display
+      if (el.classList.contains('home-day-body')) {
+        el.classList.toggle('open');
+      } else {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      }
     }
 
     // ===== VIEW SWITCHING =====
