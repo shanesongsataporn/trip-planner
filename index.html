@@ -2252,11 +2252,13 @@
         tile.classList.add('home-tile-editing');
         if (!tile.querySelector('.home-tile-remove-btn')) {
           var id = tile.getAttribute('data-tile-id');
-          var rmBtn = document.createElement('div');
+          var rmBtn = document.createElement('a');
           rmBtn.className = 'home-tile-remove-btn';
           rmBtn.setAttribute('data-tile-id', id);
+          rmBtn.setAttribute('href', '#');
           rmBtn.textContent = '−';
-          rmBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); hideHomeTile(id); };
+          rmBtn.onclick = function(e) { e.stopPropagation(); e.preventDefault(); hideHomeTile(id); return false; };
+          rmBtn.addEventListener('touchend', function(e) { e.stopPropagation(); e.preventDefault(); hideHomeTile(id); }, { passive: false });
           tile.appendChild(rmBtn);
         }
       });
@@ -2272,9 +2274,9 @@
         animation: 0,
         ghostClass: 'home-sortable-ghost',
         dragClass: 'home-sortable-drag',
-        delay: 120,
+        delay: 200,
         delayOnTouchOnly: true,
-        touchStartThreshold: 4,
+        touchStartThreshold: 8,
         filter: '.home-tile-remove-btn',
         preventOnFilter: false,
         onEnd: function() {
