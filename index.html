@@ -441,9 +441,8 @@
       50% { transform: rotate(1.5deg); }
     }
     .home-tile-editing { animation: homeTileWiggle 0.3s infinite; overflow: visible !important; }
-.home-tile-remove-btn { position: absolute; top: -10px; left: -10px; width: 28px; height: 28px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-    .home-tile-add-btn { position: absolute; top: -10px; left: -10px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 18px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-    .home-sortable-drag { opacity: 1 !important; transform: scale(1.06) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; z-index: 999 !important; cursor: grabbing !important; }
+.home-tile-remove-btn { position: absolute; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 14px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .home-tile-add-btn { position: absolute; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }    .home-sortable-drag { opacity: 1 !important; transform: scale(1.06) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; z-index: 999 !important; cursor: grabbing !important; }
     .home-sortable-ghost { opacity: 0 !important; }    .home-edit-trigger { position: fixed; top: 64px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 20; box-shadow: var(--card-shadow); }
     @media (max-width: 640px) { .home-edit-trigger { top: 62px; } }
     .home-edit-trigger:hover { border-color: var(--accent); color: var(--accent); }
@@ -2008,13 +2007,34 @@
         var grid = document.getElementById('home-sortable-grid');
         if (!grid) return;
         var pressTimer;
-        grid.addEventListener('pointerdown', function() {
+        var startX, startY;
+        function startPress(x, y) {
+          if (grid.classList.contains('is-editing')) return;
+          startX = x; startY = y;
           pressTimer = setTimeout(function() {
-            if (!grid.classList.contains('is-editing')) { enterHomeTileEdit(); }
+            enterHomeTileEdit();
           }, 600);
-        });
-        grid.addEventListener('pointerup', function() { clearTimeout(pressTimer); });
-        grid.addEventListener('pointermove', function() { clearTimeout(pressTimer); });
+        }
+        function cancelPress(x, y) {
+          if (x !== undefined && startX !== undefined) {
+            var dx = Math.abs(x - startX);
+            var dy = Math.abs(y - startY);
+            if (dx > 8 || dy > 8) { clearTimeout(pressTimer); return; }
+          }
+          clearTimeout(pressTimer);
+        }
+        grid.addEventListener('touchstart', function(e) {
+          var t = e.touches[0];
+          startPress(t.clientX, t.clientY);
+        }, { passive: true });
+        grid.addEventListener('touchend', function() { clearTimeout(pressTimer); }, { passive: true });
+        grid.addEventListener('touchmove', function(e) {
+          var t = e.touches[0];
+          cancelPress(t.clientX, t.clientY);
+        }, { passive: true });
+        grid.addEventListener('mousedown', function(e) { startPress(e.clientX, e.clientY); });
+        grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
+        grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
       }, 100);
       // gaps bar
       var gapsHtml = '';
