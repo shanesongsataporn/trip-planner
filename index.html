@@ -4478,7 +4478,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
           }
         })(10);
         var pill = document.getElementById('mob-day-pill');
-        if (pill && isMobile()) { pill.classList.add('active'); }
+        if (pill && isMobile() && currentView === 'map') { pill.classList.add('active'); }
         fetchExchangeRates(function() {
           if (currentView === 'budget') { renderBudget(); }
         });
