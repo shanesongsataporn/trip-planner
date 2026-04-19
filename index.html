@@ -435,7 +435,9 @@
       #disc-map { height: 220px; }
     }
 /* ===== HOME VIEW ===== */
-    #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
+    #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow: hidden; background: var(--sand); z-index: 1; flex-direction: column; }
+    #home-tiles-sticky { padding: 20px 20px 0; flex-shrink: 0; }
+    #home-days-scroll { flex: 1; overflow-y: auto; padding: 0 20px 20px; scrollbar-width: thin; }
     @media (max-width: 640px) { #view-home { top: 54px; bottom: 0; } }
 
     /* Tile grid */
@@ -2026,9 +2028,18 @@
 
           var actionsHtml =
             '<div class="home-day-actions">' +
-              '<button class="home-action-btn primary" onclick="event.stopPropagation();toggleItinEdit(' + di + ');setView(\'itinerary\');">✏️ Edit</button>' +
-              '<button class="home-action-btn" onclick="event.stopPropagation();openDayPanelOnTab(currentTrip.days[' + di + '],\'activities\')">+ Activity</button>' +
-              '<button class="home-action-btn" onclick="event.stopPropagation();openDayPanelOnTab(currentTrip.days[' + di + '],\'food\')">+ Food</button>' +
+              '<button class="home-action-btn primary" id="home-edit-btn-' + di + '" onclick="event.stopPropagation();toggleHomeInlineEdit(' + di + ')">✏️ Edit</button>' +
+            '</div>' +
+            '<div id="home-inline-edit-' + di + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--sand-dark);">' +
+              '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Accommodation</div>' +
+              '<div id="home-inline-accom-' + di + '">' + renderInlineAccom(di) + '</div>' +
+              '<button class="add-btn" onclick="addItinAccom(' + di + ');refreshHomeInlineEdit(' + di + ')">+ Add accommodation</button>' +
+              '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Activities</div>' +
+              '<div id="home-inline-acts-' + di + '">' + renderInlineActivities(di) + '</div>' +
+              buildSearchBox('activities') +
+              '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin:16px 0 8px;">Food</div>' +
+              '<div id="home-inline-food-' + di + '">' + renderInlineFood(di) + '</div>' +
+              buildSearchBox('food') +
             '</div>';
 
           var bodyId = 'home-day-body-' + di;
@@ -2053,7 +2064,10 @@
         return groupHeader + cardsHtml;
       }).join('');
 
-      el.innerHTML = tilesHtml + gapsHtml + expandBarHtml + daysHtml;
+      el.style.display = 'flex';
+      el.innerHTML =
+        '<div id="home-tiles-sticky">' + tilesHtml + gapsHtml + '</div>' +
+        '<div id="home-days-scroll">' + expandBarHtml + daysHtml + '</div>';
 
       // fetch weather async and update tile
       fetchHomeWeather(nextCity.day.lat, nextCity.day.lng, function(w) {
@@ -2083,6 +2097,34 @@
     function toggleHomeDayBody(id) {
       var el = document.getElementById(id);
       if (el) { el.classList.toggle('open'); }
+    }
+
+    function toggleHomeInlineEdit(di) {
+      var panel = document.getElementById('home-inline-edit-' + di);
+      var btn = document.getElementById('home-edit-btn-' + di);
+      var body = document.getElementById('home-day-body-' + di);
+      if (!panel) return;
+      var isOpen = panel.style.display !== 'none';
+      panel.style.display = isOpen ? 'none' : 'block';
+      if (btn) { btn.textContent = isOpen ? '✏️ Edit' : '✓ Done'; btn.style.background = isOpen ? '' : 'none'; btn.style.border = isOpen ? '' : '1px solid var(--accent)'; btn.style.color = isOpen ? '' : 'var(--accent)'; }
+      if (!isOpen) {
+        currentDayItem = currentTrip.days[di];
+        activeInlineEditIndex = di;
+        initInlineSortables(di);
+        if (body) { body.classList.add('open'); }
+      } else {
+        activeInlineEditIndex = -1;
+      }
+    }
+
+    function refreshHomeInlineEdit(di) {
+      var accomEl = document.getElementById('home-inline-accom-' + di);
+      var actEl = document.getElementById('home-inline-acts-' + di);
+      var foodEl = document.getElementById('home-inline-food-' + di);
+      if (accomEl) { accomEl.innerHTML = renderInlineAccom(di); }
+      if (actEl) { actEl.innerHTML = renderInlineActivities(di); }
+      if (foodEl) { foodEl.innerHTML = renderInlineFood(di); }
+      initInlineSortables(di);
     }
 
     function homeExpandAll() {
