@@ -1043,10 +1043,10 @@
           var savedPhoto = cardPhotos[photoKey];
           var userNote = (item.cardNotes && item.cardNotes[actIndex]) || '';
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
+var mobPhotoId = 'kp-' + photoKey;
           var photoHtml = savedPhoto
             ? '<img style="width:100%;height:290px;object-fit:cover;display:block;" src="' + savedPhoto + '">'
-            : '<div style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';
-          return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
+            : '<div id="' + mobPhotoId + '" style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';          return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
             photoHtml +
             '<div style="padding:12px 14px;">' +
               '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;font-weight:700;">' + cat + '</div>' +
@@ -1060,8 +1060,15 @@
               '<button class="kbtn" onclick="editItinDay(' + dayIndex + ')">Edit</button>' +
             '</div>' +
           '</div>';
-        }).join('') : '<div style="padding:20px;text-align:center;color:var(--ink-muted);font-style:italic;font-size:13px;">No activities for this day</div>';
-
+}).join('') : '<div style="padding:20px;text-align:center;color:var(--ink-muted);font-style:italic;font-size:13px;">No activities for this day</div>';
+        // fetch photos for activities that don't have one yet
+        item.activities.forEach(function(activity, actIndex) {
+          var cat = (item.activityCategories && item.activityCategories[actIndex]) || 'default';
+          var photoKey = 'day' + item.day + '_act' + actIndex;
+          if (!cardPhotos[photoKey] && cat !== 'default') {
+            fetchKanbanPhoto(activity, item, 'kp-' + photoKey);
+          }
+        });
         var foodCardsHtml = item.food.length ? '<div style="margin-top:6px;"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;font-weight:700;padding:0 2px;">Food & Drinks</div>' + item.food.map(function(f, fi) {
           normaliseFood(item);
           var fname = f.name;
