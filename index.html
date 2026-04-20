@@ -2273,7 +2273,10 @@ var mobPhotoId = 'kp-' + photoKey;
         '</div>';
 
       floatEl.style.display = 'block';
-      setTimeout(function() { floatEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+      setTimeout(function() {
+        var container = document.getElementById('view-home');
+        if (container) { container.scrollTo({ top: floatEl.offsetTop - 20, behavior: 'smooth' }); }
+      }, 50);
     }
 
     function toggleHomeDayBody(id) {
