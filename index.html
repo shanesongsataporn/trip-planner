@@ -1875,7 +1875,7 @@ var mobPhotoId = 'kp-' + photoKey;
       function buildTileHtml(id) {
         switch(id) {
           case 'dates':
-            return '<div class="home-tile" data-tile-id="dates" onclick="">' +
+            return '<div class="home-tile" data-tile-id="dates" onclick="editDatesTile()">' +
               '<div class="home-tile-emoji">📅</div>' +
               '<div class="home-tile-label">Dates</div>' +
               '<div class="home-tile-value" style="font-size:13px;font-weight:800;">' + firstDay.date + '</div>' +
@@ -3488,6 +3488,57 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           refreshInlineEdit(dayIndex);
         }
       );
+    }
+
+    function editDatesTile() {
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      var firstDay = currentTrip.days[0];
+      var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+      var startDate = new Date(yr, months[p[0]], parseInt(p[1]));
+      var iso = startDate.getFullYear() + '-' + String(startDate.getMonth()+1).padStart(2,'0') + '-' + String(startDate.getDate()).padStart(2,'0');
+
+      var existing = document.getElementById('dates-edit-overlay');
+      if (existing) { existing.remove(); return; }
+
+      var overlay = document.createElement('div');
+      overlay.id = 'dates-edit-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:6000;display:flex;align-items:center;justify-content:center;';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+      overlay.innerHTML =
+        '<div style="background:var(--white);border-radius:var(--radius);padding:24px;width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.3);">' +
+          '<div style="font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px;">✈️ Change trip dates</div>' +
+          '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:16px;">All ' + currentTrip.days.length + ' days will shift to match the new start date.</div>' +
+          '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin-bottom:6px;">Start date</div>' +
+          '<input id="dates-edit-input" type="date" value="' + iso + '" style="width:100%;font-family:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);margin-bottom:16px;">' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button onclick="saveDatesTile()" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✓ Apply</button>' +
+            '<button onclick="document.getElementById(\'dates-edit-overlay\').remove()" style="flex:1;font-family:inherit;font-size:13px;font-weight:700;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">Cancel</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(overlay);
+    }
+
+    function saveDatesTile() {
+      var input = document.getElementById('dates-edit-input');
+      if (!input || !input.value) return;
+      var overlay = document.getElementById('dates-edit-overlay');
+      if (overlay) overlay.remove();
+      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+      var yr = currentTrip.year || new Date().getFullYear();
+      var firstDay = currentTrip.days[0];
+      var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+      var currentStart = new Date(yr, months[p[0]], parseInt(p[1]));
+      var newStart = new Date(input.value + 'T00:00:00');
+      var diffDays = Math.round((newStart - currentStart) / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) { renderHome(); return; }
+      shiftTripDates(diffDays);
+      saveToStorage();
+      rebuildTimeline();
+      rebuildMobStrip();
+      renderHome();
     }
 
     function shiftTripDates(days) {
