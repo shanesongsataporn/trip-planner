@@ -2267,9 +2267,10 @@ var mobPhotoId = 'kp-' + photoKey;
 
       var mapsUrl = buildGoogleMapsUrl(day);
       bodyEl.innerHTML = stopsHtml +
-        '<div style="display:flex;gap:8px;margin-top:14px;">' +
-          '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:700;text-decoration:none;">📍 Open in Google Maps</a>' +
-          '<button onclick="openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:10px 14px;background:var(--sand);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;">Edit</button>' +
+        '<div style="display:flex;gap:6px;margin-top:14px;">' +
+          '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:9px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:11px;font-weight:700;text-decoration:none;">📍 Maps</a>' +
+          '<button onclick="suggestRouteMobile(' + di + ')" style="flex:1;padding:9px;background:var(--sand);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;">✨ Suggest</button>' +
+          '<button onclick="openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:9px 12px;background:none;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink-muted);cursor:pointer;font-family:inherit;">Edit</button>' +
         '</div>';
 
       floatEl.style.display = 'block';
@@ -5782,9 +5783,9 @@ var pinDelay = Math.floor(Math.random() * 150);
           '<div style="font-size:11px;color:var(--ink-muted);">🚗 Travel: ' + Math.floor(totalTravelMins/60) + 'h ' + (totalTravelMins%60) + 'm (' + travelPct + '%) · 📍 Stops: ' + Math.floor(totalDwellMins/60) + 'h ' + (totalDwellMins%60) + 'm</div>' +
           travelWarning +
         '</div>' +
-        '<div style="display:flex;gap:8px;margin-top:12px;">' +
-          '<a href="' + mapsUrl + '" target="_blank" style="flex:1;text-decoration:none;"><button style="width:100%;font-family:inherit;font-size:12px;font-weight:700;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">📍 Open in Google Maps</button></a>' +
-          '<button onclick="clearRoute(currentDayItem)" style="font-family:inherit;font-size:12px;font-weight:600;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">Clear</button>' +
+        '<div style="display:flex;gap:6px;margin-top:12px;">' +
+          '<a href="' + mapsUrl + '" target="_blank" style="flex:1;text-decoration:none;"><button style="width:100%;font-family:inherit;font-size:11px;font-weight:700;padding:9px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">📍 Maps</button></a>' +
+          '<button onclick="clearRoute(currentDayItem)" style="font-family:inherit;font-size:11px;font-weight:600;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">Clear</button>' +
         '</div>' +
         '<div id="claude-route-review" style="margin-top:4px;">' +
           '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;display:flex;align-items:center;gap:10px;">' +
@@ -6935,11 +6936,11 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       var unlockedStopIndices = stops.map(function(s, i) { return i; })
         .filter(function(i) { return !lockedByStopIndex[i]; });
 
-      var waypoints = unlockedStopIndices.slice(1, unlockedStopIndices.length - 1).map(function(si) {
+      var waypoints = unlockedStopIndices.map(function(si) {
         return { location: stops[si].name + ' ' + city, stopover: true };
       });
-      var origin = unlockedStopIndices.length ? stops[unlockedStopIndices[0]].name + ' ' + city : startLoc;
-      var dest = unlockedStopIndices.length > 1 ? stops[unlockedStopIndices[unlockedStopIndices.length - 1]].name + ' ' + city : origin;
+      var origin = startLoc;
+      var dest = startLoc;
 
       var directionsService = new google.maps.DirectionsService();
       directionsService.route({
@@ -6953,12 +6954,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (status === google.maps.DirectionsStatus.OK) {
           var wayptOrder = result.routes[0].waypoint_order;
           var legs = result.routes[0].legs;
-          // first stop
-          finalOrder.push(unlockedStopIndices[0]);
-          finalLegs.push({ mode: defaultMode, durationMins: 0, distanceM: 0, locked: false, lockedTime: '' });
-          // middle stops in optimised order
           wayptOrder.forEach(function(oi, pos) {
-            var si = unlockedStopIndices[oi + 1];
+            var si = unlockedStopIndices[oi];
             var leg = legs[pos] || {};
             finalOrder.push(si);
             finalLegs.push({
@@ -6968,20 +6965,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
               locked: false, lockedTime: ''
             });
           });
-          // last stop
-          if (unlockedStopIndices.length > 1) {
-            var lastSi = unlockedStopIndices[unlockedStopIndices.length - 1];
-            var lastLeg = legs[legs.length - 1] || {};
-            finalOrder.push(lastSi);
-            finalLegs.push({
-              mode: defaultMode,
-              durationMins: lastLeg.duration ? Math.ceil(lastLeg.duration.value / 60) : 0,
-              distanceM: lastLeg.distance ? lastLeg.distance.value : 0,
-              locked: false, lockedTime: ''
-            });
-          }
         } else {
-          finalOrder = unlockedStopIndices;
+          finalOrder = unlockedStopIndices.slice();
           finalLegs = unlockedStopIndices.map(function() { return { mode: defaultMode, durationMins: 0, distanceM: 0, locked: false, lockedTime: '' }; });
         }
 
@@ -7010,7 +6995,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         var mapsUrl = buildGoogleMapsUrl(day);
         body.innerHTML = stopsHtml +
           '<div style="display:flex;gap:6px;margin-top:12px;">' +
-            '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:9px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:11px;font-weight:700;text-decoration:none;">📍 Open in Google Maps</a>' +
+          '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:700;text-decoration:none;">📍 Open in Google Maps</a>' +
             '<button onclick="closeMobDaySummary();openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:9px 12px;background:none;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink-muted);cursor:pointer;font-family:inherit;">Edit</button>' +
           '</div>';
 
