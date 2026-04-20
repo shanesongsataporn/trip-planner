@@ -2166,6 +2166,7 @@ var mobPhotoId = 'kp-' + photoKey;
         var actionsHtml =
           '<div class="home-day-actions">' +
             '<button class="home-action-btn primary" id="home-edit-btn-' + di + '" onclick="event.stopPropagation();toggleHomeInlineEdit(' + di + ')">✏️ Edit</button>' +
+            '<button class="home-action-btn" onclick="event.stopPropagation();showHomeRouteFloat(' + di + ')">🗺️ Route</button>' +
           '</div>' +
           '<div id="home-inline-edit-' + di + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--sand-dark);">' +
             '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Accommodation</div>' +
@@ -2192,6 +2193,13 @@ var mobPhotoId = 'kp-' + photoKey;
           '<div class="home-day-body open" id="home-day-body-' + di + '">' +
             bodyParts.join('') + actionsHtml +
           '</div>' +
+        '</div>' +
+        '<div id="home-route-float-' + di + '" style="display:none;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius);padding:16px;margin-top:8px;box-shadow:var(--card-shadow);">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+            '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);">🗺️ Today\'s Route</div>' +
+            '<button onclick="document.getElementById(\'home-route-float-' + di + '\').style.display=\'none\'" style="background:none;border:none;font-size:18px;color:var(--ink-muted);cursor:pointer;padding:0;line-height:1;">×</button>' +
+          '</div>' +
+          '<div id="home-route-float-body-' + di + '"></div>' +
         '</div>';
       }
 
@@ -2215,6 +2223,50 @@ var mobPhotoId = 'kp-' + photoKey;
         }
       });
 
+    }
+
+    function showHomeRouteFloat(di) {
+      var floatEl = document.getElementById('home-route-float-' + di);
+      var bodyEl = document.getElementById('home-route-float-body-' + di);
+      if (!floatEl || !bodyEl) { return; }
+
+      // toggle off if already open
+      if (floatEl.style.display !== 'none') { floatEl.style.display = 'none'; return; }
+
+      var day = currentTrip.days[di];
+      if (!day) { return; }
+
+      // no route yet — open panel Route tab
+      if (!day.routeOrder || !day.routeOrder.length) {
+        openDayPanelOnTab(day, 'route');
+        return;
+      }
+
+      // build stop list
+      var stops = getRouteStops(day);
+      var stopsHtml = day.routeOrder.map(function(si, pos) {
+        var stop = stops[si];
+        if (!stop) { return ''; }
+        var leg = (day.routeLegs && day.routeLegs[pos]) || {};
+        var travelHtml = pos > 0 && leg.durationMins
+          ? '<div style="font-size:10px;color:var(--ink-muted);padding:3px 0 3px 28px;">🚗 ' + leg.durationMins + 'min</div>'
+          : '';
+        var catEmoji = (activityCategories[stop.cat] && activityCategories[stop.cat].emoji) || '📍';
+        return travelHtml +
+          '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">' +
+            '<div style="width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (pos + 1) + '</div>' +
+            '<div style="font-size:13px;color:var(--ink);">' + catEmoji + ' ' + stop.name + '</div>' +
+          '</div>';
+      }).filter(Boolean).join('');
+
+      var mapsUrl = buildGoogleMapsUrl(day);
+      bodyEl.innerHTML = stopsHtml +
+        '<div style="display:flex;gap:8px;margin-top:14px;">' +
+          '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:700;text-decoration:none;">📍 Open in Google Maps</a>' +
+          '<button onclick="openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:10px 14px;background:var(--sand);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;">Edit</button>' +
+        '</div>';
+
+      floatEl.style.display = 'block';
     }
 
     function toggleHomeDayBody(id) {
