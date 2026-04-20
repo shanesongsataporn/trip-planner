@@ -6709,7 +6709,7 @@ var pinDelay = Math.floor(Math.random() * 150);
         data: JSON.stringify(trips[currentTripKey]),
         citySettings: JSON.stringify(citySettings),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(function(e) { console.warn('Firestore save failed:', e); });
+      }, { merge: true }).catch(function(e) { console.warn('Firestore save failed:', e); });
       localStorage.setItem('current_trip_key', currentTripKey);
     }
 
