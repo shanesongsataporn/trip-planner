@@ -2032,9 +2032,8 @@
           startPress(t.clientX, t.clientY);
         }, { passive: false });
         grid.addEventListener('touchend', function(e) {
-          e.preventDefault();
           clearTimeout(pressTimer);
-        }, { passive: false });
+        }, { passive: true });
         grid.addEventListener('touchmove', function(e) {
           var t = e.touches[0];
           cancelPress(t.clientX, t.clientY);
