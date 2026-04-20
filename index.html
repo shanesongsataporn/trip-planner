@@ -6022,7 +6022,19 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (!item || !item.routeOrder || !item.routeLegs) { return; }
     }
 
-    function callClaudeRouteReview(item, finalOrder, finalLegs) {
+    function callClaudeRouteReview(item, finalOrder, finalLegs, _retries) {
+      if (!anthropicApiKey) {
+        var retries = _retries === undefined ? 5 : _retries;
+        if (retries > 0) {
+          setTimeout(function() { callClaudeRouteReview(item, finalOrder, finalLegs, retries - 1); }, 1000);
+          return;
+        }
+        var reviewEl = document.getElementById('claude-route-review');
+        if (reviewEl) {
+          reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;font-size:12px;color:var(--ink-muted);">⚠️ AI review unavailable — API key not loaded. Try re-optimising.</div>';
+        }
+        return;
+      }
       var stops = getRouteStops(item);
       var city = item.city.split('>').pop().trim();
       var destination = getTripDestination();
@@ -6197,8 +6209,9 @@ var pinDelay = Math.floor(Math.random() * 150);
         ? '<ul style="margin:6px 0 0 0;padding-left:16px;">' + parsed.issues.map(function(iss) { return '<li style="font-size:11px;color:var(--ink-muted);margin-bottom:3px;">' + iss + '</li>'; }).join('') + '</ul>'
         : '';
 
-      var hasDifferentOrder = parsed.suggestedOrder && JSON.stringify(parsed.suggestedOrder) !== JSON.stringify(finalOrder);
-      var stops = getRouteStops(item);
+console.log('[Claude Review] parsed:', JSON.stringify(parsed));
+      window._claudeSuggestedOrder = parsed.suggestedOrder || null;
+      var hasDifferentOrder = parsed.suggestedOrder && Array.isArray(parsed.suggestedOrder) && JSON.stringify(parsed.suggestedOrder) !== JSON.stringify(finalOrder);      var stops = getRouteStops(item);
       var suggestedHtml = '';
       if (hasDifferentOrder) {
         suggestedHtml = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--sand-dark);">' +
@@ -6213,8 +6226,7 @@ var pinDelay = Math.floor(Math.random() * 150);
               '<div style="font-size:12px;color:var(--ink);">' + stop.name + '</div>' +
             '</div>';
           }).filter(Boolean).join('') +
-          '<button onclick="applyClaudeOrder(' + JSON.stringify(parsed.suggestedOrder) + ')" style="width:100%;margin-top:10px;font-family:inherit;font-size:12px;font-weight:700;padding:9px;border-radius:var(--radius-sm);border:none;background:' + verdictColor + ';color:#fff;cursor:pointer;">✨ Apply Claude\'s order</button>' +
-        '</div>';
+'<button id="claude-apply-btn" onclick="applyClaudeOrder()" style="width:100%;margin-top:10px;font-family:inherit;font-size:12px;font-weight:700;padding:9px;border-radius:var(--radius-sm);border:none;background:' + verdictColor + ';color:#fff;cursor:pointer;">✨ Apply Claude\'s order</button>' +        '</div>';
       }
 
       reviewEl.innerHTML =
@@ -6226,7 +6238,11 @@ var pinDelay = Math.floor(Math.random() * 150);
         '</div>';
     }
 
-    function applyClaudeOrder(newOrder) {
+    function applyClaudeOrder() {
+      var newOrder = window._claudeSuggestedOrder;
+      if (!currentDayItem || !newOrder) { return; }
+      var btn = document.getElementById('claude-apply-btn');
+      if (btn) { btn.textContent = '✅ Applied!'; btn.disabled = true; btn.style.opacity = '0.7'; }
       if (!currentDayItem) { return; }
       var oldLegs = currentDayItem.routeLegs || [];
       var oldOrder = currentDayItem.routeOrder || [];
