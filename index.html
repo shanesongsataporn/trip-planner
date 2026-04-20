@@ -6705,6 +6705,9 @@ var pinDelay = Math.floor(Math.random() * 150);
 
     // ===== STORAGE =====
     function saveToStorage() {
+      // IMPORTANT: always use { merge: true } here.
+      // cardPhotos and wishlist are saved separately by saveCardPhotos() and saveDiscWishlist().
+      // Without merge:true, .set() overwrites the whole Firestore doc and wipes those fields.
       db.collection('trips').doc(currentTripKey).set({
         data: JSON.stringify(trips[currentTripKey]),
         citySettings: JSON.stringify(citySettings),
