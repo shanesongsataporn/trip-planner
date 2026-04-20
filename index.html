@@ -5581,9 +5581,6 @@ var pinDelay = Math.floor(Math.random() * 150);
     function getRouteStops(item) {
       normaliseAccom(item); normaliseFood(item);
       var stops = [];
-      if (item.accommodation && item.accommodation.length && item.accommodation[0].name) {
-        stops.push({ name: item.accommodation[0].name, type: 'accommodation', cat: 'default', index: 0, isHotel: true });
-      }
       item.activities.forEach(function(a, i) {
         var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
         stops.push({ name: a, type: 'activity', cat: cat, index: i });
@@ -6974,6 +6971,14 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         day.routeLegs = finalLegs;
         currentRouteResult = { applied: true };
         saveToStorage();
+
+        // re-show summary and route card after saveToStorage triggers onSnapshot
+        setTimeout(function() {
+          var summary = document.getElementById('mob-day-summary');
+          var card = document.getElementById('mob-summary-route-card');
+          if (summary) { summary.classList.add('open'); }
+          if (card) { card.style.display = 'block'; }
+        }, 800);
 
         // render inline result
         var stopsHtml = finalOrder.map(function(si, pos) {
