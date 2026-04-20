@@ -2208,12 +2208,6 @@ var mobPhotoId = 'kp-' + photoKey;
         }
       });
 
-      // scroll today into view
-      var scrollTarget = todayDayIndex >= 0 ? todayDayIndex : 0;
-      setTimeout(function() {
-        var card = document.getElementById('home-day-card-' + scrollTarget);
-        if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-      }, 100);
     }
 
     function toggleHomeDayBody(id) {
@@ -2533,7 +2527,6 @@ var mobPhotoId = 'kp-' + photoKey;
         item.classList.toggle('active', item.textContent.toLowerCase().indexOf(view) !== -1);
       });
 
-      localStorage.setItem('last_view', view);
       if (view === 'home') { renderHome(); }
       if (view === 'itinerary') { renderItinerary(); }
       if (view === 'cards') { renderKanban(); }
@@ -4853,8 +4846,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         } else {
           setTheme(savedTheme);
         }
-        var savedView = localStorage.getItem('last_view') || 'home';
-        setView(savedView);
+        setView('home');
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
         if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
