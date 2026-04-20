@@ -2236,9 +2236,15 @@ var mobPhotoId = 'kp-' + photoKey;
       var day = currentTrip.days[di];
       if (!day) { return; }
 
-      // no route yet — open panel Route tab
+      // no route yet — show prompt in float card
       if (!day.routeOrder || !day.routeOrder.length) {
-        openDayPanelOnTab(day, 'route');
+        bodyEl.innerHTML =
+          '<div style="text-align:center;padding:16px 0;">' +
+            '<div style="font-size:24px;margin-bottom:8px;">🗺️</div>' +
+            '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:14px;">No optimised route yet for today.</div>' +
+            '<button onclick="openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:10px 20px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">✨ Optimise today\'s route</button>' +
+          '</div>';
+        floatEl.style.display = 'block';
         return;
       }
 
@@ -2267,6 +2273,7 @@ var mobPhotoId = 'kp-' + photoKey;
         '</div>';
 
       floatEl.style.display = 'block';
+      setTimeout(function() { floatEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
     }
 
     function toggleHomeDayBody(id) {
