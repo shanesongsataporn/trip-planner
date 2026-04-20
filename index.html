@@ -605,7 +605,7 @@
       #mob-search-btn {
         display: none;
         position: fixed; bottom: 24px; left: 24px;
-        z-index: 2500;
+        z-index: 1900;
         width: 48px; height: 48px; border-radius: 50%;
         background: var(--white); border: 1px solid var(--sand-dark);
         box-shadow: 0 4px 20px rgba(0,0,0,0.25);
@@ -6192,8 +6192,9 @@ var pinDelay = Math.floor(Math.random() * 150);
         '1. Review the route order critically for: backtracking, meal timing, heat exposure, opening hour conflicts, day-of-week issues, overloaded schedule\n' +
         '2. Suggest a better order if one exists (respecting locked stops)\n' +
         '3. Flag any activities that would fit much better on an adjacent day\n' +
-        '4. suggestedOrder must contain EXACTLY these indices: ' + JSON.stringify(finalOrder) + '\n' +
-        '5. Locked indices that must stay in position: ' + JSON.stringify(lockedIndices) + '\n\n' +
+        '4. suggestedOrder must contain EXACTLY these indices (in whatever order you think is best): ' + JSON.stringify(finalOrder.slice().sort(function(a,b){return a-b;})) + '\n' +
+        '5. These stop indices are LOCKED and must stay in their current positions — do not move them: ' + JSON.stringify(lockedIndices) + '\n' +
+        '6. Current order for reference (this is what you are reviewing): ' + JSON.stringify(finalOrder) + '\n\n' +
         'Return ONLY valid JSON, no markdown, no extra text:\n' +
         '{\n' +
         '  "verdict": "good" or "suggestion" or "warning",\n' +
@@ -6317,8 +6318,7 @@ console.log('[Claude Review] parsed:', JSON.stringify(parsed));
       if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
       var reviewEl = document.getElementById('claude-route-review');
       if (reviewEl) {
-        reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;font-size:12px;color:var(--accent);">✅ Claude\'s suggested order applied. Re-optimise to review again.</div>';
-      }
+reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;font-size:12px;color:var(--accent);">✅ Claude\'s order applied.</div>';      }
     }
 
     function buildGoogleMapsUrl(item) {
