@@ -4013,16 +4013,29 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       );
     }
 
+    var fetchingPhotos = {};
     function fetchKanbanPhoto(activity, item, photoId) {
+      var photoKey = photoId.replace('kp-', '');
+      if (fetchingPhotos[photoKey]) { return; }
+      fetchingPhotos[photoKey] = true;
       var service = new google.maps.places.PlacesService(map);
       service.findPlaceFromQuery({ query: activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination(), fields: ['place_id'] }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           service.getDetails({ placeId: results[0].place_id, fields: ['photos'] }, function(details, detailStatus) {
+            delete fetchingPhotos[photoKey];
             if (detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0) {
+              var url = details.photos[0].getUrl({ maxWidth: 270, maxHeight: 120 });
+              cardPhotos[photoKey] = url;
               var el = document.getElementById(photoId);
-              if (el) { el.outerHTML = '<img class="kanban-card-photo" src="' + details.photos[0].getUrl({ maxWidth: 270, maxHeight: 120 }) + '">'; }
+              if (el) { el.outerHTML = '<img class="kanban-card-photo" src="' + url + '">'; }
+              else {
+                var allPlaceholders = document.querySelectorAll('[id="' + photoId + '"]');
+                allPlaceholders.forEach(function(p) { p.outerHTML = '<img class="kanban-card-photo" src="' + url + '">'; });
+              }
             }
           });
+        } else {
+          delete fetchingPhotos[photoKey];
         }
       });
     }
