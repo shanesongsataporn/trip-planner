@@ -6269,6 +6269,10 @@ console.log('[Claude Review] parsed:', JSON.stringify(parsed));
       saveToStorage();
       var resultsEl = document.getElementById('route-results');
       if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
+      var reviewEl = document.getElementById('claude-route-review');
+      if (reviewEl) {
+        reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;font-size:12px;color:var(--accent);">✅ Claude\'s suggested order applied. Re-optimise to review again.</div>';
+      }
     }
 
     function buildGoogleMapsUrl(item) {
