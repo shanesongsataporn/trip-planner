@@ -2080,15 +2080,16 @@ var mobPhotoId = 'kp-' + photoKey;
           var ah = day.accommodation.map(function(a, i) {
             var detailId = 'home-accom-detail-' + i;
             var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent((a.name||'') + ' ' + day.city.split('>').pop().trim());
+            var aDetailId = 'home-accom-detail-' + di + '-' + i;
             return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
-              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleHomeDayBody(\'' + detailId + '\')">' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleItinItem(\'' + aDetailId + '\')">' +
                 '<span>🏨</span>' +
                 '<span class="home-item-row-main">' + (a.name||'') + '</span>' +
                 '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
               '</div>' +
-              '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
-                (a.notes ? '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:8px;">' + a.notes + '</div>' : '') +
-                '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+              '<div id="' + aDetailId + '" style="display:none;margin:0 0 8px 0;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
+                (a.notes ? '<div style="font-size:12px;color:var(--ink-light);font-style:italic;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sand-dark);">' + a.notes + '</div>' : '') +
+                '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
               '</div>' +
             '</div>';
           }).join('');
@@ -2102,17 +2103,23 @@ var mobPhotoId = 'kp-' + photoKey;
             var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
             var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
             var detailId = 'home-act-detail-' + i;
+            var actDetailId = 'home-act-detail-' + di + '-' + i;
+            var photoKey = 'day' + (di+1) + '_act' + i;
+            var photo = cardPhotos[photoKey] || '';
             return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
-              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleHomeDayBody(\'' + detailId + '\')">' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleItinItem(\'' + actDetailId + '\')">' +
                 '<span>' + emoji + '</span>' +
                 '<span class="home-item-row-main">' + a + '</span>' +
                 '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
               '</div>' +
-              '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
-                (note ? '<div style="font-size:12px;color:var(--accent);font-style:italic;margin-bottom:8px;">' + note + '</div>' : '') +
-                '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
-                  '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
-                  '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim()) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink-muted);text-decoration:none;">🧭 Directions</a>' +
+              '<div id="' + actDetailId + '" style="display:none;margin:0 0 8px 0;background:var(--sand);border-radius:8px;overflow:hidden;">' +
+                (photo ? '<img src="' + photo + '" style="width:100%;height:140px;object-fit:cover;display:block;">' : '') +
+                '<div style="padding:10px 12px;">' +
+                  (note ? '<div style="font-size:12px;color:var(--ink-light);font-style:italic;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sand-dark);">' + note + '</div>' : '') +
+                  '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+                    '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+                    '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(a + ' ' + day.city.split(\'>\').pop().trim()) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-muted);text-decoration:none;">🧭 Directions</a>' +
+                  '</div>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -2133,17 +2140,18 @@ var mobPhotoId = 'kp-' + photoKey;
               : isBooked ? '<span style="font-size:9px;font-weight:700;color:var(--accent);margin-left:6px;">✅</span>' : '';
             var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
             var detailId = 'home-food-detail-' + i;
+            var fDetailId = 'home-food-detail-' + di + '-' + i;
             return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
-              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleHomeDayBody(\'' + detailId + '\')">' +
+              '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleItinItem(\'' + fDetailId + '\')">' +
                 '<span>🍜</span>' +
                 '<span class="home-item-row-main">' + fname + resBadge + '</span>' +
                 '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
               '</div>' +
-              '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
-                (fnotes ? '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:8px;">' + fnotes + '</div>' : '') +
-                '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
-                  '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
-                  (flink ? '<a href="' + flink + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink-muted);text-decoration:none;">🔗 Link</a>' : '') +
+              '<div id="' + fDetailId + '" style="display:none;margin:0 0 8px 0;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
+                (fnotes ? '<div style="font-size:12px;color:var(--ink-light);font-style:italic;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sand-dark);">' + fnotes + '</div>' : '') +
+                '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+                  '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+                  (flink ? '<a href="' + flink + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-muted);text-decoration:none;">🔗 Link</a>' : '') +
                   (fbookingUrl && needsRes ? '<a href="' + fbookingUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--warn);text-decoration:none;">🔖 Book now</a>' : '') +
                 '</div>' +
               '</div>' +
