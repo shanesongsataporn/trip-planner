@@ -339,9 +339,11 @@
     .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--ink-muted); border-radius: 1px; }
 
     /* ===== SPLIT VIEW ===== */
-    #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; }
-    #split-map { position: absolute; top: 0; left: 0; width: 55%; bottom: 0; overflow: hidden; }
-    #split-list { position: absolute; top: 0; left: 55%; right: 0; bottom: 0; overflow-y: auto; background: var(--white); border-left: 1px solid var(--sand-dark); scrollbar-width: thin; }
+   #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; flex-direction: column; }
+    #split-map { position: absolute; top: 0; left: 0; right: 0; height: 40%; overflow: hidden; }
+    #split-divider { position: absolute; left: 0; right: 0; height: 10px; background: var(--sand-dark); cursor: row-resize; touch-action: none; display: flex; align-items: center; justify-content: center; z-index: 10; }
+    #split-divider::after { content: ''; width: 36px; height: 3px; border-radius: 999px; background: var(--ink-muted); opacity: 0.4; }
+    #split-list { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--white); border-top: 1px solid var(--sand-dark); scrollbar-width: thin; }
     .split-day-item { padding: 14px 18px; border-bottom: 1px solid var(--sand-dark); cursor: pointer; transition: background 0.15s; }
     .split-day-item:hover { background: var(--sand); }
     .split-day-item.active { background: var(--accent-light); border-left: 3px solid var(--accent); }
@@ -950,6 +952,7 @@
   </div>
   <div id="view-split">
     <div id="split-map"></div>
+    <div id="split-divider"></div>
     <div id="split-list"></div>
     <div id="split-float-card">
       <button id="split-float-card-close" onclick="closeSplitFloatCard()">x</button>
@@ -3092,8 +3095,8 @@ var mobPhotoId = 'kp-' + photoKey;
 
     function structDayTap(di, e) {
       if (e.target.classList.contains('struct-day-delete') || e.target.classList.contains('struct-drag-handle')) return;
-      var item = currentTrip.days[di];
-      if (item) openDayPanel(item);
+      setView('split');
+      setTimeout(function() { selectSplitDay(di); }, 150);
     }
 
     function structAddDay(city, e) {
@@ -4754,6 +4757,49 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     // ===== SPLIT VIEW =====
+    function initSplitDivider() {
+      var container = document.getElementById('view-split');
+      var mapPane = document.getElementById('split-map');
+      var divider = document.getElementById('split-divider');
+      var listPane = document.getElementById('split-list');
+      if (!container || !divider) return;
+
+      var savedPos = parseFloat(localStorage.getItem('split_divider_pos'));
+      var pct = (!isNaN(savedPos) && savedPos >= 20 && savedPos <= 70) ? savedPos : 40;
+      mapPane.style.height = pct + '%';
+      divider.style.top = pct + '%';
+      listPane.style.top = 'calc(' + pct + '% + 10px)';
+
+      var dragging = false;
+
+      divider.addEventListener('pointerdown', function(e) {
+        dragging = true;
+        divider.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+
+      divider.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        var rect = container.getBoundingClientRect();
+        var newPct = ((e.clientY - rect.top) / rect.height) * 100;
+        newPct = Math.max(20, Math.min(70, newPct));
+        mapPane.style.height = newPct + '%';
+        divider.style.top = newPct + '%';
+        listPane.style.top = 'calc(' + newPct + '% + 10px)';
+        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
+      });
+
+      divider.addEventListener('pointerup', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        var rect = container.getBoundingClientRect();
+        var newPct = ((e.clientY - rect.top) / rect.height) * 100;
+        newPct = Math.max(20, Math.min(70, newPct));
+        localStorage.setItem('split_divider_pos', newPct);
+        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
+      });
+    }
+
     function renderSplit() {
       document.getElementById('split-list').innerHTML = currentTrip.days.map(function(item, index) {
         normaliseAccom(item); normaliseDayTransport(item);
@@ -4774,6 +4820,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       if (!splitMap) {
         splitMap = new google.maps.Map(document.getElementById('split-map'), { center: { lat: 15.5, lng: 100.5 }, zoom: 6, mapTypeId: 'roadmap', disableDefaultUI: false, mapId: 'DEMO_MAP_ID', gestureHandling: 'greedy' });
       } else { google.maps.event.trigger(splitMap, 'resize'); }
+      initSplitDivider();
       setTimeout(function() {
         var todayIdx = 0;
         var now = new Date();
