@@ -339,7 +339,8 @@
     .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--ink-muted); border-radius: 1px; }
 
     /* ===== SPLIT VIEW ===== */
-   #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; flex-direction: column; }
+   #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; }
+    #view-split.active { display: block; }
     #split-map { position: absolute; top: 0; left: 0; right: 0; height: 40%; overflow: hidden; }
     #split-divider { position: absolute; left: 0; right: 0; height: 10px; background: var(--sand-dark); cursor: row-resize; touch-action: none; display: flex; align-items: center; justify-content: center; z-index: 10; }
     #split-divider::after { content: ''; width: 36px; height: 3px; border-radius: 999px; background: var(--ink-muted); opacity: 0.4; }
@@ -4764,24 +4765,25 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var divider = document.getElementById('split-divider');
       var listPane = document.getElementById('split-list');
       if (!container || !divider) return;
-      if (splitDividerInited) {
-        // just restore saved position
-        var savedPos = parseFloat(localStorage.getItem('split_divider_pos'));
-        var pct = (!isNaN(savedPos) && savedPos >= 20 && savedPos <= 70) ? savedPos : 40;
-        mapPane.style.height = pct + '%';
-        divider.style.top = pct + '%';
-        listPane.style.top = 'calc(' + pct + '% + 10px)';
-        listPane.style.bottom = '0';
-        return;
+      function applyDividerPct(newPct) {
+        var containerH = container.getBoundingClientRect().height;
+        var mapH = Math.round(containerH * newPct / 100);
+        var listTop = mapH + 10;
+        var listH = containerH - listTop;
+        mapPane.style.height = mapH + 'px';
+        divider.style.top = mapH + 'px';
+        listPane.style.top = listTop + 'px';
+        listPane.style.height = listH + 'px';
+        listPane.style.bottom = '';
+        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
       }
-      splitDividerInited = true;
 
       var savedPos = parseFloat(localStorage.getItem('split_divider_pos'));
       var pct = (!isNaN(savedPos) && savedPos >= 20 && savedPos <= 70) ? savedPos : 40;
-      mapPane.style.height = pct + '%';
-      divider.style.top = pct + '%';
-      listPane.style.top = 'calc(' + pct + '% + 10px)';
-      listPane.style.bottom = '0';
+      applyDividerPct(pct);
+
+      if (splitDividerInited) return;
+      splitDividerInited = true;
 
       var dragging = false;
 
@@ -4791,16 +4793,25 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         e.preventDefault();
       });
 
+      function applyDividerPct(newPct) {
+        var containerH = container.getBoundingClientRect().height;
+        var mapH = Math.round(containerH * newPct / 100);
+        var listTop = mapH + 10;
+        var listH = containerH - listTop;
+        mapPane.style.height = mapH + 'px';
+        divider.style.top = mapH + 'px';
+        listPane.style.top = listTop + 'px';
+        listPane.style.height = listH + 'px';
+        listPane.style.bottom = '';
+        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
+      }
+
       divider.addEventListener('pointermove', function(e) {
         if (!dragging) return;
         var rect = container.getBoundingClientRect();
         var newPct = ((e.clientY - rect.top) / rect.height) * 100;
         newPct = Math.max(20, Math.min(70, newPct));
-        mapPane.style.height = newPct + '%';
-        divider.style.top = newPct + '%';
-        listPane.style.top = 'calc(' + newPct + '% + 10px)';
-        listPane.style.bottom = '0';
-        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
+        applyDividerPct(newPct);
       });
 
       divider.addEventListener('pointerup', function(e) {
@@ -4809,9 +4820,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         var rect = container.getBoundingClientRect();
         var newPct = ((e.clientY - rect.top) / rect.height) * 100;
         newPct = Math.max(20, Math.min(70, newPct));
-        listPane.style.bottom = '0';
+        applyDividerPct(newPct);
         localStorage.setItem('split_divider_pos', newPct);
-        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
       });
     }
 
