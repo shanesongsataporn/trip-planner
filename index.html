@@ -383,10 +383,69 @@
     .cal-detail-label { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
     .cal-detail-item { font-size: 13px; color: var(--ink-light); padding: 3px 0; display: flex; align-items: center; gap: 8px; }
 
-    /* ===== BUDGET VIEW ===== */
+   /* ===== BUDGET VIEW ===== */
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-discovery { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; scrollbar-width: thin; flex-direction: column; }
+
+    /* ===== STRUCTURE VIEW ===== */
+    #view-structure { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; scrollbar-width: thin; }
+    #struct-inner { max-width: 680px; margin: 0 auto; padding: 16px 16px 40px; }
+
+    /* City blocks */
+    .struct-city-block { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); margin-bottom: 12px; overflow: hidden; }
+    .struct-city-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: grab; border-left: 5px solid #ccc; }
+    .struct-city-header:active { cursor: grabbing; }
+    .struct-city-emoji { font-size: 20px; flex-shrink: 0; }
+    .struct-city-name { font-weight: 700; font-size: 15px; color: var(--ink); flex: 1; text-transform: uppercase; letter-spacing: 0.04em; }
+    .struct-city-meta { font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+    .struct-city-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .struct-add-day-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1.5px solid var(--accent); color: var(--accent); background: none; cursor: pointer; white-space: nowrap; }
+    .struct-add-day-btn:active { background: var(--accent-light); }
+    .struct-remove-city-btn { font-size: 16px; color: var(--ink-muted); background: none; border: none; cursor: pointer; padding: 2px 6px; line-height: 1; }
+    .struct-remove-city-btn:active { color: var(--danger); }
+
+    /* Day rows */
+    .struct-day-list { padding: 0 0 8px; }
+    .struct-day-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--sand); cursor: pointer; transition: background 0.15s; }
+    .struct-day-row:active { background: var(--sand); }
+    .struct-day-row.has-transport-warning { background: #fff8f0; }
+    .struct-day-num { font-size: 11px; font-weight: 700; color: var(--ink-muted); min-width: 36px; }
+    .struct-day-date { font-size: 13px; color: var(--ink); flex: 1; }
+    .struct-day-label { font-size: 12px; color: var(--ink-muted); flex: 1; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+    .struct-day-warning { font-size: 11px; color: var(--warn); flex-shrink: 0; }
+    .struct-day-delete { font-size: 15px; color: var(--ink-muted); background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+    .struct-day-row:hover .struct-day-delete { opacity: 1; }
+    .struct-drag-handle { color: var(--ink-muted); font-size: 16px; cursor: grab; flex-shrink: 0; padding: 0 2px; user-select: none; }
+    .struct-drag-handle:active { cursor: grabbing; }
+
+    /* Transport warning row */
+    .struct-transport-warn-row { padding: 4px 14px 8px; font-size: 11px; color: var(--warn); border-top: none; }
+
+    /* Bottom buttons */
+    .struct-add-dest-btn { display: block; width: 100%; padding: 14px; margin-top: 4px; border-radius: var(--radius); border: 2px dashed var(--ink-muted); background: none; color: var(--ink-muted); font-size: 14px; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+    .struct-add-dest-btn:active { border-color: var(--accent); color: var(--accent); }
+    .struct-shift-btn { display: block; width: 100%; padding: 13px; margin-top: 10px; border-radius: var(--radius); border: none; background: var(--white); box-shadow: var(--card-shadow); color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
+    .struct-shift-btn:active { background: var(--sand); }
+
+    /* Sheets */
+    #struct-dest-overlay, #struct-shift-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5000; }
+    #struct-dest-sheet, #struct-shift-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-radius: 20px 20px 0 0; padding: 16px 20px 40px; z-index: 5100; box-shadow: 0 -4px 24px rgba(0,0,0,0.12); }
+    #struct-dest-sheet h3, #struct-shift-sheet h3 { margin: 8px 0 16px; font-size: 17px; }
+    .struct-field-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .struct-field-row label { font-size: 13px; color: var(--ink-muted); min-width: 70px; }
+    .struct-field-row input[type=text] { flex: 1; padding: 9px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--sand-dark); font-size: 14px; background: var(--sand); }
+    .struct-field-row input[type=color] { width: 48px; height: 36px; border-radius: var(--radius-sm); border: 1.5px solid var(--sand-dark); cursor: pointer; padding: 2px; }
+    .struct-field-row select { flex: 1; padding: 9px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--sand-dark); font-size: 14px; background: var(--sand); }
+    .struct-field-row input[type=number] { width: 70px; padding: 9px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--sand-dark); font-size: 14px; background: var(--sand); }
+    .struct-sheet-btns { display: flex; gap: 10px; margin-top: 20px; }
+    .struct-sheet-btns button { flex: 1; padding: 13px; border-radius: var(--radius); border: none; font-size: 15px; font-weight: 600; cursor: pointer; background: var(--sand); color: var(--ink); }
+    .struct-sheet-btns button.primary { background: var(--accent); color: white; }
+
+    /* Sortable ghost/drag states */
+    .struct-city-block.sortable-ghost { opacity: 0.4; }
+    .struct-day-row.sortable-ghost { opacity: 0.4; background: var(--accent-light); }
+    .struct-city-block.sortable-chosen { box-shadow: var(--card-shadow-hover); }
 
     /* ===== DISCOVERY VIEW ===== */
     #disc-search-bar { position: sticky; top: 0; z-index: 10; background: var(--white); border-bottom: 1px solid var(--sand-dark); padding: 12px 16px; display: flex; gap: 8px; align-items: center; }
@@ -581,6 +640,7 @@
       #view-budget { top: 54px; bottom: 0; }
       #view-food { top: 54px; bottom: 0; }
       #view-calendar { top: 54px; bottom: 0; }
+      #view-structure { top: 54px; bottom: 0; }
       #split-map { width: 100%; height: 45%; bottom: auto; top: 0; position: absolute; }
       #split-list { left: 0; top: 45%; height: 55%; position: absolute; }
       #split-float-card { left: 10px; top: auto; bottom: calc(55% + 10px); width: 170px; }
@@ -747,11 +807,11 @@
     <div class="hdr-right">
       <div class="view-switcher">
         <button class="view-btn active" onclick="setView('home')">🏠 Home</button>
+        <button class="view-btn" onclick="setView('structure')">🏗️ Trip</button>
         <button class="view-btn" onclick="setView('map')">🗺 Map</button>
-        <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
-        <button class="view-btn" onclick="setView('calendar')">🗓 Calendar</button>
-        <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
+        <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
+        <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="resetMapView()" title="Reset map to overview">🌏</button>
       </div>
       <div class="hdr-sep"></div>
@@ -820,11 +880,11 @@
   <div id="mob-view-menu">
     <div class="menu-section">
       <button class="menu-item" onclick="setView('home');toggleMenu('mob-view-menu')">🏠 Home</button>
+      <button class="menu-item" onclick="setView('structure');toggleMenu('mob-view-menu')">🏗️ Trip</button>
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
-      <button class="menu-item" onclick="setView('calendar');toggleMenu('mob-view-menu')">🗓 Calendar</button>
-      <button class="menu-item" onclick="setView('split');toggleMenu('mob-view-menu')">⬛ Split</button>
       <button class="menu-item" onclick="setView('itinerary');toggleMenu('mob-view-menu')">📋 Itinerary</button>
       <button class="menu-item" onclick="setView('cards');toggleMenu('mob-view-menu')">🃏 Cards</button>
+      <button class="menu-item" onclick="setView('split');toggleMenu('mob-view-menu')">⬛ Split</button>
     </div>
   </div>
 
@@ -903,6 +963,45 @@
   <div id="view-budget"></div>
   <div id="view-food"></div>
   <div id="view-calendar"></div>
+
+  <div id="view-structure">
+    <div id="struct-inner">
+      <div id="struct-city-list"></div>
+      <button class="struct-add-dest-btn" onclick="showAddDestSheet()">+ Add destination</button>
+      <button class="struct-shift-btn" onclick="showManualShiftSheet()">📅 Shift all dates</button>
+    </div>
+  </div>
+
+  <!-- Structure: Add destination sheet -->
+  <div id="struct-dest-overlay" onclick="closeAddDestSheet()"></div>
+  <div id="struct-dest-sheet">
+    <div class="sheet-handle"></div>
+    <h3>Add destination</h3>
+    <div class="struct-field-row">
+      <label>City name</label>
+      <input id="struct-dest-name" type="text" placeholder="e.g. Phuket" />
+    </div>
+    <div class="struct-field-row">
+      <label>Emoji</label>
+      <input id="struct-dest-emoji" type="text" placeholder="🏖️" maxlength="2" />
+    </div>
+    <div class="struct-field-row">
+      <label>Colour</label>
+      <input id="struct-dest-colour" type="color" value="#3498DB" />
+    </div>
+    <div class="struct-sheet-btns">
+      <button onclick="closeAddDestSheet()">Cancel</button>
+      <button class="primary" onclick="confirmAddDest()">Add</button>
+    </div>
+  </div>
+
+  <!-- Structure: Batch date shift sheet -->
+  <div id="struct-shift-overlay" onclick="closeShiftSheet()"></div>
+  <div id="struct-shift-sheet">
+    <div class="sheet-handle"></div>
+    <div id="struct-shift-content"></div>
+  </div>
+
   <div id="view-discovery">
     <div id="disc-search-bar">
       <input id="disc-search-input" type="text" placeholder="Search a place, restaurant, temple..." onkeydown="if(event.key==='Enter')runDiscoverySearch()">
@@ -1946,11 +2045,11 @@ var mobPhotoId = 'kp-' + photoKey;
               '<div class="home-tile-label">View</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Map</div>' +
             '</div>';
-          case 'calendar':
-            return '<div class="home-tile" data-tile-id="calendar" onclick="setView(\'calendar\')">' +
-              '<div class="home-tile-emoji">🗓</div>' +
+          case 'structure':
+            return '<div class="home-tile" data-tile-id="structure" onclick="setView(\'structure\')">' +
+              '<div class="home-tile-emoji">🏗️</div>' +
               '<div class="home-tile-label">View</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Calendar</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Trip</div>' +
             '</div>';
           case 'split':
             return '<div class="home-tile" data-tile-id="split" onclick="setView(\'split\')">' +
@@ -2571,6 +2670,8 @@ var mobPhotoId = 'kp-' + photoKey;
       document.getElementById('view-budget').style.display = view === 'budget' ? 'block' : 'none';
       document.getElementById('view-food').style.display = view === 'food' ? 'block' : 'none';
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
+      document.getElementById('view-structure').style.display = view === 'structure' ? 'block' : 'none';
+      if (view === 'structure') renderStructure();
       var discEl = document.getElementById('view-discovery');
       if (discEl) { discEl.style.display = view === 'discovery' ? 'flex' : 'none'; }
       var mobCards = document.getElementById('mob-cards-view');
@@ -2590,10 +2691,10 @@ var mobPhotoId = 'kp-' + photoKey;
 
       document.querySelectorAll('.view-btn').forEach(function(btn) { btn.classList.remove('active'); });
       document.querySelectorAll('.view-btn').forEach(function(btn) {
-        if (btn.textContent.toLowerCase().indexOf(view) !== -1) { btn.classList.add('active'); }
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').indexOf("'" + view + "'") !== -1) { btn.classList.add('active'); }
       });
       document.querySelectorAll('#mob-view-menu .menu-item').forEach(function(item) {
-        item.classList.toggle('active', item.textContent.toLowerCase().indexOf(view) !== -1);
+        item.classList.toggle('active', item.getAttribute('onclick') && item.getAttribute('onclick').indexOf("'" + view + "'") !== -1);
       });
 
       if (view === 'home') { renderHome(); }
@@ -2777,6 +2878,378 @@ var mobPhotoId = 'kp-' + photoKey;
       currentDayItem.transport.splice(index, 1);
       saveToStorage();
       document.getElementById('tab-transport').innerHTML = renderTransportTab(currentDayItem);
+    }
+
+    // ===== STRUCTURE VIEW =====
+
+    var structCitySortable = null;
+    var structDaySortables = [];
+    var pendingShiftCallback = null;
+
+    function renderStructure() {
+      var el = document.getElementById('struct-city-list');
+      if (!el) return;
+      var days = currentTrip.days || [];
+
+      // Group days by city block (preserving order)
+      var blocks = [];
+      var seen = [];
+      days.forEach(function(day) {
+        var key = day.city;
+        if (!seen.includes(key)) { seen.push(key); blocks.push({ city: key, days: [] }); }
+        blocks[seen.indexOf(key)].days.push(day);
+      });
+
+      el.innerHTML = blocks.map(function(block, bi) {
+        var cs = (citySettings && citySettings[block.city]) || {};
+        var colour = cs.color || '#aaa';
+        var emoji = cs.emoji || '📍';
+        var dayDates = block.days.map(function(d) { return d.date; }).filter(Boolean);
+        var dateRange = dayDates.length ? (fmtShortDate(dayDates[0]) + (dayDates.length > 1 ? '–' + fmtShortDate(dayDates[dayDates.length-1]) : '')) : '';
+        var dayCount = block.days.length;
+
+        var rowsHtml = block.days.map(function(day, ri) {
+          var di = days.indexOf(day);
+          var hasTransport = day.transport && day.transport.length > 0;
+          var hasContent = (day.activities && day.activities.length) || (day.food && day.food.length) || (day.accommodation && day.accommodation.length);
+          var warnHtml = hasTransport ? '<span class="struct-day-warning">⚠️</span>' : '';
+          var label = day.note || '';
+          return '<div class="struct-day-row" data-di="' + di + '" onclick="structDayTap(' + di + ', event)">' +
+            '<span class="struct-day-num">Day ' + day.day + '</span>' +
+            '<span class="struct-day-date">' + fmtDayDate(day.date) + '</span>' +
+            '<span class="struct-day-label">' + escHtml(label) + '</span>' +
+            warnHtml +
+            '<button class="struct-day-delete" onclick="structDeleteDay(' + di + ', event)" title="Remove day">✕</button>' +
+            '<span class="struct-drag-handle">⠿</span>' +
+            '</div>';
+        }).join('');
+
+        return '<div class="struct-city-block" data-city="' + escHtml(block.city) + '">' +
+          '<div class="struct-city-header" style="border-left-color:' + colour + '">' +
+            '<span class="struct-city-emoji">' + emoji + '</span>' +
+            '<span class="struct-city-name">' + escHtml(block.city) + '</span>' +
+            '<span class="struct-city-meta">' + dateRange + ' · ' + dayCount + (dayCount === 1 ? ' day' : ' days') + '</span>' +
+            '<div class="struct-city-actions">' +
+              '<button class="struct-add-day-btn" onclick="structAddDay(\'' + escHtml(block.city) + '\', event)">+ Add day</button>' +
+              '<button class="struct-remove-city-btn" onclick="structRemoveCity(\'' + escHtml(block.city) + '\', event)" title="Remove destination">✕</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="struct-day-list" data-city="' + escHtml(block.city) + '">' + rowsHtml + '</div>' +
+        '</div>';
+      }).join('');
+
+      initStructSortables();
+    }
+
+    function fmtShortDate(dateStr) {
+      if (!dateStr) return '';
+      // Handle ISO format "2026-05-09"
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        var d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
+      }
+      // Handle "Sat May 9" format — extract month and day
+      var parts = dateStr.replace(/^[A-Za-z]+\s/, '').split(' ');
+      var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      var m = months[parts[0]]; var day = parseInt(parts[1]);
+      if (isNaN(m) || isNaN(day)) return dateStr;
+      var d = new Date(2026, m, day);
+      return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
+    }
+
+    function fmtDayDate(dateStr) {
+      if (!dateStr) return '—';
+      // Handle ISO format
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        var d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      // Handle "Sat May 9" format
+      var parts = dateStr.replace(/^[A-Za-z]+\s/, '').split(' ');
+      var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      var m = months[parts[0]]; var day = parseInt(parts[1]);
+      if (isNaN(m) || isNaN(day)) return dateStr;
+      var d = new Date(2026, m, day);
+      return d.toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function initStructSortables() {
+      // Destroy existing
+      if (structCitySortable) { structCitySortable.destroy(); structCitySortable = null; }
+      structDaySortables.forEach(function(s) { s.destroy(); });
+      structDaySortables = [];
+
+      var cityList = document.getElementById('struct-city-list');
+      if (!cityList) return;
+
+      // City block sortable
+      structCitySortable = Sortable.create(cityList, {
+        animation: 150,
+        handle: '.struct-city-header',
+        draggable: '.struct-city-block',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: function(evt) {
+          structReorderCities();
+          showAutoShiftSheet('City order changed. Shift dates to match new order?', null);
+        }
+      });
+
+      // Day row sortables — one per city block, with cross-block enabled via group
+      var dayLists = cityList.querySelectorAll('.struct-day-list');
+      dayLists.forEach(function(list) {
+        var s = Sortable.create(list, {
+          group: 'struct-days',
+          animation: 150,
+          handle: '.struct-drag-handle',
+          draggable: '.struct-day-row',
+          ghostClass: 'sortable-ghost',
+          onEnd: function(evt) {
+            structReorderDays(evt);
+          }
+        });
+        structDaySortables.push(s);
+      });
+    }
+
+    function structReorderCities() {
+      var cityList = document.getElementById('struct-city-list');
+      if (!cityList) return;
+      var blocks = cityList.querySelectorAll('.struct-city-block');
+      var newOrder = [];
+      blocks.forEach(function(block) {
+        var city = block.getAttribute('data-city');
+        currentTrip.days.forEach(function(day) {
+          if (day.city === city) newOrder.push(day);
+        });
+      });
+      currentTrip.days = newOrder;
+      renumberDays();
+      saveToStorage();
+      renderStructure();
+    }
+
+    function structReorderDays(evt) {
+      var fromCity = evt.from.getAttribute('data-city');
+      var toCity = evt.to.getAttribute('data-city');
+      var movedDi = parseInt(evt.item.getAttribute('data-di'));
+      var movedDay = currentTrip.days[movedDi];
+      if (!movedDay) return;
+
+      // Rebuild full day order from DOM
+      var cityList = document.getElementById('struct-city-list');
+      var allRows = cityList.querySelectorAll('.struct-day-row');
+      var newOrder = [];
+      allRows.forEach(function(row) {
+        var di = parseInt(row.getAttribute('data-di'));
+        if (!isNaN(di) && currentTrip.days[di]) newOrder.push(currentTrip.days[di]);
+      });
+      currentTrip.days = newOrder;
+
+      // If moved to different city, update city/lat/lng
+      if (fromCity !== toCity) {
+        movedDay.city = toCity;
+        var cs = citySettings && citySettings[toCity];
+        if (cs && cs.lat) { movedDay.lat = cs.lat; movedDay.lng = cs.lng; }
+        // Transport warning flag — handled in render via hasTransport check
+        var hasTransport = movedDay.transport && movedDay.transport.length > 0;
+        if (hasTransport) {
+          setTimeout(function() {
+            var rows = document.querySelectorAll('.struct-day-row');
+            rows.forEach(function(r) {
+              if (parseInt(r.getAttribute('data-di')) === movedDi) {
+                r.classList.add('has-transport-warning');
+              }
+            });
+          }, 100);
+        }
+      }
+
+      renumberDays();
+      saveToStorage();
+      renderStructure();
+
+      if (fromCity !== toCity) {
+        showAutoShiftSheet('Day moved to ' + toCity + '. Shift following dates?', null);
+      }
+    }
+
+    function renumberDays() {
+      currentTrip.days.forEach(function(day, i) {
+        day.day = i + 1;
+      });
+    }
+
+    function structDayTap(di, e) {
+      if (e.target.classList.contains('struct-day-delete') || e.target.classList.contains('struct-drag-handle')) return;
+      var item = currentTrip.days[di];
+      if (item) openDayPanel(item);
+    }
+
+    function structAddDay(city, e) {
+      if (e) e.stopPropagation();
+      var cs = citySettings && citySettings[city];
+      var days = currentTrip.days;
+
+      // Find last day in this city block to insert after
+      var lastIdx = -1;
+      days.forEach(function(d, i) { if (d.city === city) lastIdx = i; });
+
+      // Build new blank day
+      var prevDay = lastIdx >= 0 ? days[lastIdx] : days[days.length - 1];
+      var newDate = '';
+      if (prevDay && prevDay.date) {
+        var d = new Date(prevDay.date + 'T00:00:00');
+        d.setDate(d.getDate() + 1);
+        newDate = d.toISOString().slice(0, 10);
+      }
+      var newDay = {
+        day: 0, date: newDate, city: city,
+        lat: cs ? cs.lat : 0, lng: cs ? cs.lng : 0,
+        note: '', accommodation: [], activities: [], activityCategories: [],
+        activityLinks: [], food: [], transport: [], cardNotes: {}, costs: {}, done: {}
+      };
+
+      days.splice(lastIdx + 1, 0, newDay);
+      renumberDays();
+      saveToStorage();
+      renderStructure();
+
+      var insertedDayNum = lastIdx + 2;
+      showAutoShiftSheet('Added a day to ' + city + '.', insertedDayNum);
+    }
+
+    function structDeleteDay(di, e) {
+      if (e) e.stopPropagation();
+      var day = currentTrip.days[di];
+      if (!day) return;
+      var hasContent = (day.activities && day.activities.length) ||
+                       (day.food && day.food.length) ||
+                       (day.accommodation && day.accommodation.length);
+      var proceed = !hasContent || confirm('Day ' + day.day + ' has content. Delete anyway?');
+      if (!proceed) return;
+
+      currentTrip.days.splice(di, 1);
+      renumberDays();
+      saveToStorage();
+      renderStructure();
+      showAutoShiftSheet('Removed a day from ' + (day.city || 'trip') + '.', di + 1);
+    }
+
+    function structRemoveCity(city, e) {
+      if (e) e.stopPropagation();
+      var daysInCity = currentTrip.days.filter(function(d) { return d.city === city; });
+      var withContent = daysInCity.filter(function(d) {
+        return (d.activities && d.activities.length) || (d.food && d.food.length) || (d.accommodation && d.accommodation.length);
+      });
+      var msg = withContent.length
+        ? city + ' has ' + withContent.length + ' day(s) with content. Delete anyway?'
+        : 'Remove ' + city + ' and all its days?';
+      if (!confirm(msg)) return;
+
+      currentTrip.days = currentTrip.days.filter(function(d) { return d.city !== city; });
+      renumberDays();
+      saveToStorage();
+      renderStructure();
+    }
+
+    // ---- Add destination sheet ----
+    function showAddDestSheet() {
+      document.getElementById('struct-dest-overlay').style.display = 'block';
+      document.getElementById('struct-dest-sheet').style.display = 'block';
+      document.getElementById('struct-dest-name').value = '';
+      document.getElementById('struct-dest-emoji').value = '';
+      document.getElementById('struct-dest-colour').value = '#3498DB';
+      setTimeout(function() { document.getElementById('struct-dest-name').focus(); }, 100);
+    }
+
+    function closeAddDestSheet() {
+      document.getElementById('struct-dest-overlay').style.display = 'none';
+      document.getElementById('struct-dest-sheet').style.display = 'none';
+    }
+
+    function confirmAddDest() {
+      var name = document.getElementById('struct-dest-name').value.trim();
+      var emoji = document.getElementById('struct-dest-emoji').value.trim() || '📍';
+      var colour = document.getElementById('struct-dest-colour').value || '#3498DB';
+      if (!name) { alert('Please enter a city name.'); return; }
+      if (citySettings[name]) { alert(name + ' already exists.'); return; }
+
+      citySettings[name] = { emoji: emoji, color: colour, code: name.slice(0,3).toUpperCase() };
+      saveToStorage();
+      closeAddDestSheet();
+      renderStructure();
+    }
+
+    // ---- Batch date shift sheets ----
+    function showAutoShiftSheet(contextMsg, fromDayNum) {
+      var fromDayNum = fromDayNum || 1;
+      var content = document.getElementById('struct-shift-content');
+      content.innerHTML =
+        '<h3>📅 Dates need updating</h3>' +
+        '<p style="color:var(--ink-muted);font-size:14px;margin-bottom:20px;">' + escHtml(contextMsg) + '</p>' +
+        '<p style="font-size:14px;margin-bottom:20px;">Shift all days from Day <strong>' + fromDayNum + '</strong> onwards forward by 1 day?</p>' +
+        '<div class="struct-sheet-btns">' +
+          '<button onclick="closeShiftSheet()">Keep current dates</button>' +
+          '<button class="primary" onclick="applyAutoShift(' + fromDayNum + ', 1)">Shift dates</button>' +
+        '</div>';
+      document.getElementById('struct-shift-overlay').style.display = 'block';
+      document.getElementById('struct-shift-sheet').style.display = 'block';
+    }
+
+    function showManualShiftSheet() {
+      var dayOptions = currentTrip.days.map(function(d) {
+        return '<option value="' + d.day + '">Day ' + d.day + ' · ' + fmtShortDate(d.date) + '</option>';
+      }).join('');
+      var content = document.getElementById('struct-shift-content');
+      content.innerHTML =
+        '<h3>📅 Shift trip dates</h3>' +
+        '<div class="struct-field-row"><label>From day</label><select id="shift-from-day">' + dayOptions + '</select></div>' +
+        '<div class="struct-field-row"><label>Direction</label><select id="shift-direction"><option value="1">Forward</option><option value="-1">Back</option></select></div>' +
+        '<div class="struct-field-row"><label>By</label><input type="number" id="shift-by-days" value="1" min="1" max="60" /></div>' +
+        '<div class="struct-sheet-btns">' +
+          '<button onclick="closeShiftSheet()">Cancel</button>' +
+          '<button class="primary" onclick="applyManualShift()">Apply shift</button>' +
+        '</div>';
+      document.getElementById('struct-shift-overlay').style.display = 'block';
+      document.getElementById('struct-shift-sheet').style.display = 'block';
+    }
+
+    function closeShiftSheet() {
+      document.getElementById('struct-shift-overlay').style.display = 'none';
+      document.getElementById('struct-shift-sheet').style.display = 'none';
+    }
+
+    function applyAutoShift(fromDayNum, byDays) {
+      shiftDatesFrom(fromDayNum, byDays);
+      closeShiftSheet();
+      renderStructure();
+    }
+
+    function applyManualShift() {
+      var fromDayNum = parseInt(document.getElementById('shift-from-day').value);
+      var direction = parseInt(document.getElementById('shift-direction').value);
+      var byDays = parseInt(document.getElementById('shift-by-days').value) * direction;
+      if (!byDays) { closeShiftSheet(); return; }
+      shiftDatesFrom(fromDayNum, byDays);
+      closeShiftSheet();
+      renderStructure();
+    }
+
+    function shiftDatesFrom(fromDayNum, byDays) {
+      currentTrip.days.forEach(function(day) {
+        if (day.day >= fromDayNum && day.date) {
+          var d = new Date(day.date + 'T00:00:00');
+          d.setDate(d.getDate() + byDays);
+          day.date = d.toISOString().slice(0, 10);
+        }
+      });
+      saveToStorage();
     }
 
     // ===== CALENDAR VIEW =====
@@ -3895,7 +4368,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','calendar','split','itinerary','cards','discovery'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','structure','itinerary','cards','discovery'];
     var HOME_TILE_META = {
       dates:      { emoji: '📅', label: 'Dates' },
       weather:    { emoji: '🌤️', label: 'Weather' },
@@ -3905,7 +4378,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       food:       { emoji: '🍜', label: 'Reservations' },
       budget:     { emoji: '💰', label: 'Budget' },
       map:        { emoji: '🗺️', label: 'Map' },
-      calendar:   { emoji: '🗓', label: 'Calendar' },
+      structure:  { emoji: '🏗️', label: 'Trip' },
       split:      { emoji: '⬛', label: 'Split' },
       itinerary:  { emoji: '📋', label: 'Itinerary' },
       cards:      { emoji: '🃏', label: 'Cards' },
