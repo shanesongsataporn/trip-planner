@@ -4757,12 +4757,24 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     // ===== SPLIT VIEW =====
+    var splitDividerInited = false;
     function initSplitDivider() {
       var container = document.getElementById('view-split');
       var mapPane = document.getElementById('split-map');
       var divider = document.getElementById('split-divider');
       var listPane = document.getElementById('split-list');
       if (!container || !divider) return;
+      if (splitDividerInited) {
+        // just restore saved position
+        var savedPos = parseFloat(localStorage.getItem('split_divider_pos'));
+        var pct = (!isNaN(savedPos) && savedPos >= 20 && savedPos <= 70) ? savedPos : 40;
+        mapPane.style.height = pct + '%';
+        divider.style.top = pct + '%';
+        listPane.style.top = 'calc(' + pct + '% + 10px)';
+        listPane.style.bottom = '0';
+        return;
+      }
+      splitDividerInited = true;
 
       var savedPos = parseFloat(localStorage.getItem('split_divider_pos'));
       var pct = (!isNaN(savedPos) && savedPos >= 20 && savedPos <= 70) ? savedPos : 40;
@@ -4786,6 +4798,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         mapPane.style.height = newPct + '%';
         divider.style.top = newPct + '%';
         listPane.style.top = 'calc(' + newPct + '% + 10px)';
+        listPane.style.bottom = '0';
         if (splitMap) google.maps.event.trigger(splitMap, 'resize');
       });
 
@@ -4795,6 +4808,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         var rect = container.getBoundingClientRect();
         var newPct = ((e.clientY - rect.top) / rect.height) * 100;
         newPct = Math.max(20, Math.min(70, newPct));
+        listPane.style.bottom = '0';
         localStorage.setItem('split_divider_pos', newPct);
         if (splitMap) google.maps.event.trigger(splitMap, 'resize');
       });
@@ -5012,8 +5026,14 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       }
 
       if (isMobile()) {
+        if (splitMap && day.lat && day.lng) {
+          splitMap.panTo({ lat: day.lat, lng: day.lng });
+          splitMap.setZoom(12);
+        }
         document.querySelectorAll('.split-inline-detail').forEach(function(d) { d.remove(); });
         normaliseAccom(day); normaliseDayTransport(day);
+        var listPane = document.getElementById('split-list');
+        if (listPane && el) { listPane.scrollTop = el.offsetTop - 8; }
         var detail = document.createElement('div');
         detail.className = 'split-inline-detail';
         detail.style.cssText = 'background:var(--sand);padding:12px 16px;border-bottom:1px solid var(--sand-dark);';
