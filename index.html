@@ -430,8 +430,8 @@
 
     /* Sheets */
     #struct-dest-overlay, #struct-shift-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5000; }
-    #struct-dest-sheet, #struct-shift-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-radius: 20px 20px 0 0; padding: 16px 20px 40px; z-index: 5100; box-shadow: 0 -4px 24px rgba(0,0,0,0.12); }
-    #struct-dest-sheet h3, #struct-shift-sheet h3 { margin: 8px 0 16px; font-size: 17px; }
+#struct-dest-sheet, #struct-shift-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-radius: 20px 20px 0 0; padding: 16px 20px 40px; z-index: 5100; box-shadow: 0 -4px 24px rgba(0,0,0,0.12); overflow: visible; }
+    #struct-shift-sheet select, #struct-shift-sheet input { position: relative; z-index: 5200; }    #struct-dest-sheet h3, #struct-shift-sheet h3 { margin: 8px 0 16px; font-size: 17px; }
     .struct-field-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
     .struct-field-row label { font-size: 13px; color: var(--ink-muted); min-width: 70px; }
     .struct-field-row input[type=text] { flex: 1; padding: 9px 12px; border-radius: var(--radius-sm); border: 1.5px solid var(--sand-dark); font-size: 14px; background: var(--sand); }
@@ -4390,7 +4390,14 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         var raw = localStorage.getItem('home_tile_config');
         if (raw) {
           var cfg = JSON.parse(raw);
-          if (cfg.order && cfg.hidden) return cfg;
+          if (cfg.order && cfg.hidden) {
+            // Self-heal: swap calendar for structure
+            var calIdx = cfg.order.indexOf('calendar');
+            if (calIdx !== -1) cfg.order[calIdx] = 'structure';
+            var hiddenCalIdx = cfg.hidden.indexOf('calendar');
+            if (hiddenCalIdx !== -1) cfg.hidden[hiddenCalIdx] = 'structure';
+            return cfg;
+          }
         }
       } catch(e) {}
       return { order: HOME_TILE_DEFAULTS.slice(), hidden: [] };
