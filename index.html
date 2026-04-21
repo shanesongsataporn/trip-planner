@@ -4781,6 +4781,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       mapPane.style.height = pct + '%';
       divider.style.top = pct + '%';
       listPane.style.top = 'calc(' + pct + '% + 10px)';
+      listPane.style.bottom = '0';
 
       var dragging = false;
 
