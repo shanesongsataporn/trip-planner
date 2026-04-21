@@ -443,6 +443,8 @@
     .struct-sheet-btns button.primary { background: var(--accent); color: white; }
 
     /* Sortable ghost/drag states */
+    .struct-city-drag-handle { font-size: 18px; color: var(--ink-muted); cursor: grab; padding: 0 6px 0 0; user-select: none; flex-shrink: 0; }
+    .struct-city-drag-handle:active { cursor: grabbing; }
     .struct-city-block.sortable-ghost { opacity: 0.4; }
     .struct-day-row.sortable-ghost { opacity: 0.4; background: var(--accent-light); }
     .struct-city-block.sortable-chosen { box-shadow: var(--card-shadow-hover); }
@@ -2926,6 +2928,7 @@ var mobPhotoId = 'kp-' + photoKey;
 
         return '<div class="struct-city-block" data-city="' + escHtml(block.city) + '">' +
           '<div class="struct-city-header" style="border-left-color:' + colour + '">' +
+            '<span class="struct-city-drag-handle" title="Drag to reorder">⠿</span>' +
             '<span class="struct-city-emoji">' + emoji + '</span>' +
             '<span class="struct-city-name">' + escHtml(block.city) + '</span>' +
             '<span class="struct-city-meta">' + dateRange + ' · ' + dayCount + (dayCount === 1 ? ' day' : ' days') + '</span>' +
@@ -2990,11 +2993,12 @@ var mobPhotoId = 'kp-' + photoKey;
       // City block sortable
       structCitySortable = Sortable.create(cityList, {
         animation: 150,
-        handle: '.struct-city-header',
+        handle: '.struct-city-drag-handle',
         draggable: '.struct-city-block',
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         onEnd: function(evt) {
+          if (evt.oldIndex === evt.newIndex) return;
           structReorderCities();
           showAutoShiftSheet('City order changed. Shift dates to match new order?', null);
         }
@@ -3010,6 +3014,7 @@ var mobPhotoId = 'kp-' + photoKey;
           draggable: '.struct-day-row',
           ghostClass: 'sortable-ghost',
           onEnd: function(evt) {
+            if (evt.oldIndex === evt.newIndex && evt.from === evt.to) return;
             structReorderDays(evt);
           }
         });
