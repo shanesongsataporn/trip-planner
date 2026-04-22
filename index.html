@@ -972,7 +972,7 @@
     <div id="split-map"></div>
     <div id="split-divider"></div>
     <div id="split-list"></div>
-    <div id="split-float-card">
+<button id="split-fit-btn" onclick="fitSplitPins()" style="display:none;position:absolute;top:10px;right:10px;z-index:10;font-family:inherit;font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;border:none;background:rgba(0,0,0,0.6);color:#fff;cursor:pointer;backdrop-filter:blur(4px);">⊙ Show day</button>    <div id="split-float-card">
       <button id="split-float-card-close" onclick="closeSplitFloatCard()">x</button>
       <img id="split-float-card-img" src="" style="display:none;">
       <div id="split-float-card-body">
@@ -4837,6 +4837,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       });
     }
 
+    var splitSelectedIndex = -1;
+    var deSuppressSync = false;
+
     function renderSplit() {
       document.getElementById('split-list').innerHTML = currentTrip.days.map(function(item, index) {
         normaliseAccom(item); normaliseDayTransport(item);
@@ -4859,6 +4862,10 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       } else { google.maps.event.trigger(splitMap, 'resize'); }
       initSplitDivider();
       setTimeout(function() {
+        if (splitSelectedIndex >= 0 && splitSelectedIndex < currentTrip.days.length) {
+          selectSplitDay(splitSelectedIndex);
+          return;
+        }
         var todayIdx = 0;
         var now = new Date();
         var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -4974,6 +4981,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     function selectSplitDay(index) {
+      splitSelectedIndex = index;
       document.querySelectorAll('.split-day-item').forEach(function(el) { el.classList.remove('active'); });
       document.querySelectorAll('[id^="split-detail-"]').forEach(function(d) { d.style.display = 'none'; d.innerHTML = ''; });
       clearSplitActivityMarkers();
@@ -5048,21 +5056,68 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           '<div class="de-header-title">' + dateStr + '</div>' +
           (day.note ? '<div class="de-header-note">' + day.note + '</div>' : '') +
         '</div>' +
-        '<div class="de-section"><div class="de-section-label">Stay</div>' + accomCards + '<button class="de-add-btn">+ Add accommodation</button></div>' +
-        '<div class="de-section"><div class="de-section-label">Activities</div>' + actCards + '<button class="de-add-btn">+ Add activity</button></div>' +
-        '<div class="de-section"><div class="de-section-label">Food & Drink</div>' + foodCards + '<button class="de-add-btn">+ Add food</button></div>' +
+        '<div class="de-section"><div class="de-section-label">Stay</div><div id="de-sort-accom">' + accomCards + '</div><button class="de-add-btn">+ Add accommodation</button></div>' +
+        '<div class="de-section"><div class="de-section-label">Activities</div><div id="de-sort-acts">' + actCards + '</div><button class="de-add-btn">+ Add activity</button></div>' +
+        '<div class="de-section"><div class="de-section-label">Food & Drink</div><div id="de-sort-food">' + foodCards + '</div><button class="de-add-btn">+ Add food</button></div>' +
         '<div class="de-section"><div class="de-section-label">Note</div>' +
           '<textarea class="de-note-field" rows="3" placeholder="Day notes..." onblur="updateDayField(\'note\', this.value)">' + (day.note||'') + '</textarea>' +
         '</div>' +
         '<button class="de-route-btn">🗺 Plan route →</button>';
 
+      // Init Sortable on each section
+      var deCurrentDay = day;
+      var deCurrentIndex = index;
+      ['accom','acts','food'].forEach(function(section) {
+        var el = document.getElementById('de-sort-' + section);
+        if (!el || el.children.length < 2) return;
+        Sortable.create(el, {
+          animation: 150,
+          handle: '.de-card-handle',
+          onEnd: function(evt) {
+            if (evt.oldIndex === evt.newIndex) return;
+            if (section === 'accom') {
+              normaliseAccom(deCurrentDay);
+              var m = deCurrentDay.accommodation.splice(evt.oldIndex, 1)[0];
+              deCurrentDay.accommodation.splice(evt.newIndex, 0, m);
+            } else if (section === 'acts') {
+              var m = deCurrentDay.activities.splice(evt.oldIndex, 1)[0];
+              deCurrentDay.activities.splice(evt.newIndex, 0, m);
+              if (deCurrentDay.activityCategories) {
+                var mc = deCurrentDay.activityCategories.splice(evt.oldIndex, 1)[0];
+                deCurrentDay.activityCategories.splice(evt.newIndex, 0, mc);
+              }
+            } else if (section === 'food') {
+              normaliseFood(deCurrentDay);
+              var m = deCurrentDay.food.splice(evt.oldIndex, 1)[0];
+              deCurrentDay.food.splice(evt.newIndex, 0, m);
+            }
+            deSuppressSync = true;
+            saveToStorage();
+            setTimeout(function() { deSuppressSync = false; }, 2000);
+          }
+        });
+      });
+
+      var fitBtn = document.getElementById('split-fit-btn');
+      if (fitBtn) { fitBtn.style.display = 'block'; }
+
       addSplitActivityMarkers(day, function() {
         if (splitActivityMarkers.length > 0) {
           var bounds = new google.maps.LatLngBounds();
           splitActivityMarkers.forEach(function(obj) { bounds.extend(obj.marker.position); });
-          map.fitBounds(bounds, { padding: 60 });
+          var activeMap = splitMap || window.map;
+          activeMap.fitBounds(bounds, { padding: 60 });
         }
       });
+    }
+
+    function fitSplitPins() {
+      if (splitActivityMarkers.length > 0) {
+        var bounds = new google.maps.LatLngBounds();
+        splitActivityMarkers.forEach(function(obj) { bounds.extend(obj.marker.position); });
+        var activeMap = splitMap || window.map;
+        activeMap.fitBounds(bounds, { padding: 60 });
+      }
     }
 
       // ===== PANEL TABS =====
@@ -7632,7 +7687,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             if (currentView === 'home') { renderHome(); }
             if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
             if (currentView === 'cards') { renderKanban(); }
-            if (currentView === 'split') { renderSplit(); }
+            if (currentView === 'split' && !deSuppressSync) { renderSplit(); }
             if (currentView === 'budget') { renderBudget(); }
             if (currentView === 'food') { renderFood(); }
             if (currentView === 'calendar') { renderCalendar(); }
