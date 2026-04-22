@@ -835,7 +835,6 @@
         <button class="view-btn" onclick="setView('map')">🗺 Map</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
         <button class="view-btn" onclick="setView('cards')">🃏 Cards</button>
-        <button class="view-btn" onclick="setView('split')">⬛ Split</button>
         <button class="view-btn" onclick="resetMapView()" title="Reset map to overview">🌏</button>
       </div>
       <div class="hdr-sep"></div>
@@ -908,7 +907,6 @@
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
       <button class="menu-item" onclick="setView('itinerary');toggleMenu('mob-view-menu')">📋 Itinerary</button>
       <button class="menu-item" onclick="setView('cards');toggleMenu('mob-view-menu')">🃏 Cards</button>
-      <button class="menu-item" onclick="setView('split');toggleMenu('mob-view-menu')">⬛ Split</button>
     </div>
   </div>
 
@@ -2076,12 +2074,6 @@ var mobPhotoId = 'kp-' + photoKey;
               '<div class="home-tile-label">View</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Plan</div>' +
             '</div>';
-          case 'split':
-            return '<div class="home-tile" data-tile-id="split" onclick="setView(\'split\')">' +
-              '<div class="home-tile-emoji">⬛</div>' +
-              '<div class="home-tile-label">View</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Split</div>' +
-            '</div>';
           case 'itinerary':
             return '<div class="home-tile" data-tile-id="itinerary" onclick="setView(\'itinerary\')">' +
               '<div class="home-tile-emoji">📋</div>' +
@@ -3116,6 +3108,7 @@ var mobPhotoId = 'kp-' + photoKey;
     function structDayTap(di, e) {
       if (e.target.classList.contains('struct-day-delete') || e.target.classList.contains('struct-drag-handle')) return;
       setView('split');
+      lastView = 'structure';
       setTimeout(function() { selectSplitDay(di); }, 150);
     }
 
@@ -5072,134 +5065,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       });
     }
 
-      var el = document.getElementById('split-item-' + index);
-      if (el) { el.classList.add('active'); }
-      var day = currentTrip.days[index];
-      splitMap.panTo({ lat: day.lat, lng: day.lng }); splitMap.setZoom(12);
-
-      if (!isMobile()) {
-        normaliseAccom(day); normaliseDayTransport(day);
-        var detail = document.getElementById('split-detail-' + index);
-
-        var accomHtml = day.accommodation.length ? day.accommodation.map(function(a, i) {
-          return '<div onclick="openSplitPin(' + i + ',\'accommodation\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.5)\'" onmouseout="this.style.background=\'\'">' +
-            '<span style="font-size:14px;">🏨</span>' +
-            '<span style="font-size:12px;color:var(--ink);flex:1;">' + a.name + '</span>' +
-            '<span style="font-size:10px;color:var(--accent);">📍</span>' +
-          '</div>';
-        }).join('') : '<div style="font-size:12px;color:var(--ink-muted);padding:6px 0;font-style:italic;">No accommodation</div>';
-
-        var actsHtml = day.activities.length ? day.activities.map(function(a, i) {
-          var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
-          var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-          return '<div onclick="openSplitPin(' + i + ',\'activity\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.5)\'" onmouseout="this.style.background=\'\'">' +
-            '<span style="font-size:14px;">' + emoji + '</span>' +
-            '<span style="font-size:12px;color:var(--ink);flex:1;">' + a + '</span>' +
-            '<span style="font-size:10px;color:var(--accent);">📍</span>' +
-          '</div>';
-        }).join('') : '<div style="font-size:12px;color:var(--ink-muted);padding:6px 0;font-style:italic;">No activities</div>';
-
-        var foodHtml = day.food.length ? day.food.map(function(f, i) {
-          var fname = typeof f === 'string' ? f : f.name;
-          return '<div onclick="openSplitPin(' + i + ',\'food\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.5)\'" onmouseout="this.style.background=\'\'">' +
-            '<span style="font-size:14px;">🍽️</span>' +
-            '<span style="font-size:12px;color:var(--ink);flex:1;">' + fname + '</span>' +
-            '<span style="font-size:10px;color:var(--accent);">📍</span>' +
-          '</div>';
-        }).join('') : '';
-
-        detail.style.display = 'block';
-        detail.innerHTML =
-          '<div style="padding:10px 16px;background:var(--accent-light);border-left:3px solid var(--accent);">' +
-            '<div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:8px;gap:6px;">' +
-              '<button onclick="toggleSplitEdit(' + index + ')" id="split-edit-btn-' + index + '" style="font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;border:1px solid var(--sand-dark);background:var(--white);color:var(--ink-muted);cursor:pointer;">Edit</button>' +
-            '</div>' +
-            '<div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;opacity:0.7;">Stay</div>' + accomHtml +
-            '<div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin:10px 0 4px;opacity:0.7;">Activities</div>' + actsHtml +
-            (foodHtml ? '<div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin:10px 0 4px;opacity:0.7;">Food</div>' + foodHtml : '') +
-            '<div id="split-inline-edit-' + index + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--sand-dark);">' +
-              '<div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;">Edit Accommodation</div>' +
-              '<div id="inline-accom-' + index + '">' + renderInlineAccom(index) + '</div>' +
-              '<button class="add-btn" onclick="addSplitAccom(' + index + ')">+ Add accommodation</button>' +
-              '<div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin:12px 0 6px;">Edit Activities</div>' +
-              '<div id="inline-acts-' + index + '">' + renderInlineActivities(index) + '</div>' +
-              buildSearchBox('activities') +
-              '<div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent);margin:12px 0 6px;">Edit Food</div>' +
-              '<div id="inline-food-' + index + '">' + renderInlineFood(index) + '</div>' +
-              buildSearchBox('food') +
-            '</div>' +
-          '</div>';
-
-        addSplitActivityMarkers(day, function() {
-          if (splitActivityMarkers.length > 0) {
-            var bounds = new google.maps.LatLngBounds();
-            splitActivityMarkers.forEach(function(obj) { bounds.extend(obj.marker.position); });
-            splitMap.fitBounds(bounds, { padding: 60 });
-          }
-        });
-        return;
-      }
-
-      if (isMobile()) {
-        if (splitMap && day.lat && day.lng) {
-          splitMap.panTo({ lat: day.lat, lng: day.lng });
-          splitMap.setZoom(12);
-        }
-        document.querySelectorAll('.split-inline-detail').forEach(function(d) { d.remove(); });
-        normaliseAccom(day); normaliseDayTransport(day);
-        var listPane = document.getElementById('split-list');
-        if (listPane && el) { listPane.scrollTop = el.offsetTop - 8; }
-        var detail = document.createElement('div');
-        detail.className = 'split-inline-detail';
-        detail.style.cssText = 'background:var(--sand);padding:12px 16px;border-bottom:1px solid var(--sand-dark);';
-
-        var transHtml = day.transport.length ? day.transport.map(function(t) {
-          return '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">✈️ ' + (t.from||'') + (t.to?' → '+t.to:'') + (t.flightNum?' ('+t.flightNum+')':'') + '</div>';
-        }).join('') : '';
-
-        var accomHtml = day.accommodation.length ? day.accommodation.map(function(a) {
-          return '<div style="font-size:12px;color:var(--ink-light);margin-bottom:2px;">🏨 ' + a.name + '</div>';
-        }).join('') : '<div style="font-size:12px;color:var(--ink-muted);">No accommodation</div>';
-
-        var actsHtml = day.activities.length ? day.activities.map(function(a, i) {
-          var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
-          var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
-          var photoKey = 'day' + day.day + '_act' + i;
-          var photo = cardPhotos[photoKey] || '';
-          var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : '';
-          var itemCtx = JSON.stringify({dayIndex: currentTrip.days.indexOf(day), actIndex: i}).replace(/"/g, '&quot;');
-          return '<div onclick="showSplitFloatCardDirect(\'' + a.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + currentTrip.days.indexOf(day) + ',' + i + ')" style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--sand-dark);cursor:pointer;">' +
-            '<span style="font-size:13px;">' + emoji + '</span>' +
-            '<span style="flex:1;font-size:12px;color:var(--ink-light);">' + a + '</span>' +
-            '<span style="font-size:10px;color:var(--accent);white-space:nowrap;">📍</span>' +
-          '</div>';
-        }).join('') : '<div style="font-size:12px;color:var(--ink-muted);">No activities</div>';
-
-        var foodHtml = day.food.length ? day.food.map(function(f, i) {
-          var fname = typeof f === 'string' ? f : f.name;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
-          return '<div onclick="showSplitFloatCardDirect(\'' + fname.replace(/'/g,"\\'") + '\',\'\',\'\',\'' + mapsUrl + '\',-1,-1)" style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--sand-dark);cursor:pointer;">' +
-            '<span style="font-size:13px;">🍽️</span>' +
-            '<span style="flex:1;font-size:12px;color:var(--ink-light);">' + fname + '</span>' +
-            '<span style="font-size:10px;color:var(--accent);white-space:nowrap;">📍</span>' +
-          '</div>';
-        }).join('') : '';
-
-        detail.innerHTML = transHtml + accomHtml +
-          '<div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-muted);margin:8px 0 4px;">Activities</div>' + actsHtml +
-          (foodHtml ? '<div style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-muted);margin:8px 0 4px;">Food</div>' + foodHtml : '') +
-          '<button onclick="openDayPanel(currentTrip.days[' + index + '])" style="margin-top:10px;font-family:inherit;font-size:11px;font-weight:500;padding:6px 14px;border-radius:6px;border:none;background:var(--accent);color:#fff;cursor:pointer;">Edit day →</button>';
-
-        el.insertAdjacentElement('afterend', detail);
-        clearSplitActivityMarkers();
-        addSplitActivityMarkers(day, null);
-      } else {
-        openDayPanel(day);
-      }
-    }
-
-    // ===== PANEL TABS =====
+      // ===== PANEL TABS =====
     function refreshPanelTabs(item) {
       normaliseAccom(item); normaliseDayTransport(item);
 
