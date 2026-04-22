@@ -2954,13 +2954,16 @@ var mobPhotoId = 'kp-' + photoKey;
       if (!el) return;
       var days = currentTrip.days || [];
 
-      // Group days by city block (preserving order)
+      // Sort by day number first, then group by consecutive city runs
+      var sorted = days.slice().sort(function(a, b) { return a.day - b.day; });
       var blocks = [];
-      var seen = [];
-      days.forEach(function(day) {
-        var key = day.city;
-        if (!seen.includes(key)) { seen.push(key); blocks.push({ city: key, days: [] }); }
-        blocks[seen.indexOf(key)].days.push(day);
+      sorted.forEach(function(day) {
+        var last = blocks[blocks.length - 1];
+        if (last && last.city === day.city) {
+          last.days.push(day);
+        } else {
+          blocks.push({ city: day.city, days: [day] });
+        }
       });
 
       el.innerHTML = blocks.map(function(block, bi) {
@@ -3924,7 +3927,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var toggleBar = '<div style="display:flex;justify-content:flex-end;padding:0 0 12px 0;">' +
         '<button id="itin-toggle-all" onclick="toggleAllItinDays()" style="font-family:inherit;font-size:11px;font-weight:700;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;transition:all 0.15s;">Expand All</button>' +
         '</div>';
-      var daysHtml = currentTrip.days.map(function(item) {
+      var sortedDays = currentTrip.days.slice().sort(function(a, b) { return a.day - b.day; });
+      var daysHtml = sortedDays.map(function(item) {
         normaliseAccom(item); normaliseDayTransport(item);
         var cityEmoji = getCityEmoji(item.city);
 
