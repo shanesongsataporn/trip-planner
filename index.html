@@ -378,8 +378,8 @@
     .de-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); cursor: pointer; border: 1px solid transparent; }
     .de-cat-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     /* Add sheet */
-    #de-add-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 20px 20px 0 0; padding: 20px 20px 36px; z-index: 5300; transform: translateY(100%); transition: transform 0.3s ease; box-shadow: 0 -4px 30px rgba(0,0,0,0.4); }
-    #de-add-sheet.open { transform: translateY(0); }
+#de-add-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 20px 20px 0 0; padding: 20px 20px 36px; z-index: 5300; transform: translateY(100%); transition: transform 0.3s ease; box-shadow: 0 -4px 30px rgba(0,0,0,0.4); }
+    .pac-container { z-index: 5400 !important; }    #de-add-sheet.open { transform: translateY(0); }
     .de-add-sheet-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 16px; }
     .de-add-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
     .de-add-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); cursor: pointer; border: 1px solid transparent; }
@@ -1057,8 +1057,12 @@
   </div>
   <div id="de-add-sheet">
     <div class="de-add-sheet-title" id="de-add-sheet-title">Add Activity</div>
-    <input class="de-add-input" id="de-add-input" type="text" placeholder="Search or type a place...">
+    <input class="de-add-input" id="de-add-input" type="text" placeholder="Search a place...">
+    <input class="de-add-input" id="de-add-manual-input" type="text" placeholder="Name..." style="display:none;">
     <textarea class="de-add-input" id="de-add-note" rows="2" placeholder="Note (optional)" style="resize:none;"></textarea>
+    <div style="text-align:center;margin:-4px 0 8px;">
+      <span id="de-add-manual-toggle" onclick="deToggleManualAdd()" style="font-size:12px;color:rgba(255,255,255,0.35);cursor:pointer;text-decoration:underline;">or add manually</span>
+    </div>
     <div id="de-add-cat-row">
       <div class="de-expand-label" style="margin-bottom:8px;">Category</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
@@ -5095,7 +5099,12 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       sheet.dataset.section = section;
       var title = section === 'acts' ? 'Add Activity' : section === 'accom' ? 'Add Accommodation' : 'Add Food & Drink';
       document.getElementById('de-add-sheet-title').textContent = title;
+      deAddManualMode = false;
       document.getElementById('de-add-input').value = '';
+      document.getElementById('de-add-input').style.display = 'block';
+      document.getElementById('de-add-manual-input').value = '';
+      document.getElementById('de-add-manual-input').style.display = 'none';
+      document.getElementById('de-add-manual-toggle').textContent = 'or add manually';
       document.getElementById('de-add-note').value = '';
       document.getElementById('de-add-cat-row').style.display = section === 'acts' ? 'block' : 'none';
       sheet.dataset.selectedCat = 'default';
@@ -5125,6 +5134,14 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       if (sheet) sheet.classList.remove('open');
     }
 
+    var deAddManualMode = false;
+    function deToggleManualAdd() {
+      deAddManualMode = !deAddManualMode;
+      document.getElementById('de-add-input').style.display = deAddManualMode ? 'none' : 'block';
+      document.getElementById('de-add-manual-input').style.display = deAddManualMode ? 'block' : 'none';
+      document.getElementById('de-add-manual-toggle').textContent = deAddManualMode ? 'or search Google' : 'or add manually';
+    }
+
     function deAddPickCat(cat) {
       var sheet = document.getElementById('de-add-sheet');
       if (sheet) sheet.dataset.selectedCat = cat;
@@ -5137,7 +5154,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var sheet = document.getElementById('de-add-sheet');
       if (!sheet || !deCurrentDay) return;
       var section = sheet.dataset.section;
-      var name = document.getElementById('de-add-input').value.trim();
+      var name = deAddManualMode
+        ? document.getElementById('de-add-manual-input').value.trim()
+        : document.getElementById('de-add-input').value.trim();
       var note = document.getElementById('de-add-note').value.trim();
       var cat = sheet.dataset.selectedCat || 'default';
       if (!name) return;
