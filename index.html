@@ -2954,8 +2954,14 @@ var mobPhotoId = 'kp-' + photoKey;
       if (!el) return;
       var days = currentTrip.days || [];
 
-      // Sort by day number first, then group by consecutive city runs
-      var sorted = days.slice().sort(function(a, b) { return a.day - b.day; });
+      // Sort by actual date first, then group by consecutive city runs
+      var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+      var sorted = days.slice().sort(function(a, b) {
+        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
+        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
+        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
+        return da - db;
+      });
       var blocks = [];
       sorted.forEach(function(day) {
         var last = blocks[blocks.length - 1];
@@ -3927,7 +3933,13 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var toggleBar = '<div style="display:flex;justify-content:flex-end;padding:0 0 12px 0;">' +
         '<button id="itin-toggle-all" onclick="toggleAllItinDays()" style="font-family:inherit;font-size:11px;font-weight:700;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;transition:all 0.15s;">Expand All</button>' +
         '</div>';
-      var sortedDays = currentTrip.days.slice().sort(function(a, b) { return a.day - b.day; });
+      var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
+        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
+        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
+        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
+        return da - db;
+      });
       var daysHtml = sortedDays.map(function(item) {
         normaliseAccom(item); normaliseDayTransport(item);
         var cityEmoji = getCityEmoji(item.city);
