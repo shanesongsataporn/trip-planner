@@ -365,6 +365,27 @@
     .de-card-name { flex: 1; font-size: 14px; font-weight: 600; color: #fff; letter-spacing: -0.01em; }
     .de-card-meta { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
     .de-card-handle { font-size: 16px; color: rgba(255,255,255,0.2); cursor: grab; padding: 0 4px; flex-shrink: 0; }
+    .de-card--expanded { display: block; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .de-expand-inner { display: flex; flex-direction: column; gap: 6px; }
+    .de-expand-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .de-expand-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; font-size: 14px; color: #fff; box-sizing: border-box; }
+    .de-expand-textarea { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: #fff; box-sizing: border-box; resize: none; }
+    .de-expand-select { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: #fff; box-sizing: border-box; }
+    .de-expand-actions { display: flex; gap: 8px; margin-top: 6px; }
+    .de-expand-save { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .de-expand-delete { background: rgba(224,85,85,0.15); color: var(--danger); border: 1px solid rgba(224,85,85,0.3); border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .de-cat-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+    .de-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); cursor: pointer; border: 1px solid transparent; }
+    .de-cat-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    /* Add sheet */
+    #de-add-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 20px 20px 0 0; padding: 20px 20px 36px; z-index: 5300; transform: translateY(100%); transition: transform 0.3s ease; box-shadow: 0 -4px 30px rgba(0,0,0,0.4); }
+    #de-add-sheet.open { transform: translateY(0); }
+    .de-add-sheet-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 16px; }
+    .de-add-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
+    .de-add-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); cursor: pointer; border: 1px solid transparent; }
+    .de-add-cat-chip.active { background: var(--accent); color: #fff; }
+    .de-add-confirm { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+    .de-add-cancel { width: 100%; background: transparent; color: rgba(255,255,255,0.4); border: none; padding: 10px; font-size: 13px; cursor: pointer; margin-top: 4px; }
     .de-empty { font-size: 12px; color: rgba(255,255,255,0.25); font-style: italic; padding: 8px 0 12px; }
     .de-add-btn { display: block; width: 100%; text-align: left; font-family: inherit; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.35); background: none; border: none; padding: 10px 0 16px; cursor: pointer; letter-spacing: 0.02em; }
     .de-add-btn:hover { color: rgba(255,255,255,0.6); }
@@ -1034,6 +1055,27 @@
     <div id="disc-map"></div>
     <div id="disc-body"></div>
   </div>
+  <div id="de-add-sheet">
+    <div class="de-add-sheet-title" id="de-add-sheet-title">Add Activity</div>
+    <input class="de-add-input" id="de-add-input" type="text" placeholder="Search or type a place...">
+    <textarea class="de-add-input" id="de-add-note" rows="2" placeholder="Note (optional)" style="resize:none;"></textarea>
+    <div id="de-add-cat-row">
+      <div class="de-expand-label" style="margin-bottom:8px;">Category</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+        <div class="de-add-cat-chip active" data-cat="default" onclick="deAddPickCat('default')">📌 default</div>
+        <div class="de-add-cat-chip" data-cat="temple" onclick="deAddPickCat('temple')">🛕 temple</div>
+        <div class="de-add-cat-chip" data-cat="food" onclick="deAddPickCat('food')">🍜 food</div>
+        <div class="de-add-cat-chip" data-cat="beach" onclick="deAddPickCat('beach')">🏖️ beach</div>
+        <div class="de-add-cat-chip" data-cat="nature" onclick="deAddPickCat('nature')">🌿 nature</div>
+        <div class="de-add-cat-chip" data-cat="shopping" onclick="deAddPickCat('shopping')">🛍️ shopping</div>
+        <div class="de-add-cat-chip" data-cat="nightlife" onclick="deAddPickCat('nightlife')">🌙 nightlife</div>
+        <div class="de-add-cat-chip" data-cat="transport" onclick="deAddPickCat('transport')">🚌 transport</div>
+      </div>
+    </div>
+    <button class="de-add-confirm" onclick="confirmDeAdd()">Add to Day</button>
+    <button class="de-add-cancel" onclick="closeDeAddSheet()">Cancel</button>
+  </div>
+
   <div id="disc-add-overlay" onclick="closeAddToTripSheet()"></div>
   <div id="disc-add-sheet">
     <div id="disc-add-sheet-handle"></div>
@@ -4839,6 +4881,283 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
 
     var splitSelectedIndex = -1;
     var deSuppressSync = false;
+    var deCurrentDay = null;
+    var deCurrentIndex = -1;
+    var deExpandedCard = null;
+
+    function renderDeCards() {
+      if (!deCurrentDay || deCurrentIndex < 0) return;
+      deExpandedCard = null;
+
+      var accomCards = '';
+      normaliseAccom(deCurrentDay);
+      if (deCurrentDay.accommodation && deCurrentDay.accommodation.length) {
+        deCurrentDay.accommodation.forEach(function(a, i) {
+          accomCards += '<div class="de-card" id="de-card-accommodation-' + i + '" onclick="deToggleCard(\'accom\',' + i + ')">' +
+            '<div class="de-card-icon" style="background:rgba(52,152,219,0.15);">🏨</div>' +
+            '<div style="flex:1;"><div class="de-card-name">' + (a.name||'Unnamed') + '</div>' +
+            (a.notes ? '<div class="de-card-meta">' + a.notes + '</div>' : '') + '</div>' +
+            '<span class="de-card-handle">⠿</span>' +
+          '</div>';
+        });
+      } else { accomCards = '<div class="de-empty">No accommodation added</div>'; }
+
+      var actCards = '';
+      if (deCurrentDay.activities && deCurrentDay.activities.length) {
+        deCurrentDay.activities.forEach(function(a, i) {
+          var cat = (deCurrentDay.activityCategories && deCurrentDay.activityCategories[i]) || 'default';
+          var catObj = activityCategories[cat] || activityCategories['default'];
+          var dwell = {temple:45,food:60,beach:180,shopping:120,nature:90,nightlife:120,transport:0,default:60};
+          var dur = dwell[cat] || 60;
+          var durLabel = dur >= 60 ? (dur/60) + 'h' : dur + 'm';
+          var photoKey = 'day' + deCurrentDay.day + '_act' + i;
+          var photo = cardPhotos[photoKey];
+          var iconHtml = photo
+            ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
+            : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
+          actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
+            iconHtml +
+            '<div style="flex:1;"><div class="de-card-name">' + a + '</div>' +
+            '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div></div>' +
+            '<span class="de-card-handle">⠿</span>' +
+          '</div>';
+        });
+      } else { actCards = '<div class="de-empty">No activities added</div>'; }
+
+      var foodCards = '';
+      if (deCurrentDay.food && deCurrentDay.food.length) {
+        deCurrentDay.food.forEach(function(f, i) {
+          var fname = typeof f === 'string' ? f : f.name;
+          var booked = f.reservationBooked ? '✅ Booked' : (f.reservationRequired ? '⚠️ Needs booking' : '');
+          foodCards += '<div class="de-card" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
+            '<div class="de-card-icon" style="background:rgba(230,126,34,0.15);">🍽️</div>' +
+            '<div style="flex:1;"><div class="de-card-name">' + fname + '</div>' +
+            (booked ? '<div class="de-card-meta">' + booked + '</div>' : '') + '</div>' +
+            '<span class="de-card-handle">⠿</span>' +
+          '</div>';
+        });
+      } else { foodCards = '<div class="de-empty">No food added</div>'; }
+
+      var accomEl = document.getElementById('de-sort-accom');
+      var actsEl = document.getElementById('de-sort-acts');
+      var foodEl = document.getElementById('de-sort-food');
+      if (accomEl) accomEl.innerHTML = accomCards;
+      if (actsEl) actsEl.innerHTML = actCards;
+      if (foodEl) foodEl.innerHTML = foodCards;
+
+      // Re-wire route + add buttons
+      var routeBtn = document.querySelector('.de-route-btn');
+      if (routeBtn) { routeBtn.onclick = function() { openDayPanelOnTab(deCurrentDay, 'route'); }; }
+      var addBtns = document.querySelectorAll('.de-add-btn');
+      addBtns.forEach(function(btn) {
+        var txt = btn.textContent;
+        if (txt.indexOf('activity') !== -1) { btn.onclick = function() { showDeAddSheet('acts'); }; }
+        else if (txt.indexOf('accommodation') !== -1) { btn.onclick = function() { showDeAddSheet('accom'); }; }
+        else if (txt.indexOf('food') !== -1) { btn.onclick = function() { showDeAddSheet('food'); }; }
+      });
+    }
+
+    function deToggleCard(section, i) {
+      var cardId = 'de-card-' + (section === 'acts' ? 'act' : section === 'accom' ? 'accommodation' : 'food') + '-' + i;
+      var card = document.getElementById(cardId);
+      if (!card) return;
+
+      // If this card is already expanded, collapse it
+      if (deExpandedCard === cardId) {
+        deExpandedCard = null;
+        renderDeCards();
+        return;
+      }
+
+      // Collapse any open card first
+      deExpandedCard = cardId;
+
+      var day = deCurrentDay;
+      var cats = Object.keys(activityCategories);
+      var currentCat = (day.activityCategories && day.activityCategories[i]) || 'default';
+      var currentName = section === 'acts' ? (day.activities[i] || '') :
+                        section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].name : '') :
+                        (day.food[i] ? (typeof day.food[i] === 'string' ? day.food[i] : day.food[i].name) : '');
+      var currentNote = section === 'acts' ? '' :
+                        section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].notes || '' : '') :
+                        (day.food[i] ? day.food[i].notes || '' : '');
+      var currentLink = section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].link || '' : '') :
+                        section === 'food' ? (day.food[i] ? day.food[i].link || '' : '') : '';
+
+      var dayOptions = currentTrip.days.map(function(d, di) {
+        return '<option value="' + di + '"' + (di === deCurrentIndex ? ' selected' : '') + '>Day ' + d.day + ' · ' + d.city + '</option>';
+      }).join('');
+
+      var catPicker = section === 'acts' ? '<div class="de-expand-label">Category</div><div class="de-cat-picker">' +
+        cats.map(function(c) {
+          var co = activityCategories[c];
+          return '<div class="de-cat-chip' + (c === currentCat ? ' active' : '') + '" onclick="dePickCat(\'' + section + '\',' + i + ',\'' + c + '\')">' + co.emoji + ' ' + c + '</div>';
+        }).join('') + '</div>' : '';
+
+      card.innerHTML =
+        '<div class="de-expand-inner" onclick="event.stopPropagation();">' +
+          '<div class="de-expand-label">Name</div>' +
+          '<input class="de-expand-input" id="de-exp-name" type="text" value="' + currentName.replace(/"/g, '&quot;') + '">' +
+          catPicker +
+          '<div class="de-expand-label">Note</div>' +
+          '<textarea class="de-expand-textarea" id="de-exp-note" rows="2">' + currentNote + '</textarea>' +
+          (section !== 'acts' ? '<div class="de-expand-label">Link</div><input class="de-expand-input" id="de-exp-link" type="text" placeholder="https://..." value="' + currentLink + '">' : '') +
+          '<div class="de-expand-label">Move to day</div>' +
+          '<select class="de-expand-select" id="de-exp-day">' + dayOptions + '</select>' +
+          '<div class="de-expand-actions">' +
+            '<button class="de-expand-save" onclick="deSaveCard(\'' + section + '\',' + i + ')">Done</button>' +
+            '<button class="de-expand-delete" onclick="deDeleteCard(\'' + section + '\',' + i + ')">Delete</button>' +
+          '</div>' +
+        '</div>';
+      card.classList.add('de-card--expanded');
+    }
+
+    function dePickCat(section, i, cat) {
+      if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
+      deCurrentDay.activityCategories[i] = cat;
+      // Update chip UI only
+      document.querySelectorAll('.de-cat-chip').forEach(function(el) { el.classList.remove('active'); });
+      var chips = document.querySelectorAll('.de-cat-chip');
+      chips.forEach(function(el) { if (el.textContent.indexOf(cat) !== -1) el.classList.add('active'); });
+    }
+
+    function deSaveCard(section, i) {
+      var nameEl = document.getElementById('de-exp-name');
+      var noteEl = document.getElementById('de-exp-note');
+      var linkEl = document.getElementById('de-exp-link');
+      var dayEl = document.getElementById('de-exp-day');
+      var newName = nameEl ? nameEl.value.trim() : '';
+      var newNote = noteEl ? noteEl.value.trim() : '';
+      var newLink = linkEl ? linkEl.value.trim() : '';
+      var newDayIdx = dayEl ? parseInt(dayEl.value) : deCurrentIndex;
+
+      if (section === 'acts') {
+        if (newName) deCurrentDay.activities[i] = newName;
+      } else if (section === 'accom') {
+        normaliseAccom(deCurrentDay);
+        if (newName) deCurrentDay.accommodation[i].name = newName;
+        deCurrentDay.accommodation[i].notes = newNote;
+        deCurrentDay.accommodation[i].link = newLink;
+      } else if (section === 'food') {
+        normaliseFood(deCurrentDay);
+        if (newName) deCurrentDay.food[i].name = newName;
+        deCurrentDay.food[i].notes = newNote;
+        deCurrentDay.food[i].link = newLink;
+      }
+
+      // Move to different day if changed
+      if (newDayIdx !== deCurrentIndex) {
+        var targetDay = currentTrip.days[newDayIdx];
+        if (section === 'acts') {
+          targetDay.activities.push(deCurrentDay.activities.splice(i, 1)[0]);
+          if (deCurrentDay.activityCategories) {
+            if (!targetDay.activityCategories) targetDay.activityCategories = [];
+            targetDay.activityCategories.push(deCurrentDay.activityCategories.splice(i, 1)[0]);
+          }
+        } else if (section === 'accom') {
+          normaliseAccom(targetDay);
+          targetDay.accommodation.push(deCurrentDay.accommodation.splice(i, 1)[0]);
+        } else if (section === 'food') {
+          normaliseFood(targetDay);
+          targetDay.food.push(deCurrentDay.food.splice(i, 1)[0]);
+        }
+      }
+
+      deSuppressSync = true;
+      saveToStorage();
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      deExpandedCard = null;
+      renderDeCards();
+    }
+
+    function deDeleteCard(section, i) {
+      if (!confirm('Delete this item?')) return;
+      if (section === 'acts') {
+        deCurrentDay.activities.splice(i, 1);
+        if (deCurrentDay.activityCategories) deCurrentDay.activityCategories.splice(i, 1);
+      } else if (section === 'accom') {
+        normaliseAccom(deCurrentDay);
+        deCurrentDay.accommodation.splice(i, 1);
+      } else if (section === 'food') {
+        normaliseFood(deCurrentDay);
+        deCurrentDay.food.splice(i, 1);
+      }
+      deSuppressSync = true;
+      saveToStorage();
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      deExpandedCard = null;
+      renderDeCards();
+    }
+
+    function showDeAddSheet(section) {
+      var sheet = document.getElementById('de-add-sheet');
+      if (!sheet) return;
+      sheet.dataset.section = section;
+      var title = section === 'acts' ? 'Add Activity' : section === 'accom' ? 'Add Accommodation' : 'Add Food & Drink';
+      document.getElementById('de-add-sheet-title').textContent = title;
+      document.getElementById('de-add-input').value = '';
+      document.getElementById('de-add-note').value = '';
+      document.getElementById('de-add-cat-row').style.display = section === 'acts' ? 'block' : 'none';
+      sheet.dataset.selectedCat = 'default';
+      document.querySelectorAll('.de-add-cat-chip').forEach(function(el) { el.classList.remove('active'); });
+      var defaultChip = document.querySelector('.de-add-cat-chip[data-cat="default"]');
+      if (defaultChip) defaultChip.classList.add('active');
+      sheet.classList.add('open');
+      // Init Places Autocomplete biased to current day's city
+      setTimeout(function() {
+        var input = document.getElementById('de-add-input');
+        if (!input || !window.google) return;
+        var opts = {};
+        if (deCurrentDay && deCurrentDay.lat && deCurrentDay.lng) {
+          opts.locationBias = { center: { lat: deCurrentDay.lat, lng: deCurrentDay.lng }, radius: 30000 };
+        }
+        var ac = new google.maps.places.Autocomplete(input, opts);
+        ac.addListener('place_changed', function() {
+          var place = ac.getPlace();
+          if (place && place.name) { input.value = place.name; }
+        });
+      }, 100);
+      sheet.dataset.open = '1';
+    }
+
+    function closeDeAddSheet() {
+      var sheet = document.getElementById('de-add-sheet');
+      if (sheet) sheet.classList.remove('open');
+    }
+
+    function deAddPickCat(cat) {
+      var sheet = document.getElementById('de-add-sheet');
+      if (sheet) sheet.dataset.selectedCat = cat;
+      document.querySelectorAll('.de-add-cat-chip').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.cat === cat);
+      });
+    }
+
+    function confirmDeAdd() {
+      var sheet = document.getElementById('de-add-sheet');
+      if (!sheet || !deCurrentDay) return;
+      var section = sheet.dataset.section;
+      var name = document.getElementById('de-add-input').value.trim();
+      var note = document.getElementById('de-add-note').value.trim();
+      var cat = sheet.dataset.selectedCat || 'default';
+      if (!name) return;
+      if (section === 'acts') {
+        deCurrentDay.activities.push(name);
+        if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
+        deCurrentDay.activityCategories.push(cat);
+      } else if (section === 'accom') {
+        normaliseAccom(deCurrentDay);
+        deCurrentDay.accommodation.push({ name: name, notes: note, price: '', link: '' });
+      } else if (section === 'food') {
+        normaliseFood(deCurrentDay);
+        deCurrentDay.food.push({ name: name, notes: note, link: '', bookingUrl: '', reservationRequired: false, reservationBooked: false, mustOrder: '' });
+      }
+      deSuppressSync = true;
+      saveToStorage();
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      closeDeAddSheet();
+      renderDeCards();
+    }
 
     function renderSplit() {
       document.getElementById('split-list').innerHTML = currentTrip.days.map(function(item, index) {
@@ -4996,8 +5315,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var accomCards = '';
       normaliseAccom(day);
       if (day.accommodation && day.accommodation.length) {
-        day.accommodation.forEach(function(a) {
-          accomCards += '<div class="de-card">' +
+        day.accommodation.forEach(function(a, i) {
+          accomCards += '<div class="de-card" id="de-card-accommodation-' + i + '" onclick="deToggleCard(\'accom\',' + i + ')">' +
             '<div class="de-card-icon" style="background:rgba(52,152,219,0.15);">🏨</div>' +
             '<div style="flex:1;"><div class="de-card-name">' + (a.name||'Unnamed') + '</div>' +
             (a.notes ? '<div class="de-card-meta">' + a.notes + '</div>' : '') + '</div>' +
@@ -5021,7 +5340,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           var iconHtml = photo
             ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
             : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
-          actCards += '<div class="de-card">' +
+          actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
             iconHtml +
             '<div style="flex:1;"><div class="de-card-name">' + a + '</div>' +
             '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div></div>' +
@@ -5034,10 +5353,10 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
 
       var foodCards = '';
       if (day.food && day.food.length) {
-        day.food.forEach(function(f) {
+        day.food.forEach(function(f, i) {
           var fname = typeof f === 'string' ? f : f.name;
           var booked = f.reservationBooked ? '✅ Booked' : (f.reservationRequired ? '⚠️ Needs booking' : '');
-          foodCards += '<div class="de-card">' +
+          foodCards += '<div class="de-card" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
             '<div class="de-card-icon" style="background:rgba(230,126,34,0.15);">🍽️</div>' +
             '<div style="flex:1;"><div class="de-card-name">' + fname + '</div>' +
             (booked ? '<div class="de-card-meta">' + booked + '</div>' : '') + '</div>' +
@@ -5065,8 +5384,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         '<button class="de-route-btn">🗺 Plan route →</button>';
 
       // Init Sortable on each section
-      var deCurrentDay = day;
-      var deCurrentIndex = index;
+      deCurrentDay = day;
+      deCurrentIndex = index;
       ['accom','acts','food'].forEach(function(section) {
         var el = document.getElementById('de-sort-' + section);
         if (!el || el.children.length < 2) return;
@@ -5098,6 +5417,19 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         });
       });
 
+      // Wire route button
+      var routeBtn = document.querySelector('.de-route-btn');
+      if (routeBtn) { routeBtn.onclick = function() { openDayPanelOnTab(deCurrentDay, 'route'); }; }
+
+      // Wire add buttons
+      var addBtns = document.querySelectorAll('.de-add-btn');
+      addBtns.forEach(function(btn) {
+        var txt = btn.textContent;
+        if (txt.indexOf('activity') !== -1) { btn.onclick = function() { showDeAddSheet('acts'); }; }
+        else if (txt.indexOf('accommodation') !== -1) { btn.onclick = function() { showDeAddSheet('accom'); }; }
+        else if (txt.indexOf('food') !== -1) { btn.onclick = function() { showDeAddSheet('food'); }; }
+      });
+
       var fitBtn = document.getElementById('split-fit-btn');
       if (fitBtn) { fitBtn.style.display = 'block'; }
 
@@ -5109,6 +5441,38 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           activeMap.fitBounds(bounds, { padding: 60 });
         }
       });
+    }
+
+    function deCardId(type, index) {
+      var prefix = type === 'activity' ? 'act' : type === 'accommodation' ? 'accommodation' : 'food';
+      return 'de-card-' + prefix + '-' + index;
+    }
+
+    function dePanToPin(type, index) {
+      var activeMap = splitMap || window.map;
+      var found = null;
+      splitActivityMarkers.forEach(function(obj) {
+        if (obj.type === type && obj.index === index) { found = obj; }
+      });
+      if (found && activeMap) {
+        activeMap.panTo(found.marker.position);
+        var card = document.getElementById(deCardId(type, index));
+        if (card) {
+          card.style.borderLeft = '3px solid var(--accent)';
+          card.style.paddingLeft = '9px';
+          setTimeout(function() { card.style.borderLeft = ''; card.style.paddingLeft = ''; }, 2000);
+        }
+      }
+    }
+
+    function deHighlightCard(type, index) {
+      var card = document.getElementById(deCardId(type, index));
+      if (!card) return;
+      var listPane = document.getElementById('split-list');
+      card.style.borderLeft = '3px solid var(--accent)';
+      card.style.paddingLeft = '9px';
+      if (listPane) { listPane.scrollTop = card.offsetTop - 60; }
+      setTimeout(function() { card.style.borderLeft = ''; card.style.paddingLeft = ''; }, 2000);
     }
 
     function fitSplitPins() {
@@ -5748,9 +6112,15 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
               }
 
               var itemContext = (task.type === 'activity') ? { item: item, actIndex: task.index } : null;
-              marker.addListener('gmp-click', function() {
-                showSplitFloatCard(displayName, photoUrl, userNote, mapsUrl, place.geometry.location, itemContext);
-              });
+              (function(t, idx) {
+                marker.addListener('gmp-click', function() {
+                  if (currentView === 'split') {
+                    deHighlightCard(t, idx);
+                  } else {
+                    showSplitFloatCard(displayName, photoUrl, userNote, mapsUrl, place.geometry.location, itemContext);
+                  }
+                });
+              })(task.type, task.index);
               splitActivityMarkers.push({ marker: marker, index: task.index, type: task.type, name: displayName, photo: photoUrl, note: userNote, mapsUrl: mapsUrl, itemContext: itemContext });
               completed++;
               if (completed === total && callback) { callback(); }
