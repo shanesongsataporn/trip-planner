@@ -1212,20 +1212,23 @@
         var slide = document.createElement('div');
         slide.className = 'mob-cards-slide';
         var actCardsHtml = item.activities.length ? item.activities.map(function(activity, actIndex) {
+          var name = (typeof activity === 'object') ? activity.name : activity;
+          var uid = (typeof activity === 'object' && activity.uid) ? activity.uid : ('day' + item.day + '_act' + actIndex);
           var cat = (item.activityCategories && item.activityCategories[actIndex]) || 'default';
           var catStyle = activityCategories[cat] || activityCategories['default'];
-          var photoKey = 'day' + item.day + '_act' + actIndex;
+          var photoKey = 'act_' + uid;
           var savedPhoto = cardPhotos[photoKey];
           var userNote = (item.cardNotes && item.cardNotes[actIndex]) || '';
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
-var mobPhotoId = 'kp-' + photoKey;
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
+          var mobPhotoId = 'kp-' + photoKey;
           var photoHtml = savedPhoto
             ? '<img style="width:100%;height:290px;object-fit:cover;display:block;" src="' + savedPhoto + '">'
-            : '<div id="' + mobPhotoId + '" style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';          return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
+            : '<div id="' + mobPhotoId + '" style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';
+          return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
             photoHtml +
             '<div style="padding:12px 14px;">' +
               '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;font-weight:700;">' + cat + '</div>' +
-              '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">' + activity + '</div>' +
+              '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">' + name + '</div>' +
               (userNote ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-bottom:8px;">' + userNote + '</div>' : '') +
             '</div>' +
             '<div style="padding:8px 14px;border-top:1px solid var(--sand-dark);display:flex;gap:6px;">' +
@@ -1235,13 +1238,15 @@ var mobPhotoId = 'kp-' + photoKey;
               '<button class="kbtn" onclick="editItinDay(' + dayIndex + ')">Edit</button>' +
             '</div>' +
           '</div>';
-}).join('') : '<div style="padding:20px;text-align:center;color:var(--ink-muted);font-style:italic;font-size:13px;">No activities for this day</div>';
+        }).join('') : '<div style="padding:20px;text-align:center;color:var(--ink-muted);font-style:italic;font-size:13px;">No activities for this day</div>';
         // fetch photos for activities that don't have one yet
         item.activities.forEach(function(activity, actIndex) {
+          var name = (typeof activity === 'object') ? activity.name : activity;
+          var uid = (typeof activity === 'object' && activity.uid) ? activity.uid : ('day' + item.day + '_act' + actIndex);
           var cat = (item.activityCategories && item.activityCategories[actIndex]) || 'default';
-          var photoKey = 'day' + item.day + '_act' + actIndex;
+          var photoKey = 'act_' + uid;
           if (!cardPhotos[photoKey] && cat !== 'default') {
-            fetchKanbanPhoto(activity, item, 'kp-' + photoKey);
+            fetchKanbanPhoto(name, item, 'kp-' + photoKey);
           }
         });
         var foodCardsHtml = item.food.length ? '<div style="margin-top:6px;"><div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;font-weight:700;padding:0 2px;">Food & Drinks</div>' + item.food.map(function(f, fi) {
@@ -4312,6 +4317,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         return '<option value="' + cat + '">' + activityCategories[cat].emoji + ' ' + cat + '</option>';
       }).join('');
       return item.activities.map(function(a, i) {
+        var name = (typeof a === 'object') ? a.name : a;
         var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
         var emoji = (activityCategories[cat] || activityCategories['default']).emoji;
         var dragHandle = '<div class="drag-handle"><span></span><span></span><span></span></div>';
@@ -4319,7 +4325,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
             dragHandle +
             '<span style="font-size:14px;flex-shrink:0;">' + emoji + '</span>' +
-            '<input class="inline-edit" style="flex:1;font-size:12px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:4px 8px;background:var(--sand);" value="' + a.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="inlineUpdateActivity(' + dayIndex + ',' + i + ',\'name\',this.value)" onblur="inlineUpdateActivity(' + dayIndex + ',' + i + ',\'name\',this.value)">' +
+            '<input class="inline-edit" style="flex:1;font-size:12px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:4px 8px;background:var(--sand);" value="' + name.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="inlineUpdateActivity(' + dayIndex + ',' + i + ',\'name\',this.value)" onblur="inlineUpdateActivity(' + dayIndex + ',' + i + ',\'name\',this.value)">' +
             makeDeleteBtn('inlineDeleteActivity(' + dayIndex + ',' + i + ')') +
           '</div>' +
           '<div style="display:flex;align-items:center;gap:6px;margin-left:22px;margin-top:4px;flex-wrap:wrap;">' +
@@ -4589,11 +4595,12 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var item = currentTrip.days[dayIndex];
       if (!item.activities.length) return '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:4px 0;">None added</div>';
       return item.activities.map(function(a, i) {
+        var name = (typeof a === 'object') ? a.name : a;
         var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
         var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
         return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--sand-dark);">' +
           '<span style="font-size:14px;">' + emoji + '</span>' +
-          '<span style="flex:1;font-size:12px;color:var(--ink);">' + a + '</span>' +
+          '<span style="flex:1;font-size:12px;color:var(--ink);">' + name + '</span>' +
           makeDeleteBtn('deleteCalActivity(' + dayIndex + ',' + i + ')') +
         '</div>';
       }).join('');
@@ -4674,9 +4681,11 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     function buildKanbanCard(item, dayIndex, activity, actIndex) {
       var card = document.createElement('div');
       card.className = 'kanban-card';
+      var name = (typeof activity === 'object') ? activity.name : activity;
+      var uid = (typeof activity === 'object' && activity.uid) ? activity.uid : ('day' + item.day + '_act' + actIndex);
       var cat = (item.activityCategories && item.activityCategories[actIndex]) || 'default';
       var catStyle = activityCategories[cat] || activityCategories['default'];
-      var photoKey = 'day' + item.day + '_act' + actIndex;
+      var photoKey = 'act_' + uid;
       var savedPhoto = cardPhotos[photoKey];
       var photoId = 'kp-' + photoKey;
       if (!item.cardNotes) { item.cardNotes = {}; }
@@ -4691,7 +4700,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       card.innerHTML = photoHtml +
         '<div class="kanban-card-body">' +
           '<div class="kanban-card-label">' + cat + '</div>' +
-          '<div class="kanban-card-title">' + activity + '</div>' +
+          '<div class="kanban-card-title">' + name + '</div>' +
           '<div class="kanban-card-note">' + item.note + '</div>' +
           (userNote ? '<div class="kanban-card-user-note">' + userNote + '</div>' : '') +
         '</div>' +
@@ -4702,7 +4711,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           '<button class="kbtn" onclick="editItinDay(' + dayIndex + ')">Edit</button>' +
         '</div>';
 
-      if (!savedPhoto && cat !== 'default') { fetchKanbanPhoto(activity, item, photoId); }
+      if (!savedPhoto && cat !== 'default') { fetchKanbanPhoto(name, item, photoId); }
       return card;
     }
 
@@ -4932,19 +4941,21 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var actCards = '';
       if (deCurrentDay.activities && deCurrentDay.activities.length) {
         deCurrentDay.activities.forEach(function(a, i) {
+          var name = (typeof a === 'object') ? a.name : a;
+          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + deCurrentDay.day + '_act' + i);
           var cat = (deCurrentDay.activityCategories && deCurrentDay.activityCategories[i]) || 'default';
           var catObj = activityCategories[cat] || activityCategories['default'];
           var dwell = {temple:45,food:60,beach:180,shopping:120,nature:90,nightlife:120,transport:0,default:60};
           var dur = dwell[cat] || 60;
           var durLabel = dur >= 60 ? (dur/60) + 'h' : dur + 'm';
-          var photoKey = 'day' + deCurrentDay.day + '_act' + i;
+          var photoKey = 'act_' + uid;
           var photo = cardPhotos[photoKey];
           var iconHtml = photo
             ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
             : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
           actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
             iconHtml +
-            '<div style="flex:1;"><div class="de-card-name">' + a + '</div>' +
+            '<div style="flex:1;"><div class="de-card-name">' + name + '</div>' +
             '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div></div>' +
             '<span class="de-card-handle">⠿</span>' +
           '</div>';
@@ -5002,7 +5013,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var day = deCurrentDay;
       var cats = Object.keys(activityCategories);
       var currentCat = (day.activityCategories && day.activityCategories[i]) || 'default';
-      var currentName = section === 'acts' ? (day.activities[i] || '') :
+      var currentName = section === 'acts' ? (typeof day.activities[i] === 'object' ? day.activities[i].name : (day.activities[i] || '')) :
                         section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].name : '') :
                         (day.food[i] ? (typeof day.food[i] === 'string' ? day.food[i] : day.food[i].name) : '');
       var currentNote = section === 'acts' ? '' :
@@ -5059,7 +5070,13 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var newDayIdx = dayEl ? parseInt(dayEl.value) : deCurrentIndex;
 
       if (section === 'acts') {
-        if (newName) deCurrentDay.activities[i] = newName;
+        if (newName) {
+          if (typeof deCurrentDay.activities[i] === 'object') {
+            deCurrentDay.activities[i].name = newName;
+          } else {
+            deCurrentDay.activities[i] = { name: newName, uid: generateUid() };
+          }
+        }
       } else if (section === 'accom') {
         normaliseAccom(deCurrentDay);
         if (newName) deCurrentDay.accommodation[i].name = newName;
@@ -5372,19 +5389,21 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var actCards = '';
       if (day.activities && day.activities.length) {
         day.activities.forEach(function(a, i) {
+          var name = (typeof a === 'object') ? a.name : a;
+          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + day.day + '_act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
           var catObj = activityCategories[cat] || activityCategories['default'];
           var dwell = {temple:45,food:60,beach:180,shopping:120,nature:90,nightlife:120,transport:0,default:60};
           var dur = dwell[cat] || 60;
           var durLabel = dur >= 60 ? (dur/60) + 'h' : dur + 'm';
-          var photoKey = 'day' + day.day + '_act' + i;
+          var photoKey = 'act_' + uid;
           var photo = cardPhotos[photoKey];
           var iconHtml = photo
             ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
             : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
           actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
             iconHtml +
-            '<div style="flex:1;"><div class="de-card-name">' + a + '</div>' +
+            '<div style="flex:1;"><div class="de-card-name">' + name + '</div>' +
             '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div></div>' +
             '<span class="de-card-handle">⠿</span>' +
           '</div>';
@@ -5560,6 +5579,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         return item.activities.length ?
           '<div id="sortable-activities-' + idSuffix + '">' +
           item.activities.map(function(a, i) {
+            var name = (typeof a === 'object') ? a.name : a;
             var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
             var catStyle = activityCategories[cat] || activityCategories['default'];
             var note = (item.cardNotes && item.cardNotes[String(i)]) || '';
@@ -5567,7 +5587,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
               dragHandleHtml +
               '<span style="font-size:16px;padding-top:2px;flex-shrink:0;">' + catStyle.emoji + '</span>' +
               '<div style="flex:1;min-width:0;">' +
-                '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + a.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="updateActivityName(' + i + ',this.value)" onblur="updateActivityName(' + i + ',this.value)">' +
+                '<input class="inline-edit" style="font-size:13px;font-weight:500;color:var(--ink);width:100%;margin-bottom:4px;" value="' + name.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="updateActivityName(' + i + ',this.value)" onblur="updateActivityName(' + i + ',this.value)">' +
                 '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
                   '<select onchange="updateActivityCat(' + i + ',this.value)" style="font-family:inherit;font-size:11px;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">' +
                     catOptions.replace('value="' + cat + '"', 'value="' + cat + '" selected') +
@@ -6113,8 +6133,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       if (!item.activityCategories || item.activityCategories.length !== item.activities.length) {
         item.activityCategories = item.activities.map(function() { return 'default'; });
       }
-      item.activities.forEach(function(activity, index) { tasks.push({ type: 'activity', name: activity, cat: item.activityCategories[index] || 'default', index: index, catIndex: index }); });
-      item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: typeof f === 'string' ? f : f.name, index: index, catIndex: index }); });
+item.activities.forEach(function(activity, index) { var name = (typeof activity === 'object') ? activity.name : activity; tasks.push({ type: 'activity', name: name, cat: item.activityCategories[index] || 'default', index: index, catIndex: index }); });      item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: typeof f === 'string' ? f : f.name, index: index, catIndex: index }); });
       item.accommodation.forEach(function(a, index) { if (a.name) { tasks.push({ type: 'accommodation', name: a.name, index: index, catIndex: index }); } });
       var total = tasks.length, completed = 0;
       if (total === 0) { if (callback) { callback(); } return; }
@@ -6142,10 +6161,11 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
 
               // check for user-uploaded photo
               if (task.type === 'activity') {
-                var dayItem = item;
-                var pk = 'day' + dayItem.day + '_act' + task.index;
+                var act = item.activities[task.index];
+                var actUid = (act && typeof act === 'object' && act.uid) ? act.uid : ('day' + item.day + '_act' + task.index);
+                var pk = 'act_' + actUid;
                 if (cardPhotos[pk]) { photoUrl = cardPhotos[pk]; }
-              }
+              } 
 
               // check for user note
               var userNote = '';
@@ -6184,7 +6204,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       if (!item.activityCategories || item.activityCategories.length !== item.activities.length) {
         item.activityCategories = item.activities.map(function() { return 'default'; });
       }
-      item.activities.forEach(function(activity, index) { tasks.push({ type: 'activity', name: activity, cat: item.activityCategories[index] || 'default', index: index, catIndex: index }); });
+      item.activities.forEach(function(activity, index) { var name = (typeof activity === 'object') ? activity.name : activity; tasks.push({ type: 'activity', name: name, cat: item.activityCategories[index] || 'default', index: index, catIndex: index }); });
       item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: typeof f === 'string' ? f : f.name, index: index, catIndex: index }); });
       item.accommodation.forEach(function(a, index) { if (a.name) { tasks.push({ type: 'accommodation', name: a.name, index: index, catIndex: index }); } });
       var total = tasks.length, completed = 0;
@@ -6232,7 +6252,9 @@ var pinDelay = Math.floor(Math.random() * 150);
             var mapsUrl = (details && details.url) ? details.url : 'https://www.google.com/maps/search/' + encodeURIComponent(task.name);
             var displayName = (details && details.name) ? details.name : task.name;
             if (task.type === 'activity') {
-              var pk = 'day' + item.day + '_act' + task.index;
+              var act = item.activities[task.index];
+              var actUid = (act && typeof act === 'object' && act.uid) ? act.uid : ('day' + item.day + '_act' + task.index);
+              var pk = 'act_' + actUid;
               if (cardPhotos[pk]) { photoUrl = cardPhotos[pk]; }
             }
             var userNote = (task.type === 'activity' && item.cardNotes && item.cardNotes[String(task.index)]) ? item.cardNotes[String(task.index)] : '';
@@ -6349,16 +6371,18 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (day.activities.length) {
         chips += divider('Activities');
         day.activities.forEach(function(a, i) {
+          var name = (typeof a === 'object') ? a.name : a;
+          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + day.day + '_act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
           var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
-          var photoKey = 'day' + day.day + '_act' + i;
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+          var photoKey = 'act_' + uid;
           var photo = cardPhotos[photoKey] || '';
           var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : '';
           var dk = 'act_' + i;
           var isDone = day.done && day.done[dk];
           var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
-          chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + a.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ',\'activity\',\'' + dk + '\')">' + emoji + ' ' + a + '</div>';
+          chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + name.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ',\'activity\',\'' + dk + '\')">' + emoji + ' ' + name + '</div>';
         });
       }
       if (day.food.length) {
@@ -6597,8 +6621,9 @@ var pinDelay = Math.floor(Math.random() * 150);
       normaliseAccom(item); normaliseFood(item);
       var stops = [];
       item.activities.forEach(function(a, i) {
+        var name = (typeof a === 'object') ? a.name : a;
         var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
-        stops.push({ name: a, type: 'activity', cat: cat, index: i });
+        stops.push({ name: name, type: 'activity', cat: cat, index: i });
       });
       item.food.forEach(function(f, i) {
         var fname = typeof f === 'string' ? f : f.name;
@@ -7208,10 +7233,10 @@ var pinDelay = Math.floor(Math.random() * 150);
       var prevDay = currentTrip.days[dayIdx - 1];
       var nextDay = currentTrip.days[dayIdx + 1];
       var prevDayText = (prevDay && prevDay.city === item.city)
-        ? 'Day ' + prevDay.day + ' (' + prevDay.date + '): ' + (prevDay.activities || []).join(', ')
+        ? 'Day ' + prevDay.day + ' (' + prevDay.date + '): ' + (prevDay.activities || []).map(function(a) { return typeof a === 'object' ? a.name : a; }).join(', ')
         : 'Different city or no previous day';
       var nextDayText = (nextDay && nextDay.city === item.city)
-        ? 'Day ' + nextDay.day + ' (' + nextDay.date + '): ' + (nextDay.activities || []).join(', ')
+        ? 'Day ' + nextDay.day + ' (' + nextDay.date + '): ' + (nextDay.activities || []).map(function(a) { return typeof a === 'object' ? a.name : a; }).join(', ')
         : 'Different city or no next day';
 
       // today's food reservations
@@ -7223,8 +7248,9 @@ var pinDelay = Math.floor(Math.random() * 150);
 
       // activity notes
       var actNotes = (item.activities || []).map(function(a, i) {
+        var name = (typeof a === 'object') ? a.name : a;
         var link = item.activityLinks && item.activityLinks[i];
-        return link ? '- ' + a + ': ' + link : null;
+        return link ? '- ' + name + ': ' + link : null;
       }).filter(Boolean).join('\n') || 'None';
 
       // day load estimate
@@ -7300,6 +7326,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
+        console.log('[Claude raw]', JSON.stringify(data));
         var text = data.content && data.content[0] && data.content[0].text ? data.content[0].text : '';
         var clean = text.replace(/```json|```/g, '').trim();
         var parsed;
@@ -7308,7 +7335,8 @@ var pinDelay = Math.floor(Math.random() * 150);
         }
         renderClaudeReview(parsed, item, finalOrder, finalLegs);
       })
-      .catch(function() {
+      .catch(function(e) {
+        console.log('[Claude error]', e);
         renderClaudeReview({ verdict: 'warning', message: 'AI review unavailable. Check your connection.', issues: [], suggestedOrder: null }, item, finalOrder, finalLegs);
       });
     }
@@ -8026,6 +8054,28 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     }
 
+    // ===== ACTIVITY UID MIGRATION =====
+    function generateUid() {
+      return Math.random().toString(36).substr(2, 6);
+    }
+
+    function migrateActivityUids() {
+      if (!currentTrip || !currentTrip.days) return;
+      var changed = false;
+      currentTrip.days.forEach(function(day) {
+        if (!day.activities) return;
+        day.activities = day.activities.map(function(a) {
+          if (typeof a === 'string') {
+            changed = true;
+            return { name: a, uid: generateUid() };
+          }
+          if (!a.uid) { a.uid = generateUid(); changed = true; }
+          return a;
+        });
+      });
+      if (changed) { saveToStorage(); }
+    }
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
@@ -8058,6 +8108,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
             try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
           }
+          migrateActivityUids();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
