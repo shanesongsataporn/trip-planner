@@ -1,8 +1,11 @@
+bash
+
+cat > /mnt/skills/user/trip-planner-context/SKILL.md << 'SKILLEOF'
 ---
 name: trip-planner-context
 description: Full technical reference for Shane & Cheryl's Trip Planner app. Use this skill at the start of any conversation involving this app, or whenever asked to add features, fix bugs, or modify the trip planner codebase. Trigger on any mention of trip planner, split view, day panel, splitMap, selectSplitDay, kanban, itinerary view, float card, mob-day-pill, home view, home tiles, or any reference to the Thailand trip planner project.
-version: 4.3
-updated: 2026-04-22
+version: 4.4
+updated: 2026-04-23
 ---
 
 # Shane & Cheryl's Trip Planner — Context Skill
@@ -114,7 +117,7 @@ Card IDs: de-card-act-{i}, de-card-accommodation-{i}, de-card-food-{i}
 Tap to expand inline (.de-card--expanded) → edit name, category, note, link, move to day, delete.
 
 ### Day Editor functions
-selectSplitDay(index) — renders day editor
+selectSplitDay(index) — renders day editor (has its OWN activity cards block, separate from renderDeCards)
 renderDeCards() — lightweight card-only re-render (safe, doesn't touch map)
 deToggleCard(section, i) — expand/collapse
 deSaveCard(section, i) — save edits + move-to-day
@@ -132,25 +135,48 @@ Location bias: deCurrentDay.lat/lng.
 
 ---
 
-## !! CRITICAL ARCHITECTURE ISSUE — ACTIVITY DATA MODEL !!
-Currently activities are stored as parallel arrays:
-  day.activities = ["Wat Pak Nam", "Thong Lor Area"]
-  day.activityCategories = ["temple", "default"]
-  day.activityLinks = [] (unused)
-  cardPhotos["day5_act0"] = "https://..." (separate global, keyed by position)
-
-THIS IS BROKEN. Photos are tied to array position, not to the activity.
-Reordering activities breaks photo assignments.
-
-PLANNED REFACTOR (next session): Convert activities to object arrays:
+## !! ACTIVITY DATA MODEL — uid-based photos !!
+Activities are stored as objects with a stable uid:
   day.activities = [
-    { name: "Wat Pak Nam", category: "temple", photo: "https://...", note: "...", link: "..." },
-    { name: "Thong Lor Area", category: "default", photo: "", note: "", link: "" }
+    { name: "Wat Pak Nam", uid: "a3f9k2" },
+    { name: "Thong Lor Area", uid: "b7x1m9" }
   ]
-Photo travels with the object. cardPhotos global becomes redundant.
-This also surfaces activityLinks naturally.
-Requires: migration script, update all render functions, update Sortable onEnd handlers.
-DO NOT start this refactor without a full session plan.
+  day.activityCategories = ["temple", "default"]  ← still a parallel array
+  day.activityLinks = []  ← parallel array, unused
+
+Photo keys use uid: cardPhotos["act_" + uid]
+NOT positional keys like "day5_act0" anymore.
+
+Migration: migrateActivityUids() runs inside loadFromStorage() after data loads.
+generateUid() — returns 6-char random string.
+
+!! NEVER write day.activities[i] = "string" — always preserve the object !!
+When saving a name edit: day.activities[i].name = newName (not reassignment)
+When creating new activity: push { name: "...", uid: generateUid() }
+
+### Places that read activity names — ALL updated to use a.name:
+1. renderDeCards()
+2. selectSplitDay() — has its OWN activity cards block
+3. toggleMobDaySummary()
+4. renderInlineActivities()
+5. renderCalEditActs() (calendar view — may be dead code)
+6. makeSortableActivities()
+7. getRouteStops()
+8. addActivityMarkers()
+9. addSplitActivityMarkers()
+10. renderMobCards()
+11. buildKanbanCard()
+12. callClaudeRouteReview() — prevDayText, nextDayText, actNotes
+13. deToggleCard() — reads a.name for currentName
+14. deSaveCard() — updates a.name, preserves uid
+
+### Photo key pattern (uid-based):
+renderDeCards: photoKey = 'act_' + uid
+selectSplitDay: photoKey = 'act_' + uid
+geocodeActivity: pk = 'act_' + actUid (reads from item.activities[task.index])
+addSplitActivityMarkers: pk = 'act_' + actUid
+renderMobCards: photoKey = 'act_' + uid
+buildKanbanCard: photoKey = 'act_' + uid
 
 ---
 
@@ -196,7 +222,9 @@ Same sort applied in renderItinerary() and renderMobCards().
 ### Route Optimiser
 renderRouteTab(item) / suggestRoute(item) / runSegmentRoute(...)
 buildRouteResultsHtml(item) / clearRoute(item) / buildGoogleMapsUrl(item)
-callClaudeRouteReview(item, finalOrder, finalLegs) / renderClaudeReview(...) / applyClaudeOrder(newOrder)
+callClaudeRouteReview(item, finalOrder, finalLegs) — spinner shown on first call only (_retries === undefined)
+renderClaudeReview(...) / applyClaudeOrder(newOrder)
+getRouteStops(item) — builds stop list, reads activity.name
 
 ### Discovery
 renderDiscovery() / runDiscoverySearch() / initDiscAutocomplete()
@@ -208,18 +236,24 @@ loadDiscWishlist() / saveDiscWishlist()
 saveToStorage() — Firestore .set() with { merge: true } + localStorage
 !! ALWAYS keep { merge: true } — without it, cardPhotos and wishlist get wiped !!
 
-loadFromStorage(callback) / setupRealtimeSync()
+loadFromStorage(callback) — calls migrateActivityUids() after data loads, before callback
+setupRealtimeSync()
 normaliseAccom(item) / normaliseFood(item) / normaliseDayTransport(item) / normaliseDayCurrency(day)
 fetchExchangeRates(callback) / convertToBase(amount, fromCurrency)
 loadApiKeys() — Anthropic key from Firestore into anthropicApiKey
 
-### Photo system (CURRENT — pre-refactor)
+### Activity uid system
+generateUid() — 6-char random string
+migrateActivityUids() — converts string activities to {name, uid} objects, saves if changed
+Called inside loadFromStorage() after trip data is parsed (inside the if(doc.exists) block)
+
+### Photo system (uid-based)
 cardPhotos global — {photoKey: url}
-photoKey format: 'day{N}_act{index}' / 'day{N}_food{index}'
+photoKey format: 'act_{uid}' for activities, 'day{N}_food{index}' for food (food not yet migrated)
 saveCardPhotos() / loadCardPhotos() / loadCardPhotosFromFirestore(callback)
 triggerPhotoUpload(photoKey, dayIndex, actIndex, type)
 uploadImageToFirebase(file, photoKey, ...)
-fetchKanbanPhoto(activity, item, photoId) — Places API auto-fetch
+fetchKanbanPhoto(name, item, photoId) — Places API auto-fetch, takes name string not object
 fetchingPhotos global — prevents duplicate fetches
 
 ### Done system
@@ -241,12 +275,12 @@ renderBudget() / renderFood() / renderCalendar()
   day, date, city, lat, lng, note,
   currency, currencySymbol,
   accommodation: [{name, notes, price, link}],
-  activities: [],           ← strings currently, planned: objects
-  activityCategories: [],   ← parallel array, will merge into activities
-  activityLinks: [],        ← parallel array, unused, will merge into activities
+  activities: [{name, uid}],             ← objects with stable uid
+  activityCategories: [],                ← parallel array (still strings)
+  activityLinks: [],                     ← parallel array, unused
   food: [{name, link, bookingUrl, reservationRequired, reservationBooked, notes, mustOrder}],
   transport: [{type, from, to, carrier, flightNum, depart, arrive, notes}],
-  cardNotes: {"0": "note"}, ← will merge into activities
+  cardNotes: {"0": "note"},              ← keyed by index string, not yet migrated
   costs: {"accom_0_est": 120},
   done: {"act_0": true},
   routeOrder: [], routeLegs: [],
@@ -273,7 +307,7 @@ Firestore: trips/thailand_2026
 
 !! currentTrip.days array is NOT in chronological order !!
 Days 5,6,7 (May 21-23, second Bangkok leg) appear before day 8 (May 13) in the array.
-Always sort by parsed date string before rendering. Cards view also now sorted by date.
+Always sort by parsed date string before rendering.
 Never sort by day.day number — it matches array order, not chronological order.
 
 ---
@@ -289,21 +323,21 @@ Anthropic key: Firestore config/api_keys.anthropic
 ---
 
 ## Known issues
-1. Activity data model — parallel arrays break photo/note/category sync on reorder (NEXT SESSION)
-2. Swipe left on Day Editor cards — deferred
-3. Wishlist not synced to Firestore (Cheryl can't see Shane's wishlist)
-4. Claude suggestedOrder sometimes null — Apply button missing
-5. suggestRoute fires twice per tap
+1. cardNotes still keyed by index position (not uid) — will break on reorder
+2. activityCategories still a parallel array — will break on reorder
+3. Food photos still use positional keys (day{N}_food{index})
+4. Wishlist not synced to Firestore (Cheryl can't see Shane's wishlist)
+5. Claude suggestRoute fires twice per tap
 6. PlacesService deprecated March 2025 (still works)
 7. Split view openSplitPin retry loop (potential infinite loop)
 
 ---
 
 ## Feature roadmap (priority order)
-1. Activity object refactor — photo/note/category/link travel with card (NEXT SESSION)
-2. Wishlist sync to Firestore
-3. Swipe left on Day Editor cards (delete + move)
-4. Fix Claude suggestedOrder / Apply button
+1. Migrate cardNotes and activityCategories to uid-based (completes the activity object refactor)
+2. Migrate food photos to stable keys
+3. Wishlist sync to Firestore
+4. Swipe left on Day Editor cards (delete + move)
 5. Today indicator on desktop timeline
 6. Trip progress bar in header
 7. Plan/Go/Remember mode
@@ -316,5 +350,10 @@ Anthropic key: Firestore config/api_keys.anthropic
 ---
 
 ## Session handoff
-Start new chat: "Trip planner dev session. Read /mnt/skills/user/trip-planner-context/SKILL.md first. Tell me the version number — it should be 4.3. Don't write any code until I confirm."
+Start new chat: "Trip planner dev session. Read /mnt/skills/user/trip-planner-context/SKILL.md first. Tell me the version number — it should be 4.4. Don't write any code until I confirm."
 End of session: regenerate this file AND update PROJECT-CONTEXT.md in VS Code with the same content, then commit and push.
+SKILLEOF
+echo "Done"
+Output
+
+Done
