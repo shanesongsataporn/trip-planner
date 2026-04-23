@@ -6824,12 +6824,7 @@ var pinDelay = Math.floor(Math.random() * 150);
           '<a href="' + mapsUrl + '" target="_blank" style="flex:1;text-decoration:none;"><button style="width:100%;font-family:inherit;font-size:11px;font-weight:700;padding:9px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">📍 Maps</button></a>' +
           '<button onclick="clearRoute(currentDayItem)" style="font-family:inherit;font-size:11px;font-weight:600;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">Clear</button>' +
         '</div>' +
-        '<div id="claude-route-review" style="margin-top:4px;">' +
-          '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;display:flex;align-items:center;gap:10px;">' +
-            '<div style="width:18px;height:18px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;"></div>' +
-            '<div style="font-size:12px;color:var(--ink-muted);">🤖 Claude is reviewing your route...</div>' +
-          '</div>' +
-        '</div>' +
+        '<div id="claude-route-review" style="margin-top:4px;"></div>' +
       '</div>';
     }
 
@@ -7126,13 +7121,16 @@ var pinDelay = Math.floor(Math.random() * 150);
     }
 
     function callClaudeRouteReview(item, finalOrder, finalLegs, _retries) {
+      var reviewEl = document.getElementById('claude-route-review');
+      if (reviewEl && (_retries === undefined)) {
+        reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;display:flex;align-items:center;gap:10px;"><div style="width:18px;height:18px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;"></div><div style="font-size:12px;color:var(--ink-muted);">🤖 Claude is reviewing your route...</div></div>';
+      }
       if (!anthropicApiKey) {
         var retries = _retries === undefined ? 5 : _retries;
         if (retries > 0) {
           setTimeout(function() { callClaudeRouteReview(item, finalOrder, finalLegs, retries - 1); }, 1000);
           return;
         }
-        var reviewEl = document.getElementById('claude-route-review');
         if (reviewEl) {
           reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;border:1px solid var(--sand-dark);margin-top:12px;font-size:12px;color:var(--ink-muted);">⚠️ AI review unavailable — API key not loaded. Try re-optimising.</div>';
         }
