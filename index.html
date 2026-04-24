@@ -1275,6 +1275,7 @@
 
     function renderMobCards() {
       if (!isMobile()) return;
+      mobCardsSwipeInited = false;
       var mobView = document.getElementById('mob-cards-view');
       var track = document.getElementById('mob-cards-track');
       var dotsEl = document.getElementById('mob-cards-dots');
@@ -1390,6 +1391,8 @@
     function initMobCardsSwipe() {
       var wrap = document.getElementById('mob-cards-track-wrap');
       if (!wrap) return;
+      if (mobCardsSwipeInited) return;
+      mobCardsSwipeInited = true;
       var startX, startY, isHorizontal = null;
 
       var pinchStartDist = null;
@@ -4895,8 +4898,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           var remote = JSON.parse(doc.data().cardPhotos);
           Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
           try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
-          if (currentView === 'cards') { renderKanban(); }
-          else { var mobCards = document.getElementById('mob-cards-view'); if (mobCards && mobCards.classList.contains('active')) { renderMobCards(); } }
+          if (currentView === 'cards' && !isMobile()) { renderKanban(); }
         }
         if (callback) { callback(); }
       }).catch(function(e) {
