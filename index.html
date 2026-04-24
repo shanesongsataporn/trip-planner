@@ -1291,8 +1291,16 @@
         var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
         return da - db;
       });
-      var initialDay = getInitialCardDay();
-      mobCardsCurrentIndex = initialDay < sortedDays.length ? initialDay : 0;
+      var today = new Date(); today.setHours(0,0,0,0);
+      mobCardsCurrentIndex = 0;
+      for (var si = 0; si < sortedDays.length; si++) {
+        var sp = (sortedDays[si].date||'').split(' ');
+        if (sp.length >= 3) {
+          var sd = new Date(2026, monthMap[sp[1]]-1, parseInt(sp[2]));
+          sd.setHours(0,0,0,0);
+          if (sd.getTime() === today.getTime()) { mobCardsCurrentIndex = si; break; }
+        }
+      }
       sortedDays.forEach(function(item, dayIndex) {
         var slide = document.createElement('div');
         slide.className = 'mob-cards-slide';
