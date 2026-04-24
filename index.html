@@ -3038,16 +3038,9 @@
       if (!el) return;
       var days = currentTrip.days || [];
 
-      // Sort by actual date first, then group by consecutive city runs
-      var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-      var sorted = days.slice().sort(function(a, b) {
-        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
-        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
-        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
-        return da - db;
-      });
+      // Group by consecutive city runs in storage order (do NOT re-sort by date)
       var blocks = [];
-      sorted.forEach(function(day) {
+      days.forEach(function(day) {
         var last = blocks[blocks.length - 1];
         if (last && last.city === day.city) {
           last.days.push(day);
