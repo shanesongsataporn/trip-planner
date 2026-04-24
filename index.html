@@ -2323,18 +2323,19 @@
 
         if (day.activities.length) {
           var acH = day.activities.map(function(a, i) {
+            var name = (typeof a === 'object') ? a.name : a;
+            var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + (di+1) + '_act' + i);
             var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
             var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
             var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
-            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
-            var detailId = 'home-act-detail-' + i;
+            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
             var actDetailId = 'home-act-detail-' + di + '-' + i;
-            var photoKey = 'day' + (di+1) + '_act' + i;
+            var photoKey = 'act_' + uid;
             var photo = cardPhotos[photoKey] || '';
             return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
               '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleItinItem(\'' + actDetailId + '\')">' +
                 '<span>' + emoji + '</span>' +
-                '<span class="home-item-row-main">' + a + '</span>' +
+                '<span class="home-item-row-main">' + name + '</span>' +
                 '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
               '</div>' +
               '<div id="' + actDetailId + '" style="display:none;margin:0 0 8px 0;background:var(--sand);border-radius:8px;overflow:hidden;">' +
@@ -2343,7 +2344,8 @@
                   (note ? '<div style="font-size:12px;color:var(--ink-light);font-style:italic;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sand-dark);">' + note + '</div>' : '') +
                   '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
                     '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
-'<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(a + ' ' + day.city.split('>').pop().trim()) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-muted);text-decoration:none;">🧭 Directions</a>' +                  '</div>' +
+                    '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(name + ' ' + day.city.split('>').pop().trim()) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-muted);text-decoration:none;">🧭 Directions</a>' +
+                  '</div>' +
                 '</div>' +
               '</div>' +
             '</div>';
@@ -3503,12 +3505,14 @@
               var sd = dayMap[selectedKey];
               normaliseAccom(sd); normaliseDayTransport(sd);
               var accomHtml = sd.accommodation.length ? sd.accommodation.map(function(a) { return '<div class="cal-detail-item">🏨 ' + a.name + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
-              var actHtml = sd.activities.length ? sd.activities.map(function(a, i) { var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return '<div class="cal-detail-item">' + (activityCategories[cat]||activityCategories['default']).emoji + ' ' + a + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
+              var actHtml = sd.activities.length ? sd.activities.map(function(a, i) { var name = (typeof a === 'object') ? a.name : a; var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return '<div class="cal-detail-item">' + (activityCategories[cat]||activityCategories['default']).emoji + ' ' + name + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
 var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 'string' ? f : f.name; return '<div class="cal-detail-item">🍽️ ' + fn + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';              var dayIndex = sd.day - 1;
               var makeCalItinItem = function(emoji, text, type, itemIndex) {
                 var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + sd.city.split('>').pop().trim() + ' ' + getTripDestination());
                 var detailId = 'cal-detail-' + sd.day + '-' + type + '-' + itemIndex;
-                var photoKey = 'day' + sd.day + '_act' + itemIndex;
+                var photoKey = (type === 'act' && sd.activities && sd.activities[itemIndex] && sd.activities[itemIndex].uid)
+                  ? 'act_' + sd.activities[itemIndex].uid
+                  : 'day' + sd.day + '_act' + itemIndex;
                 var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
                 var note = (type === 'act' && sd.cardNotes && sd.cardNotes[String(itemIndex)]) ? sd.cardNotes[String(itemIndex)] : '';
                 return '<div style="border-bottom:1px solid var(--sand-dark);">' +
@@ -3535,7 +3539,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
                 ? sd.accommodation.map(function(a, i) { return makeCalItinItem('🏨', a.name, 'accom', i); }).join('')
                 : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:6px 0;">None added</div>';
               var actItems = sd.activities.length
-                ? sd.activities.map(function(a, i) { var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return makeCalItinItem((activityCategories[cat]||activityCategories['default']).emoji, a, 'act', i); }).join('')
+                ? sd.activities.map(function(a, i) { var name = (typeof a === 'object') ? a.name : a; var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return makeCalItinItem((activityCategories[cat]||activityCategories['default']).emoji, name, 'act', i); }).join('')
                 : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:6px 0;">None added</div>';
               var foodItems = sd.food.length
                 ? sd.food.map(function(f, i) { var fname = typeof f === 'string' ? f : f.name; return makeCalItinItem('🍽️', fname, 'food', i); }).join('')
@@ -4010,7 +4014,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         function makeItinItem(emoji, text, dayIndex, type, itemIndex) {
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
           var detailId = 'itin-detail-' + item.day + '-' + type + '-' + itemIndex;
-          var photoKey = 'day' + item.day + '_act' + itemIndex;
+          var photoKey = (type === 'act' && item.activities && item.activities[itemIndex] && item.activities[itemIndex].uid)
+            ? 'act_' + item.activities[itemIndex].uid
+            : 'day' + item.day + '_act' + itemIndex;
           var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
           var note = (type === 'act' && item.cardNotes && item.cardNotes[String(itemIndex)]) ? item.cardNotes[String(itemIndex)] : '';
           return '<div class="itin-item" style="flex-direction:column;align-items:flex-start;padding:0;">' +
@@ -4038,8 +4044,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           : '<div class="itin-placeholder">No accommodation — click Edit to add</div>';
         var actHtml = item.activities.length
           ? item.activities.map(function(a, i) {
+              var name = (typeof a === 'object') ? a.name : a;
               var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
-              return makeItinItem((activityCategories[cat]||activityCategories['default']).emoji, a, item.day-1, 'act', i);
+              return makeItinItem((activityCategories[cat]||activityCategories['default']).emoji, name, item.day-1, 'act', i);
             }).join('')
           : '<div class="itin-placeholder">No activities — click Edit to add</div>';
         var foodHtml = item.food.length
