@@ -1399,16 +1399,20 @@
     }
 
     var mobCardsSwipeInited = false;
+    var _mobSwipeTouchStart = null, _mobSwipeTouchMove = null, _mobSwipeTouchEnd = null;
     function initMobCardsSwipe() {
       var wrap = document.getElementById('mob-cards-track-wrap');
       if (!wrap) return;
-      if (mobCardsSwipeInited) return;
-      mobCardsSwipeInited = true;
+      if (_mobSwipeTouchStart) {
+        wrap.removeEventListener('touchstart', _mobSwipeTouchStart);
+        wrap.removeEventListener('touchmove', _mobSwipeTouchMove);
+        wrap.removeEventListener('touchend', _mobSwipeTouchEnd);
+      }
       var startX, startY, isHorizontal = null;
 
       var pinchStartDist = null;
 
-      wrap.addEventListener('touchstart', function(e) {
+      _mobSwipeTouchStart = function(e) {
         if (e.touches.length === 2) {
           pinchStartDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
@@ -1420,9 +1424,8 @@
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         isHorizontal = null;
-      }, { passive: true });
-
-      wrap.addEventListener('touchmove', function(e) {
+      };
+      _mobSwipeTouchMove = function(e) {
         if (e.touches.length === 2) return;
         if (isHorizontal === null) {
           var dx = Math.abs(e.touches[0].clientX - startX);
@@ -1430,9 +1433,8 @@
           isHorizontal = dx > dy;
         }
         if (isHorizontal) { e.preventDefault(); }
-      }, { passive: false });
-
-      wrap.addEventListener('touchend', function(e) {
+      };
+      _mobSwipeTouchEnd = function(e) {
         if (pinchStartDist !== null) {
           var t0 = e.changedTouches[0];
           var t1 = e.changedTouches[1] || t0;
@@ -1458,7 +1460,10 @@
           var target = Math.max(0, Math.min(total - 1, mobCardsCurrentIndex + delta));
           mobCardsGoTo(target, true);
         }
-      });
+      };
+      wrap.addEventListener('touchstart', _mobSwipeTouchStart, { passive: true });
+      wrap.addEventListener('touchmove', _mobSwipeTouchMove, { passive: false });
+      wrap.addEventListener('touchend', _mobSwipeTouchEnd);
     }
 
     document.addEventListener('click', function(e) {
