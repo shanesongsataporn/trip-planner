@@ -1164,6 +1164,7 @@
     }
 
     var mobCardsCurrentIndex = 0;
+    var mobCardsSortedDays = [];
 
     function buildActivityCard(item, dayIndex, activity, actIndex) {
       var name = (typeof activity === 'object') ? activity.name : activity;
@@ -1328,6 +1329,7 @@
         dotsEl.appendChild(dot);
       });
 
+      mobCardsSortedDays = sortedDays;
       mobCardsGoTo(mobCardsCurrentIndex, false);
       initMobCardsSwipe();
       initMobDotsSwipe();
@@ -1348,7 +1350,8 @@
       mobCardsCurrentIndex = index;
       var indicator = document.getElementById('mob-cards-indicator-text');
       var dateEl = document.getElementById('mob-cards-indicator-date');
-      var day = currentTrip.days[index];
+      var day = mobCardsSortedDays.length ? mobCardsSortedDays[index] : currentTrip.days[index];
+      if (!day) return;
       if (indicator) { indicator.textContent = 'Day ' + day.day + ' of ' + currentTrip.days.length; }
       if (dateEl) { dateEl.textContent = day.date + ' · ' + day.city.split('>').pop().trim(); }
       document.querySelectorAll('.mob-cards-dot').forEach(function(dot, i) {
