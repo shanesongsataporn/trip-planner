@@ -3091,6 +3091,23 @@
       initStructSortables();
     }
 
+    // Shared date utilities — use these everywhere dates need parsing or formatting
+    function parseTripDate(str) {
+      if (!str) return null;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return new Date(str + 'T00:00:00');
+      var parts = str.replace(/^[A-Za-z]+\s/, '').split(' ');
+      var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      var m = months[parts[0]], d = parseInt(parts[1]);
+      if (isNaN(m) || isNaN(d)) return null;
+      return new Date(2026, m, d);
+    }
+    function formatTripDate(dateObj) {
+      if (!dateObj) return '';
+      var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return days[dateObj.getDay()] + ' ' + months[dateObj.getMonth()] + ' ' + dateObj.getDate();
+    }
+
     function fmtShortDate(dateStr) {
       if (!dateStr) return '';
       // Handle ISO format "2026-05-09"
@@ -3227,27 +3244,13 @@
       }
 
       // Set moved day's date to match its new position in the sequence
-      var monthMap = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-      function parseDayDate(str) {
-        if (!str) return null;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return new Date(str + 'T00:00:00');
-        var parts = str.replace(/^[A-Za-z]+\s/, '').split(' ');
-        var m = monthMap[parts[0]], d = parseInt(parts[1]);
-        if (isNaN(m) || isNaN(d)) return null;
-        return new Date(2026, m, d);
-      }
-      function formatDayDate(dateObj) {
-        var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        return days[dateObj.getDay()] + ' ' + months[dateObj.getMonth()] + ' ' + dateObj.getDate();
-      }
       var movedNewIndex = currentTrip.days.indexOf(movedDay);
       if (movedNewIndex > 0 && currentTrip.days[movedNewIndex - 1].date) {
-        var prevDate = parseDayDate(currentTrip.days[movedNewIndex - 1].date);
-        if (prevDate) { prevDate.setDate(prevDate.getDate() + 1); movedDay.date = formatDayDate(prevDate); }
+        var prevDate = parseTripDate(currentTrip.days[movedNewIndex - 1].date);
+        if (prevDate) { prevDate.setDate(prevDate.getDate() + 1); movedDay.date = formatTripDate(prevDate); }
       } else if (movedNewIndex === 0 && currentTrip.days[1] && currentTrip.days[1].date) {
-        var nextDate = parseDayDate(currentTrip.days[1].date);
-        if (nextDate) { nextDate.setDate(nextDate.getDate() - 1); movedDay.date = formatDayDate(nextDate); }
+        var nextDate = parseTripDate(currentTrip.days[1].date);
+        if (nextDate) { nextDate.setDate(nextDate.getDate() - 1); movedDay.date = formatTripDate(nextDate); }
       }
       renumberDays();
       saveToStorage();
