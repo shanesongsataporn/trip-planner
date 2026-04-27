@@ -3285,16 +3285,16 @@
         }
       }
 
-      // Set moved day's date to match its new position in the sequence
-      var movedNewIndex = currentTrip.days.indexOf(movedDay);
-      if (movedNewIndex > 0 && currentTrip.days[movedNewIndex - 1].date) {
-        var prevDate = parseTripDate(currentTrip.days[movedNewIndex - 1].date);
-        if (prevDate) { prevDate.setDate(prevDate.getDate() + 1); movedDay.date = formatTripDate(prevDate); }
-      } else if (movedNewIndex === 0 && currentTrip.days[1] && currentTrip.days[1].date) {
-        var nextDate = parseTripDate(currentTrip.days[1].date);
-        if (nextDate) { nextDate.setDate(nextDate.getDate() - 1); movedDay.date = formatTripDate(nextDate); }
-      }
       renumberDays();
+      // Recalculate all dates sequentially from day 1 as anchor
+      var anchorDate = parseTripDate(currentTrip.days[0].date);
+      if (anchorDate) {
+        currentTrip.days.forEach(function(d, i) {
+          var newDate = new Date(anchorDate);
+          newDate.setDate(anchorDate.getDate() + i);
+          d.date = formatTripDate(newDate);
+        });
+      }
       saveToStorage();
       renderStructure();
     }
