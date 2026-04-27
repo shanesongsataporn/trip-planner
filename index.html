@@ -3073,7 +3073,7 @@
             '</div>';
         }).join('');
 
-        return '<div class="struct-city-block" data-city="' + escHtml(block.city) + '">' +
+        return '<div class="struct-city-block" data-city="' + escHtml(block.city) + '" data-block-index="' + bi + '">' +
           '<div class="struct-city-header" style="border-left-color:' + colour + '">' +
             '<span class="struct-city-drag-handle" title="Drag to reorder">⠿</span>' +
             '<span class="struct-city-emoji">' + emoji + '</span>' +
@@ -3174,11 +3174,16 @@
       var blocks = cityList.querySelectorAll('.struct-city-block');
       var newOrder = [];
       blocks.forEach(function(block) {
-        var city = block.getAttribute('data-city');
-        currentTrip.days.forEach(function(day) {
-          if (day.city === city) newOrder.push(day);
+        var rows = block.querySelectorAll('.struct-day-row');
+        rows.forEach(function(row) {
+          var di = parseInt(row.getAttribute('data-di'));
+          if (!isNaN(di) && currentTrip.days[di]) newOrder.push(currentTrip.days[di]);
         });
       });
+      if (newOrder.length !== currentTrip.days.length) {
+        console.error('structReorderCities: day count mismatch', newOrder.length, 'vs', currentTrip.days.length);
+        return;
+      }
       currentTrip.days = newOrder;
       renumberDays();
       saveToStorage();
