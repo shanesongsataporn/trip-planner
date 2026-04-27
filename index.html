@@ -470,6 +470,22 @@
     .struct-add-dest-btn:active { border-color: var(--accent); color: var(--accent); }
     .struct-shift-btn { display: block; width: 100%; padding: 13px; margin-top: 10px; border-radius: var(--radius); border: none; background: var(--white); box-shadow: var(--card-shadow); color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
     .struct-shift-btn:active { background: var(--sand); }
+    /* History button */
+    #struct-top-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+    .struct-history-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: none; background: var(--white); box-shadow: var(--card-shadow); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
+    .struct-history-btn:active { background: var(--sand); }
+    /* Undo toast */
+#struct-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--white); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 4000; white-space: normal; max-width: 88vw; flex-wrap: wrap; }    #struct-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
+    #struct-toast button { background: var(--accent); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    /* History sheet */
+    #struct-history-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5000; }
+    #struct-history-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; max-height: 70vh; background: var(--sand); border-radius: 20px 20px 0 0; padding: 16px; z-index: 5100; overflow-y: auto; }
+    #struct-history-sheet h3 { margin: 0 0 16px; font-size: 16px; }
+    .struct-history-entry { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--sand-dark); font-size: 14px; }
+    .struct-history-entry .hist-label { flex: 1; color: var(--ink); line-height: 1.3; }
+    .struct-history-entry .hist-time { color: var(--ink-muted); font-size: 12px; white-space: nowrap; }
+    .struct-history-entry .hist-restore { background: var(--white); border: none; border-radius: var(--radius-sm); padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--ink); cursor: pointer; white-space: nowrap; }
+    .struct-sheet-close-btn { display: block; width: 100%; margin-top: 16px; padding: 14px; border-radius: var(--radius); border: none; background: var(--white); font-size: 14px; font-weight: 600; cursor: pointer; }
 
     /* Sheets */
     #struct-dest-overlay, #struct-shift-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5000; }
@@ -1010,10 +1026,28 @@
 
   <div id="view-structure">
     <div id="struct-inner">
+      <div id="struct-top-bar">
+        <button class="struct-history-btn" onclick="showStructHistory()">🕐 History</button>
+      </div>
       <div id="struct-city-list"></div>
       <button class="struct-add-dest-btn" onclick="showAddDestSheet()">+ Add destination</button>
       <button class="struct-shift-btn" onclick="showManualShiftSheet()">📅 Shift all dates</button>
     </div>
+  </div>
+
+  <!-- Structure: undo toast -->
+  <div id="struct-toast">
+    <span id="struct-toast-label"></span>
+    <button onclick="undoStructAction()">Undo</button>
+  </div>
+
+  <!-- Structure: history sheet -->
+  <div id="struct-history-overlay" onclick="closeStructHistory()"></div>
+  <div id="struct-history-sheet">
+    <div class="struct-sheet-handle"></div>
+    <h3>📋 Change history</h3>
+    <div id="struct-history-list"></div>
+    <button class="struct-sheet-close-btn" onclick="closeStructHistory()">Close</button>
   </div>
 
   <!-- Structure: Add destination sheet -->
@@ -3032,6 +3066,8 @@
     var structCitySortable = null;
     var structDaySortables = [];
     var pendingShiftCallback = null;
+    var structHistory = [];
+    var structToastTimer = null;
 
     function renderStructure() {
       var el = document.getElementById('struct-city-list');
@@ -3186,6 +3222,7 @@
     }
 
     function structReorderCities() {
+      pushStructHistory('City blocks reordered');
       var cityList = document.getElementById('struct-city-list');
       if (!cityList) return;
       var blocks = cityList.querySelectorAll('.struct-city-block');
@@ -3213,6 +3250,11 @@
       var movedDi = parseInt(evt.item.getAttribute('data-di'));
       var movedDay = currentTrip.days[movedDi];
       if (!movedDay) return;
+      var crossCity = fromCity !== toCity;
+      var histLabel = crossCity
+        ? '⚠️ Day ' + (movedDay.day) + ' → ' + toCity + ' (was ' + fromCity + ')'
+        : 'Day ' + (movedDay.day) + ' reordered in ' + fromCity;
+      pushStructHistory(histLabel);
 
       // Rebuild full day order from DOM
       var cityList = document.getElementById('struct-city-list');
@@ -3279,13 +3321,12 @@
       var lastIdx = -1;
       days.forEach(function(d, i) { if (d.city === city) lastIdx = i; });
 
-      // Build new blank day
+      // Build new blank day using shared date helpers
       var prevDay = lastIdx >= 0 ? days[lastIdx] : days[days.length - 1];
       var newDate = '';
       if (prevDay && prevDay.date) {
-        var d = new Date(prevDay.date + 'T00:00:00');
-        d.setDate(d.getDate() + 1);
-        newDate = d.toISOString().slice(0, 10);
+        var d = parseTripDate(prevDay.date);
+        if (d) { d.setDate(d.getDate() + 1); newDate = formatTripDate(d); }
       }
       var newDay = {
         day: 0, date: newDate, city: city,
@@ -3294,13 +3335,11 @@
         activityLinks: [], food: [], transport: [], cardNotes: {}, costs: {}, done: {}
       };
 
+      pushStructHistory('Day added to ' + city);
       days.splice(lastIdx + 1, 0, newDay);
       renumberDays();
       saveToStorage();
       renderStructure();
-
-      var insertedDayNum = lastIdx + 2;
-      showAutoShiftSheet('Added a day to ' + city + '.', insertedDayNum);
     }
 
     function structDeleteDay(di, e) {
@@ -3312,6 +3351,7 @@
                        (day.accommodation && day.accommodation.length);
       var proceed = !hasContent || confirm('Day ' + day.day + ' has content. Delete anyway?');
       if (!proceed) return;
+      pushStructHistory('Day ' + day.day + ' deleted from ' + (day.city || 'trip'));
 
       currentTrip.days.splice(di, 1);
       renumberDays();
@@ -3364,7 +3404,72 @@
       renderStructure();
     }
 
-    // ---- Batch date shift sheets ----
+    // ---- Undo / changelog ----
+    function pushStructHistory(label) {
+      var snapshot = JSON.parse(JSON.stringify(currentTrip.days));
+      structHistory.unshift({ label: label, snapshot: snapshot, time: new Date() });
+      if (structHistory.length > 20) structHistory.pop();
+      showStructToast(label);
+    }
+
+    function showStructToast(label) {
+      var toast = document.getElementById('struct-toast');
+      var toastLabel = document.getElementById('struct-toast-label');
+      if (!toast || !toastLabel) return;
+      toastLabel.textContent = label;
+      toast.classList.add('visible');
+      if (structToastTimer) clearTimeout(structToastTimer);
+      structToastTimer = setTimeout(function() {
+        toast.classList.remove('visible');
+      }, 5000);
+    }
+
+    function undoStructAction() {
+      if (!structHistory.length) return;
+      var entry = structHistory.shift();
+      currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
+      saveToStorage();
+      renderStructure();
+      var toast = document.getElementById('struct-toast');
+      if (toast) toast.classList.remove('visible');
+    }
+
+    function showStructHistory() {
+      var list = document.getElementById('struct-history-list');
+      if (!list) return;
+      if (!structHistory.length) {
+        list.innerHTML = '<p style="color:var(--ink-muted);font-size:14px;text-align:center;padding:20px 0;">No changes yet this session.</p>';
+      } else {
+        list.innerHTML = structHistory.map(function(entry, i) {
+          var t = entry.time;
+          var timeStr = t.getHours() + ':' + String(t.getMinutes()).padStart(2, '0');
+          return '<div class="struct-history-entry">' +
+            '<span class="hist-label">' + escHtml(entry.label) + '</span>' +
+            '<span class="hist-time">' + timeStr + '</span>' +
+            '<button class="hist-restore" onclick="restoreStructSnapshot(' + i + ')">Restore</button>' +
+            '</div>';
+        }).join('');
+      }
+      document.getElementById('struct-history-overlay').style.display = 'block';
+      document.getElementById('struct-history-sheet').style.display = 'block';
+    }
+
+    function closeStructHistory() {
+      document.getElementById('struct-history-overlay').style.display = 'none';
+      document.getElementById('struct-history-sheet').style.display = 'none';
+    }
+
+    function restoreStructSnapshot(index) {
+      var entry = structHistory[index];
+      if (!entry) return;
+      currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
+      structHistory = structHistory.slice(index + 1);
+      saveToStorage();
+      renderStructure();
+      closeStructHistory();
+    }
+
+  // ---- Batch date shift sheets ----
     function showAutoShiftSheet(contextMsg, fromDayNum) {
       var fromDayNum = fromDayNum || 1;
       var content = document.getElementById('struct-shift-content');
