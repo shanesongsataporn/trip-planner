@@ -3226,13 +3226,20 @@
         }
       }
 
+      // Set moved day's date to match its new position in the sequence
+      var movedNewIndex = currentTrip.days.indexOf(movedDay);
+      if (movedNewIndex > 0 && currentTrip.days[movedNewIndex - 1].date) {
+        var prevDate = new Date(currentTrip.days[movedNewIndex - 1].date + 'T00:00:00');
+        prevDate.setDate(prevDate.getDate() + 1);
+        movedDay.date = prevDate.toISOString().slice(0, 10);
+      } else if (movedNewIndex === 0 && currentTrip.days[1] && currentTrip.days[1].date) {
+        var nextDate = new Date(currentTrip.days[1].date + 'T00:00:00');
+        nextDate.setDate(nextDate.getDate() - 1);
+        movedDay.date = nextDate.toISOString().slice(0, 10);
+      }
       renumberDays();
       saveToStorage();
       renderStructure();
-
-      if (fromCity !== toCity) {
-        showAutoShiftSheet('Day moved to ' + toCity + '. Shift following dates?', null);
-      }
     }
 
     function renumberDays() {
