@@ -439,7 +439,7 @@
    /* ===== BUDGET VIEW ===== */
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
-    #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }    #view-discovery { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; scrollbar-width: thin; flex-direction: column; }
+    #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
 
     /* ===== STRUCTURE VIEW ===== */
     #view-structure { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; scrollbar-width: thin; }
@@ -558,6 +558,30 @@
     .disc-day-option:hover, .disc-day-option.selected { background: var(--accent-light); color: var(--accent); font-weight: 700; }
     .disc-save-btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
     .disc-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #transport-sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5400; }
+    #transport-sheet-overlay.open { display: block; }
+    #transport-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 5500; background: var(--white); border-radius: 20px 20px 0 0; box-shadow: 0 -8px 40px rgba(0,0,0,0.3); border-top: 1px solid var(--sand-dark); max-height: 90vh; overflow-y: auto; animation: fadeInUp 0.25s ease; }
+    #transport-sheet.open { display: block; }
+    #transport-sheet-handle { width: 36px; height: 4px; background: var(--sand-dark); border-radius: 2px; margin: 12px auto 0; }
+    #transport-sheet-body { padding: 16px 20px 40px; }
+    .ts-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+    .ts-type-btn { font-family: inherit; font-size: 12px; font-weight: 700; padding: 10px 6px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink); cursor: pointer; text-align: center; transition: all 0.15s; }
+    .ts-type-btn.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+    .ts-toggle { display: flex; gap: 0; margin-bottom: 20px; border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); overflow: hidden; }
+    .ts-toggle-btn { flex: 1; font-family: inherit; font-size: 12px; font-weight: 700; padding: 9px; border: none; background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
+    .ts-toggle-btn.selected { background: var(--accent); color: #fff; }
+    .ts-leg-card { background: var(--sand); border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); padding: 14px; margin-bottom: 10px; position: relative; }
+    .ts-leg-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; display: block; }
+    .ts-leg-delete { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 16px; color: var(--ink-muted); cursor: pointer; padding: 0; line-height: 1; }
+    .ts-field { margin-bottom: 10px; }
+    .ts-field label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+    .ts-field input, .ts-field select { width: 100%; font-family: inherit; font-size: 13px; color: var(--ink); border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--white); box-sizing: border-box; }
+    .ts-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .ts-row .ts-field { flex: 1; margin-bottom: 0; }
+    .ts-add-leg-btn { width: 100%; font-family: inherit; font-size: 13px; font-weight: 700; padding: 10px; border-radius: var(--radius-sm); border: 2px dashed var(--accent); background: var(--accent-light); color: var(--accent); cursor: pointer; margin-bottom: 16px; }
+    .ts-save-btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; margin-top: 8px; }
+    .ts-cancel-btn { width: 100%; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: none; color: var(--ink-muted); cursor: pointer; margin-top: 8px; }
+    .ts-connector { text-align: center; font-size: 18px; color: var(--ink-muted); margin: -4px 0 6px; }
 
     @media (max-width: 640px) {
       #view-discovery { top: 54px; bottom: 0; }
@@ -1129,6 +1153,11 @@
   <div id="disc-add-sheet">
     <div id="disc-add-sheet-handle"></div>
     <div id="disc-add-sheet-body"></div>
+  </div>
+  <div id="transport-sheet-overlay" onclick="closeTransportSheet()"></div>
+  <div id="transport-sheet">
+    <div id="transport-sheet-handle"></div>
+    <div id="transport-sheet-body"></div>
   </div>
   <div id="panel">
     <div id="panel-head">
@@ -2867,6 +2896,7 @@
       document.getElementById('view-split').style.display = view === 'split' ? 'block' : 'none';
       document.getElementById('view-budget').style.display = view === 'budget' ? 'block' : 'none';
       document.getElementById('view-food').style.display = view === 'food' ? 'block' : 'none';
+      document.getElementById('view-transport').style.display = view === 'transport' ? 'block' : 'none';
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
       document.getElementById('view-structure').style.display = view === 'structure' ? 'block' : 'none';
       if (view === 'structure') renderStructure();
@@ -3049,28 +3079,62 @@
         var t = e.t; var day = e.day; var di = e.di; var ti = e.ti;
         var typeKey = (t.type||'transport').toLowerCase();
         var typeEmoji = typeKey === 'flight' ? '✈️' : typeKey === 'train' ? '🚆' : typeKey === 'ferry' ? '⛴️' : typeKey === 'bus' ? '🚌' : typeKey === 'car' ? '🚗' : '🚐';
-        var missingFields = [];
-        if (typeKey === 'flight') {
-          if (!t.depart) missingFields.push('depart time');
-          if (!t.arrive) missingFields.push('arrive time');
-          if (!t.confirmationCode) missingFields.push('confirmation code');
+
+        var cardBody = '';
+        if (t.multiLeg && t.legs && t.legs.length) {
+          // Multi-leg card
+          cardBody = t.legs.map(function(leg, li) {
+            var legDay = currentTrip.days[leg.dayIndex] || day;
+            var legDayLabel = leg.dayIndex >= currentTrip.days.length
+              ? 'Arrival day · ' + (legDay ? legDay.date : '')
+              : 'Day ' + legDay.day + ' · ' + legDay.date;
+            var missingLeg = [];
+            if (typeKey === 'flight' && (leg.carrier || leg.flightNum)) {
+              if (!leg.depart) missingLeg.push('depart');
+              if (!leg.arrive) missingLeg.push('arrive');
+            }
+            var legDay = currentTrip.days[leg.dayIndex];
+            var isArrivalDay = !legDay;
+            var legDayLabel = isArrivalDay ? '✈️ Arrival day' : ('Day ' + legDay.day + ' · ' + (legDay.date||''));
+            legDay = legDay || day;
+            return (li > 0 ? '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><div style="width:1px;background:var(--sand-dark);flex:1;"></div><span style="font-size:10px;color:var(--ink-muted);white-space:nowrap;">Leg ' + (li+1) + ' · ' + legDayLabel + '</span><div style="width:1px;background:var(--sand-dark);flex:1;"></div></div>' : '<div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;">Leg 1 · ' + legDayLabel + '</div>') +
+            '<div class="transport-view-detail"><strong>' + (leg.from||'—') + ' → ' + (leg.to||'—') + '</strong>' + (leg.carrier||leg.flightNum ? ' · ' + (leg.carrier||'') + (leg.flightNum ? ' ' + leg.flightNum : '') : '') + '</div>' +
+            (leg.depart || leg.arrive ? '<div class="transport-view-detail">🕐 ' + (leg.depart||'?') + ' → ' + (leg.arrive||'?') + '</div>' : '') +
+            (leg.confirmationCode ? '<div class="transport-view-detail">🔖 ' + leg.confirmationCode + '</div>' : '') +
+            (missingLeg.length ? '<div style="font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingLeg.join(', ') + '</div>' : '');
+          }).join('') +
+          (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:8px;padding-top:8px;border-top:1px solid var(--sand-dark);">' + t.notes + '</div>' : '');
+        } else {
+          // Single leg card
+          var missingFields = [];
+          if (typeKey === 'flight' && (t.carrier || t.flightNum)) {
+            if (!t.depart) missingFields.push('depart time');
+            if (!t.arrive) missingFields.push('arrive time');
+            if (!t.confirmationCode) missingFields.push('confirmation code');
+          }
+          cardBody =
+            (t.carrier || t.flightNum ? '<div class="transport-view-detail"><strong>' + (t.carrier||'') + (t.flightNum ? ' · ' + t.flightNum : '') + '</strong></div>' : '') +
+            (t.depart || t.arrive ? '<div class="transport-view-detail">🕐 ' + (t.depart||'?') + ' → ' + (t.arrive||'?') + '</div>' : '') +
+            (t.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + t.confirmationCode + '</strong></div>' : '') +
+            (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:4px;">' + t.notes + '</div>' : '') +
+            (missingFields.length ? '<div style="margin-top:8px;font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingFields.join(', ') + '</div>' : '');
         }
+
+        var routeLabel = t.multiLeg && t.legs && t.legs.length
+          ? (t.legs[0].from||'—') + ' → ' + (t.legs[t.legs.length-1].to||'—')
+          : (t.from||'—') + ' → ' + (t.to||'—');
+
         return '<div class="transport-view-card">' +
           '<div class="transport-view-card-header">' +
             '<span class="transport-type-badge ' + typeKey + '">' + typeEmoji + ' ' + (t.type||'Transport') + '</span>' +
-            '<div class="transport-view-route">' + (t.from||'—') + ' → ' + (t.to||'—') + '</div>' +
+            '<div class="transport-view-route">' + routeLabel + '</div>' +
             '<div style="font-size:11px;color:var(--ink-muted);text-align:right;flex-shrink:0;">' +
               '<div style="font-weight:700;">Day ' + day.day + '</div>' +
               '<div>' + day.date + '</div>' +
             '</div>' +
           '</div>' +
           '<div class="transport-view-card-body">' +
-            (t.carrier || t.flightNum ? '<div class="transport-view-detail"><strong>' + (t.carrier||'') + (t.flightNum ? ' · ' + t.flightNum : '') + '</strong></div>' : '') +
-            (t.depart || t.arrive ? '<div class="transport-view-detail">🕐 ' + (t.depart||'?') + ' → ' + (t.arrive||'?') + '</div>' : '') +
-            (t.terminal ? '<div class="transport-view-detail">🚪 Terminal: <strong>' + t.terminal + '</strong></div>' : '') +
-            (t.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + t.confirmationCode + '</strong></div>' : '') +
-            (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:4px;">' + t.notes + '</div>' : '') +
-            (missingFields.length ? '<div style="margin-top:8px;font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingFields.join(', ') + '</div>' : '') +
+            cardBody +
             '<div class="transport-view-actions">' +
               '<button class="kbtn" onclick="showEditTransportModal(' + di + ',' + ti + ')">✏️ Edit</button>' +
               '<button class="kbtn" style="color:var(--danger);border-color:var(--danger);" onclick="deleteTransportDirect(' + di + ',' + ti + ')">🗑 Delete</button>' +
@@ -3082,113 +3146,220 @@
       el.innerHTML = summaryHtml + addHtml + entriesHtml;
     }
 
-    function showAddTransportModal(prefillDi) {
+    // ===== TRANSPORT SHEET =====
+    var _transportSheet = { mode: 'add', di: null, ti: null, type: 'Flight', multiLeg: false, legs: [] };
+
+    function openTransportSheet(mode, di, ti) {
+      _transportSheet.mode = mode;
+      _transportSheet.di = di != null ? di : null;
+      _transportSheet.ti = ti != null ? ti : null;
+      _transportSheet.type = 'Flight';
+      _transportSheet.multiLeg = false;
+      _transportSheet.legs = [];
+
+      // If editing, prefill from existing entry
+      if (mode === 'edit') {
+        var day = currentTrip.days[di];
+        if (!day) return;
+        normaliseDayTransport(day);
+        var t = day.transport[ti];
+        if (!t) return;
+        _transportSheet.type = t.type || 'Flight';
+        _transportSheet.multiLeg = !!t.multiLeg;
+        if (t.multiLeg && t.legs) {
+          _transportSheet.legs = t.legs.map(function(l) { return Object.assign({}, l); });
+        } else {
+          _transportSheet.legs = [{ from: t.from||'', to: t.to||'', carrier: t.carrier||'', flightNum: t.flightNum||'', depart: t.depart||'', arrive: t.arrive||'', confirmationCode: t.confirmationCode||'', dayIndex: di }];
+        }
+      } else {
+        _transportSheet.legs = [{ from: '', to: '', carrier: '', flightNum: '', depart: '', arrive: '', confirmationCode: '', dayIndex: di != null ? di : 0 }];
+      }
+
+      renderTransportSheet();
+      document.getElementById('transport-sheet-overlay').classList.add('open');
+      document.getElementById('transport-sheet').classList.add('open');
+    }
+
+    function closeTransportSheet() {
+      document.getElementById('transport-sheet').classList.remove('open');
+      document.getElementById('transport-sheet-overlay').classList.remove('open');
+    }
+
+    function renderTransportSheet() {
+      var isMulti = _transportSheet.multiLeg;
+      var isFlight = _transportSheet.type === 'Flight';
       var dayOptions = currentTrip.days.map(function(d, i) {
         return '<option value="' + i + '">' + 'Day ' + d.day + ' · ' + d.city + ' · ' + d.date + '</option>';
       }).join('');
-      showModal('Add Transport',
-        '<div class="modal-field"><label>Day</label><select id="tm-day">' + dayOptions + '</select></div>' +
-        '<div class="modal-field"><label>Type</label><select id="tm-type"><option>Flight</option><option>Train</option><option>Bus</option><option>Ferry</option><option>Car</option><option>Transfer</option></select></div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>From</label><input type="text" id="tm-from" placeholder="e.g. Sydney"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>To</label><input type="text" id="tm-to" placeholder="e.g. Bangkok"></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>Carrier</label><input type="text" id="tm-carrier" placeholder="e.g. Thai Airways"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>Flight / Ref #</label><input type="text" id="tm-num" placeholder="e.g. TG412"></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>Departs</label><input type="text" id="tm-depart" placeholder="e.g. 9:15am"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>Arrives</label><input type="text" id="tm-arrive" placeholder="e.g. 6:55pm"></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>Terminal</label><input type="text" id="tm-terminal" placeholder="e.g. T1"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>Confirmation Code</label><input type="text" id="tm-code" placeholder="e.g. ABC123"></div>' +
-        '</div>' +
-        '<div class="modal-field"><label>Notes</label><input type="text" id="tm-notes" placeholder="e.g. 4hr layover in KL"></div>',
-        function() {
-          var di = parseInt(document.getElementById('tm-day').value, 10);
-          var day = currentTrip.days[di];
-          if (!day) return;
-          normaliseDayTransport(day);
-          day.transport.push({
-            type: document.getElementById('tm-type').value,
-            from: document.getElementById('tm-from').value.trim(),
-            to: document.getElementById('tm-to').value.trim(),
-            carrier: document.getElementById('tm-carrier').value.trim(),
-            flightNum: document.getElementById('tm-num').value.trim(),
-            depart: document.getElementById('tm-depart').value.trim(),
-            arrive: document.getElementById('tm-arrive').value.trim(),
-            terminal: document.getElementById('tm-terminal').value.trim(),
-            confirmationCode: document.getElementById('tm-code').value.trim(),
-            notes: document.getElementById('tm-notes').value.trim()
-          });
-          saveToStorage();
-          renderTransport();
+      if (isFlight) {
+        var lastDay = currentTrip.days[currentTrip.days.length - 1];
+        var arrivalDate = '';
+        if (lastDay && lastDay.date) {
+          var ad = parseTripDate(lastDay.date);
+          if (ad) { ad.setDate(ad.getDate() + 1); arrivalDate = formatTripDate(ad); }
         }
-      );
-      if (prefillDi !== undefined) {
-        setTimeout(function() {
-          var sel = document.getElementById('tm-day');
-          if (sel) sel.value = prefillDi;
-        }, 50);
+        dayOptions += '<option value="' + currentTrip.days.length + '">✈️ Arrival day · ' + arrivalDate + '</option>';
       }
+      // For flights: add one extra "arrival day" option past the end of the trip
+      if (isFlight) {
+        var lastDay = currentTrip.days[currentTrip.days.length - 1];
+        var arrivalDate = '';
+        if (lastDay && lastDay.date) {
+          var ad = parseTripDate(lastDay.date);
+          if (ad) { ad.setDate(ad.getDate() + 1); arrivalDate = formatTripDate(ad); }
+        }
+        dayOptions += '<option value="' + currentTrip.days.length + '">Arrival day · ' + arrivalDate + '</option>';
+      }
+
+      var types = [
+        { key: 'Flight', emoji: '✈️' }, { key: 'Train', emoji: '🚆' }, { key: 'Bus', emoji: '🚌' },
+        { key: 'Ferry', emoji: '⛴️' }, { key: 'Car', emoji: '🚗' }, { key: 'Transfer', emoji: '🚐' }
+      ];
+
+      var typeHtml = '<div class="ts-type-grid">' +
+        types.map(function(t) {
+          return '<button class="ts-type-btn' + (_transportSheet.type === t.key ? ' selected' : '') + '" onclick="tsSetType(\'' + t.key + '\')">' + t.emoji + '<br>' + t.key + '</button>';
+        }).join('') +
+      '</div>';
+
+      var toggleHtml = isFlight ? '<div class="ts-toggle" style="margin-bottom:20px;">' +
+        '<button class="ts-toggle-btn' + (!isMulti ? ' selected' : '') + '" onclick="tsSetMultiLeg(false)">Single leg</button>' +
+        '<button class="ts-toggle-btn' + (isMulti ? ' selected' : '') + '" onclick="tsSetMultiLeg(true)">Multi-leg</button>' +
+      '</div>' : '';
+
+      var legsHtml = _transportSheet.legs.map(function(leg, i) {
+        var isOnly = _transportSheet.legs.length === 1;
+        return (isMulti && i > 0 ? '<div class="ts-connector">↓</div>' : '') +
+        '<div class="ts-leg-card" id="ts-leg-' + i + '">' +
+          (isMulti ? '<span class="ts-leg-label">Leg ' + (i+1) + '</span>' : '') +
+          (!isOnly && isMulti ? '<button class="ts-leg-delete" onclick="tsRemoveLeg(' + i + ')">×</button>' : '') +
+          '<div class="ts-row">' +
+            '<div class="ts-field"><label>From</label><input type="text" id="ts-from-' + i + '" value="' + leg.from + '" placeholder="e.g. Sydney"></div>' +
+            '<div class="ts-field"><label>To</label><input type="text" id="ts-to-' + i + '" value="' + leg.to + '" placeholder="e.g. Bangkok"></div>' +
+          '</div>' +
+          '<div class="ts-row">' +
+            '<div class="ts-field"><label>Carrier</label><input type="text" id="ts-carrier-' + i + '" value="' + leg.carrier + '" placeholder="e.g. Singapore Airlines"></div>' +
+            '<div class="ts-field"><label>Flight #</label><input type="text" id="ts-num-' + i + '" value="' + leg.flightNum + '" placeholder="e.g. SQ412"></div>' +
+          '</div>' +
+          '<div class="ts-row">' +
+            '<div class="ts-field"><label>Departs</label><input type="text" id="ts-depart-' + i + '" value="' + leg.depart + '" placeholder="e.g. 9:15am"></div>' +
+            '<div class="ts-field"><label>Arrives</label><input type="text" id="ts-arrive-' + i + '" value="' + leg.arrive + '" placeholder="e.g. 6:55pm"></div>' +
+          '</div>' +
+          '<div class="ts-row">' +
+            '<div class="ts-field"><label>Confirmation Code</label><input type="text" id="ts-code-' + i + '" value="' + leg.confirmationCode + '" placeholder="e.g. ABC123"></div>' +
+            '<div class="ts-field"><label>Day</label><select id="ts-day-' + i + '">' + dayOptions + '</select></div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var addLegBtn = isMulti ? '<button class="ts-add-leg-btn" onclick="tsAddLeg()">+ Add leg</button>' : '';
+
+      var notesVal = '';
+      if (_transportSheet.mode === 'edit') {
+        var et = currentTrip.days[_transportSheet.di].transport[_transportSheet.ti];
+        notesVal = et ? (et.notes || '') : '';
+      }
+
+      document.getElementById('transport-sheet-body').innerHTML =
+        '<div style="font-size:17px;font-weight:800;color:var(--ink);margin-bottom:16px;letter-spacing:-0.02em;">' + (_transportSheet.mode === 'edit' ? 'Edit Transport' : 'Add Transport') + '</div>' +
+        '<span class="ts-leg-label" style="color:var(--ink-muted);">Type</span>' +
+        typeHtml +
+        toggleHtml +
+        legsHtml +
+        addLegBtn +
+        '<div class="ts-field"><label>Notes</label><input type="text" id="ts-notes" value="' + notesVal + '" placeholder="e.g. 4hr layover in KL"></div>' +
+        '<button class="ts-save-btn" onclick="saveTransportSheet()">Save</button>' +
+        '<button class="ts-cancel-btn" onclick="closeTransportSheet()">Cancel</button>';
+
+      // Set day selects after render
+      setTimeout(function() {
+        _transportSheet.legs.forEach(function(leg, i) {
+          var sel = document.getElementById('ts-day-' + i);
+          if (sel) sel.value = leg.dayIndex;
+        });
+      }, 30);
     }
 
-    function showEditTransportModal(di, ti) {
-      var day = currentTrip.days[di];
-      if (!day) return;
-      normaliseDayTransport(day);
-      var t = day.transport[ti];
-      if (!t) return;
-      var dayOptions = currentTrip.days.map(function(d, i) {
-        return '<option value="' + i + '"' + (i === di ? ' selected' : '') + '>' + 'Day ' + d.day + ' · ' + d.city + ' · ' + d.date + '</option>';
-      }).join('');
-      showModal('Edit Transport',
-        '<div class="modal-field"><label>Day</label><select id="tm-day">' + dayOptions + '</select></div>' +
-        '<div class="modal-field"><label>Type</label><select id="tm-type"><option' + (t.type==='Flight'?' selected':'') + '>Flight</option><option' + (t.type==='Train'?' selected':'') + '>Train</option><option' + (t.type==='Bus'?' selected':'') + '>Bus</option><option' + (t.type==='Ferry'?' selected':'') + '>Ferry</option><option' + (t.type==='Car'?' selected':'') + '>Car</option><option' + (t.type==='Transfer'?' selected':'') + '>Transfer</option></select></div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>From</label><input type="text" id="tm-from" value="' + (t.from||'') + '" placeholder="e.g. Sydney"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>To</label><input type="text" id="tm-to" value="' + (t.to||'') + '" placeholder="e.g. Bangkok"></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>Carrier</label><input type="text" id="tm-carrier" value="' + (t.carrier||'') + '" placeholder="e.g. Thai Airways"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>Flight / Ref #</label><input type="text" id="tm-num" value="' + (t.flightNum||'') + '" placeholder="e.g. TG412"></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>Departs</label><input type="text" id="tm-depart" value="' + (t.depart||'') + '" placeholder="e.g. 9:15am"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>Arrives</label><input type="text" id="tm-arrive" value="' + (t.arrive||'') + '" placeholder="e.g. 6:55pm"></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:10px;">' +
-          '<div class="modal-field" style="flex:1;"><label>Terminal</label><input type="text" id="tm-terminal" value="' + (t.terminal||'') + '" placeholder="e.g. T1"></div>' +
-          '<div class="modal-field" style="flex:1;"><label>Confirmation Code</label><input type="text" id="tm-code" value="' + (t.confirmationCode||'') + '" placeholder="e.g. ABC123"></div>' +
-        '</div>' +
-        '<div class="modal-field"><label>Notes</label><input type="text" id="tm-notes" value="' + (t.notes||'') + '" placeholder="e.g. 4hr layover in KL"></div>',
-        function() {
-          var newDi = parseInt(document.getElementById('tm-day').value, 10);
-          var updatedT = {
-            type: document.getElementById('tm-type').value,
-            from: document.getElementById('tm-from').value.trim(),
-            to: document.getElementById('tm-to').value.trim(),
-            carrier: document.getElementById('tm-carrier').value.trim(),
-            flightNum: document.getElementById('tm-num').value.trim(),
-            depart: document.getElementById('tm-depart').value.trim(),
-            arrive: document.getElementById('tm-arrive').value.trim(),
-            terminal: document.getElementById('tm-terminal').value.trim(),
-            confirmationCode: document.getElementById('tm-code').value.trim(),
-            notes: document.getElementById('tm-notes').value.trim()
-          };
-          // Remove from old day
-          day.transport.splice(ti, 1);
-          // Add to new day (may be same or different)
-          var newDay = currentTrip.days[newDi];
-          normaliseDayTransport(newDay);
-          newDay.transport.push(updatedT);
-          saveToStorage();
-          renderTransport();
-        }
-      );
+    function tsSetType(type) {
+      tsSaveCurrentLegInputs();
+      _transportSheet.type = type;
+      if (type !== 'Flight') _transportSheet.multiLeg = false;
+      renderTransportSheet();
     }
+
+    function tsSetMultiLeg(val) {
+      tsSaveCurrentLegInputs();
+      _transportSheet.multiLeg = val;
+      renderTransportSheet();
+    }
+
+    function tsAddLeg() {
+      tsSaveCurrentLegInputs();
+      var lastLeg = _transportSheet.legs[_transportSheet.legs.length - 1];
+      _transportSheet.legs.push({ from: lastLeg ? lastLeg.to : '', to: '', carrier: lastLeg ? lastLeg.carrier : '', flightNum: '', depart: '', arrive: '', confirmationCode: lastLeg ? lastLeg.confirmationCode : '', dayIndex: lastLeg ? lastLeg.dayIndex : 0 });
+      renderTransportSheet();
+      setTimeout(function() { document.getElementById('ts-leg-' + (_transportSheet.legs.length-1)).scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
+    }
+
+    function tsRemoveLeg(i) {
+      tsSaveCurrentLegInputs();
+      _transportSheet.legs.splice(i, 1);
+      renderTransportSheet();
+    }
+
+    function tsSaveCurrentLegInputs() {
+      _transportSheet.legs.forEach(function(leg, i) {
+        var f = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : leg[id.split('-')[1]] || ''; };
+        leg.from = (document.getElementById('ts-from-' + i) || {}).value || leg.from;
+        leg.to = (document.getElementById('ts-to-' + i) || {}).value || leg.to;
+        leg.carrier = (document.getElementById('ts-carrier-' + i) || {}).value || leg.carrier;
+        leg.flightNum = (document.getElementById('ts-num-' + i) || {}).value || leg.flightNum;
+        leg.depart = (document.getElementById('ts-depart-' + i) || {}).value || leg.depart;
+        leg.arrive = (document.getElementById('ts-arrive-' + i) || {}).value || leg.arrive;
+        leg.confirmationCode = (document.getElementById('ts-code-' + i) || {}).value || leg.confirmationCode;
+        var dayEl = document.getElementById('ts-day-' + i);
+        if (dayEl) leg.dayIndex = parseInt(dayEl.value, 10);
+      });
+    }
+
+    function saveTransportSheet() {
+      tsSaveCurrentLegInputs();
+      var notes = (document.getElementById('ts-notes') || {}).value || '';
+      var isMulti = _transportSheet.multiLeg;
+      var legs = _transportSheet.legs;
+      if (!legs.length) { closeTransportSheet(); return; }
+
+      var newEntry;
+      if (isMulti) {
+        newEntry = { type: _transportSheet.type, multiLeg: true, notes: notes, legs: legs.map(function(l) { return Object.assign({}, l); }) };
+      } else {
+        var leg = legs[0];
+        newEntry = { type: _transportSheet.type, from: leg.from, to: leg.to, carrier: leg.carrier, flightNum: leg.flightNum, depart: leg.depart, arrive: leg.arrive, confirmationCode: leg.confirmationCode, terminal: '', notes: notes };
+      }
+
+      if (_transportSheet.mode === 'edit') {
+        var oldDay = currentTrip.days[_transportSheet.di];
+        if (oldDay) { normaliseDayTransport(oldDay); oldDay.transport.splice(_transportSheet.ti, 1); }
+      }
+
+      if (isMulti) {
+        // Multi-leg: store on first leg's day
+        var targetDi = legs[0].dayIndex;
+        var targetDay = currentTrip.days[targetDi];
+        if (targetDay) { normaliseDayTransport(targetDay); targetDay.transport.push(newEntry); }
+      } else {
+        var targetDi = legs[0].dayIndex;
+        var targetDay = currentTrip.days[targetDi];
+        if (targetDay) { normaliseDayTransport(targetDay); targetDay.transport.push(newEntry); }
+      }
+
+      saveToStorage();
+      closeTransportSheet();
+      renderTransport();
+    }
+
+    function showAddTransportModal(prefillDi) { openTransportSheet('add', prefillDi, null); }
+    function showEditTransportModal(di, ti) { openTransportSheet('edit', di, ti); }
 
     function deleteTransportDirect(di, ti) {
       var day = currentTrip.days[di];
