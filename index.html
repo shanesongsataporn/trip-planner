@@ -1407,7 +1407,7 @@
       var toggleBtn = document.getElementById('mob-kanban-toggle');
       if (toggleBtn) { toggleBtn.style.background = 'var(--accent)'; toggleBtn.style.color = '#fff'; toggleBtn.style.borderColor = 'var(--accent)'; }
       kanban.innerHTML = '';
-      kanban.style.cssText = 'display:flex;flex-direction:row;align-items:stretch;overflow-x:auto;overflow-y:hidden;flex:1;padding:8px;gap:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
+      kanban.style.cssText = 'position:absolute;top:52px;left:0;right:0;bottom:0;display:flex;flex-direction:row;align-items:stretch;overflow-x:scroll;overflow-y:hidden;padding:8px;gap:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;box-sizing:border-box;';
       kanban.classList.add('active');
       var cityColors = {};
       if (window.citySettings) { Object.keys(citySettings).forEach(function(c) { cityColors[c] = citySettings[c].color || '#ccc'; }); }
@@ -1659,14 +1659,7 @@
       var pinchStartDist = null;
 
       _mobSwipeTouchStart = function(e) {
-        if (e.touches.length === 2) {
-          pinchStartDist = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-          );
-          return;
-        }
-        pinchStartDist = null;
+        if (e.touches.length === 2) return;
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         isHorizontal = null;
