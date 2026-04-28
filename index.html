@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Shane &amp; Cheryl&#39;s Trip Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1678,10 +1678,10 @@
           var endDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
           var ratio = endDist / pinchStartDist;
           pinchStartDist = null;
-          if (ratio < 0.8 && !mobKanbanMode) {
-            enterMobKanban();
-          } else if (ratio > 1.2 && mobKanbanMode) {
+          if (ratio < 0.8 && mobKanbanMode) {
             exitMobKanban(getMobKanbanCentreDay());
+          } else if (ratio > 1.2 && !mobKanbanMode) {
+            enterMobKanban();
           }
           return;
         }
