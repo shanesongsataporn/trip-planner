@@ -1058,7 +1058,10 @@
         <div id="mob-cards-indicator-text">Day 1 of 16</div>
         <div id="mob-cards-indicator-date">Sat May 9</div>
       </div>
-      <div id="mob-cards-dots"></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div id="mob-cards-dots"></div>
+        <button id="mob-kanban-toggle" onclick="toggleMobKanban()" style="font-family:inherit;font-size:16px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;line-height:1;flex-shrink:0;">⊞</button>
+      </div>
     </div>
     <div id="mob-cards-track-wrap">
       <div id="mob-cards-track"></div>
@@ -1384,6 +1387,11 @@
 
     var mobKanbanMode = false;
 
+    function toggleMobKanban() {
+      if (mobKanbanMode) { exitMobKanban(mobCardsCurrentIndex); }
+      else { enterMobKanban(); }
+    }
+
     function enterMobKanban() {
       mobKanbanMode = true;
       var mobView = document.getElementById('mob-cards-view');
@@ -1392,12 +1400,14 @@
       if (!kanban) {
         kanban = document.createElement('div');
         kanban.id = 'mob-kanban-view';
-        trackWrap.appendChild(kanban);
+        mobView.appendChild(kanban);
       }
-      trackWrap.style.overflow = 'hidden';
-      document.getElementById('mob-cards-track').style.display = 'none';
-      document.getElementById('mob-cards-dots').style.display = 'none';
+      trackWrap.style.display = 'none';
+      document.getElementById('mob-cards-dots').style.visibility = 'hidden';
+      var toggleBtn = document.getElementById('mob-kanban-toggle');
+      if (toggleBtn) { toggleBtn.style.background = 'var(--accent)'; toggleBtn.style.color = '#fff'; toggleBtn.style.borderColor = 'var(--accent)'; }
       kanban.innerHTML = '';
+      kanban.style.cssText = 'display:flex;flex-direction:row;align-items:stretch;overflow-x:auto;overflow-y:hidden;flex:1;padding:8px;gap:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
       kanban.classList.add('active');
       var cityColors = {};
       if (window.citySettings) { Object.keys(citySettings).forEach(function(c) { cityColors[c] = citySettings[c].color || '#ccc'; }); }
@@ -1569,7 +1579,6 @@
       mobCardsGoTo(mobCardsCurrentIndex, false);
       initMobCardsSwipe();
       initMobDotsSwipe();
-      initMobPinchDetector();
     }
 
     function mobCardsGoTo(index, animate) {
