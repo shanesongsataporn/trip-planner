@@ -3115,8 +3115,7 @@
             '<span class="struct-city-name">' + escHtml(block.city) + '</span>' +
             '<span class="struct-city-meta">' + dateRange + ' · ' + dayCount + (dayCount === 1 ? ' day' : ' days') + '</span>' +
             '<div class="struct-city-actions">' +
-              '<button class="struct-add-day-btn" onclick="structAddDay(\'' + escHtml(block.city) + '\', event)">+ Add day</button>' +
-              '<button class="struct-remove-city-btn" onclick="structRemoveCity(\'' + escHtml(block.city) + '\', event)" title="Remove destination">✕</button>' +
+'<button class="struct-add-day-btn" onclick="structAddDay(\'' + escHtml(block.city) + '\',' + bi + ', event)">+ Add day</button>' +              '<button class="struct-remove-city-btn" onclick="structRemoveCity(\'' + escHtml(block.city) + '\', event)" title="Remove destination">✕</button>' +
             '</div>' +
           '</div>' +
           '<div class="struct-day-list" data-city="' + escHtml(block.city) + '">' + rowsHtml + '</div>' +
@@ -3311,14 +3310,25 @@
       setTimeout(function() { selectSplitDay(di); }, 150);
     }
 
-    function structAddDay(city, e) {
+    function structAddDay(city, blockIndex, e) {
       if (e) e.stopPropagation();
       var cs = citySettings && citySettings[city];
       var days = currentTrip.days;
 
-      // Find last day in this city block to insert after
+      // Find last day in this specific block using DOM rows (not city name match)
       var lastIdx = -1;
-      days.forEach(function(d, i) { if (d.city === city) lastIdx = i; });
+      var blockEl = document.querySelectorAll('.struct-city-block')[blockIndex];
+      if (blockEl) {
+        var rows = blockEl.querySelectorAll('.struct-day-row');
+        rows.forEach(function(row) {
+          var di = parseInt(row.getAttribute('data-di'), 10);
+          if (!isNaN(di) && di > lastIdx) lastIdx = di;
+        });
+      }
+      // Fallback: city name match
+      if (lastIdx === -1) {
+        days.forEach(function(d, i) { if (d.city === city) lastIdx = i; });
+      }
 
       // Build new blank day using shared date helpers
       var prevDay = lastIdx >= 0 ? days[lastIdx] : days[days.length - 1];
