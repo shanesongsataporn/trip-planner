@@ -324,8 +324,18 @@
     .kanban-card { background: var(--white); border-radius: var(--radius-sm); margin-bottom: 10px; overflow: hidden; cursor: default; border: 1px solid var(--sand-dark); transition: all 0.2s; }
     .kanban-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
     .kanban-card-photo { width: 100%; height: 130px; object-fit: cover; display: block; }
-    .kanban-card-photo-placeholder { width: 100%; height: 80px; background: var(--sand); display: flex; align-items: center; justify-content: center; font-size: 30px; }
-    .kanban-card-body { padding: 12px 14px; }
+.kanban-card-photo-placeholder { width: 100%; height: 80px; background: var(--sand); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+    .transport-view-card { background:var(--white);border-radius:var(--radius);border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);margin-bottom:12px;overflow:hidden; }
+    .transport-view-card-header { padding:14px 18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--sand-dark); }
+    .transport-type-badge { font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:var(--sand);color:var(--ink-muted);flex-shrink:0; }
+    .transport-type-badge.flight { background:#e8f4fd;color:#2980B9; }
+    .transport-type-badge.train { background:#eafaf1;color:#27AE60; }
+    .transport-type-badge.ferry { background:#eaf0fb;color:#8E44AD; }
+    .transport-view-route { font-size:16px;font-weight:800;color:var(--ink);flex:1; }
+    .transport-view-card-body { padding:12px 18px; }
+    .transport-view-detail { font-size:12px;color:var(--ink-muted);margin-bottom:4px; }
+    .transport-view-detail strong { color:var(--ink);font-weight:600; }
+    .transport-view-actions { display:flex;gap:8px;margin-top:10px;flex-wrap:wrap; }    .kanban-card-body { padding: 12px 14px; }
     .kanban-card-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; font-weight: 700; }
     .kanban-card-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 4px; letter-spacing: -0.01em; }
     .kanban-card-note { font-size: 11px; color: var(--ink-muted); line-height: 1.5; margin-bottom: 6px; }
@@ -456,7 +466,7 @@
     .struct-day-num { font-size: 11px; font-weight: 700; color: var(--ink-muted); min-width: 36px; }
     .struct-day-date { font-size: 13px; color: var(--ink); flex: 1; }
     .struct-day-label { font-size: 12px; color: var(--ink-muted); flex: 1; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-    .struct-day-warning { font-size: 11px; color: var(--warn); flex-shrink: 0; }
+    .struct-day-warning { font-size: 11px; color: var(--warn); flex-shrink: 0; cursor: pointer; background: none; border: none; padding: 0 2px; font-family: inherit; }
 .struct-day-delete { font-size: 15px; color: var(--danger); background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; opacity: 1; transition: opacity 0.15s; }    .struct-day-row:hover .struct-day-delete { opacity: 1; }
     .struct-drag-handle { color: var(--ink-muted); font-size: 16px; cursor: grab; flex-shrink: 0; padding: 0 2px; user-select: none; }
     .struct-drag-handle:active { cursor: grabbing; }
@@ -917,6 +927,7 @@
       <div class="menu-section-label">Tools</div>
       <button class="menu-item" onclick="setView('discovery');toggleMenu('hamburger-menu')">🔍 Discovery</button>
       <button class="menu-item" onclick="setView('food');toggleMenu('hamburger-menu')">🍽️ Food Planner</button>
+      <button class="menu-item" onclick="setView('transport');toggleMenu('hamburger-menu')">✈️ Transport</button>
       <button class="menu-item" onclick="setView('budget');toggleMenu('hamburger-menu')">💰 Budget Tracker</button>
       <button class="menu-item" onclick="showCitySettingsModal();toggleMenu('hamburger-menu')">🏙️ City Settings</button>
     </div>
@@ -1021,6 +1032,7 @@
   <div id="view-home"></div>
   <div id="view-budget"></div>
   <div id="view-food"></div>
+  <div id="view-transport"></div>
   <div id="view-calendar"></div>
 
   <div id="view-structure">
@@ -2253,6 +2265,12 @@
               '<div class="home-tile-label">View</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Discovery</div>' +
             '</div>';
+          case 'transport':
+            return '<div class="home-tile" data-tile-id="transport" onclick="setView(\'transport\')">' +
+              '<div class="home-tile-emoji">✈️</div>' +
+              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Transport</div>' +
+            '</div>';
           default: return '';
         }
       }
@@ -2883,6 +2901,7 @@
       if (view === 'split') { renderSplit(); }
       if (view === 'budget') { renderBudget(); }
       if (view === 'food') { renderFood(); }
+      if (view === 'transport') { renderTransport(); }
       if (view === 'calendar') { renderCalendar(); }
       if (view === 'discovery') { renderDiscovery(); }
       if (view === 'map') { google.maps.event.trigger(map, 'resize'); }
@@ -2984,9 +3003,211 @@
       document.getElementById('preview-accent').style.background = 'hsl(' + h + ',56%,' + accentL + '%)';
     }
 
+    // ===== TRANSPORT VIEW =====
+    function renderTransport() {
+      var el = document.getElementById('view-transport');
+      if (!el) return;
+
+      // Build flat chronological list of all transport entries
+      var allEntries = [];
+      currentTrip.days.forEach(function(day, di) {
+        normaliseDayTransport(day);
+        day.transport.forEach(function(t, ti) {
+          allEntries.push({ t: t, day: day, di: di, ti: ti });
+        });
+      });
+
+      // Summary counts
+      var flightCount = allEntries.filter(function(e) { return (e.t.type||'').toLowerCase() === 'flight'; }).length;
+      var totalCount = allEntries.length;
+
+      // Next upcoming flight
+      var today = new Date(); today.setHours(0,0,0,0);
+      var nextFlight = null;
+      allEntries.forEach(function(e) {
+        if ((e.t.type||'').toLowerCase() !== 'flight') return;
+        var d = parseTripDate(e.day.date);
+        if (d && d >= today && !nextFlight) nextFlight = e;
+      });
+
+      var summaryHtml = '<div style="background:var(--white);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">Transport</div>' +
+          '<div style="font-size:12px;color:var(--ink-muted);">' + totalCount + ' entr' + (totalCount === 1 ? 'y' : 'ies') + ' · ' + flightCount + ' flight' + (flightCount === 1 ? '' : 's') + '</div>' +
+        '</div>' +
+        (nextFlight ? '<div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;">' +
+          '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:2px;">Next Flight</div>' +
+          '<div style="font-size:13px;font-weight:800;color:var(--ink);">' + (nextFlight.t.from||'?') + ' → ' + (nextFlight.t.to||'?') + '</div>' +
+          '<div style="font-size:11px;color:var(--ink-muted);">' + nextFlight.day.date + (nextFlight.t.depart ? ' · ' + nextFlight.t.depart : '') + '</div>' +
+        '</div>' : '') +
+      '</div>';
+
+      // Add transport button
+      var addHtml = '<button onclick="showAddTransportModal()" style="font-family:inherit;font-size:13px;font-weight:700;padding:10px 20px;border-radius:var(--radius-sm);border:2px dashed var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;width:100%;margin-bottom:16px;">+ Add transport</button>';
+
+      var entriesHtml = allEntries.length ? allEntries.map(function(e) {
+        var t = e.t; var day = e.day; var di = e.di; var ti = e.ti;
+        var typeKey = (t.type||'transport').toLowerCase();
+        var typeEmoji = typeKey === 'flight' ? '✈️' : typeKey === 'train' ? '🚆' : typeKey === 'ferry' ? '⛴️' : typeKey === 'bus' ? '🚌' : typeKey === 'car' ? '🚗' : '🚐';
+        var missingFields = [];
+        if (typeKey === 'flight') {
+          if (!t.depart) missingFields.push('depart time');
+          if (!t.arrive) missingFields.push('arrive time');
+          if (!t.confirmationCode) missingFields.push('confirmation code');
+        }
+        return '<div class="transport-view-card">' +
+          '<div class="transport-view-card-header">' +
+            '<span class="transport-type-badge ' + typeKey + '">' + typeEmoji + ' ' + (t.type||'Transport') + '</span>' +
+            '<div class="transport-view-route">' + (t.from||'—') + ' → ' + (t.to||'—') + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-muted);text-align:right;flex-shrink:0;">' +
+              '<div style="font-weight:700;">Day ' + day.day + '</div>' +
+              '<div>' + day.date + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="transport-view-card-body">' +
+            (t.carrier || t.flightNum ? '<div class="transport-view-detail"><strong>' + (t.carrier||'') + (t.flightNum ? ' · ' + t.flightNum : '') + '</strong></div>' : '') +
+            (t.depart || t.arrive ? '<div class="transport-view-detail">🕐 ' + (t.depart||'?') + ' → ' + (t.arrive||'?') + '</div>' : '') +
+            (t.terminal ? '<div class="transport-view-detail">🚪 Terminal: <strong>' + t.terminal + '</strong></div>' : '') +
+            (t.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + t.confirmationCode + '</strong></div>' : '') +
+            (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:4px;">' + t.notes + '</div>' : '') +
+            (missingFields.length ? '<div style="margin-top:8px;font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingFields.join(', ') + '</div>' : '') +
+            '<div class="transport-view-actions">' +
+              '<button class="kbtn" onclick="showEditTransportModal(' + di + ',' + ti + ')">✏️ Edit</button>' +
+              '<button class="kbtn" style="color:var(--danger);border-color:var(--danger);" onclick="deleteTransportDirect(' + di + ',' + ti + ')">🗑 Delete</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') : '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No transport added yet.</div>';
+
+      el.innerHTML = summaryHtml + addHtml + entriesHtml;
+    }
+
+    function showAddTransportModal(prefillDi) {
+      var dayOptions = currentTrip.days.map(function(d, i) {
+        return '<option value="' + i + '">' + 'Day ' + d.day + ' · ' + d.city + ' · ' + d.date + '</option>';
+      }).join('');
+      showModal('Add Transport',
+        '<div class="modal-field"><label>Day</label><select id="tm-day">' + dayOptions + '</select></div>' +
+        '<div class="modal-field"><label>Type</label><select id="tm-type"><option>Flight</option><option>Train</option><option>Bus</option><option>Ferry</option><option>Car</option><option>Transfer</option></select></div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>From</label><input type="text" id="tm-from" placeholder="e.g. Sydney"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>To</label><input type="text" id="tm-to" placeholder="e.g. Bangkok"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>Carrier</label><input type="text" id="tm-carrier" placeholder="e.g. Thai Airways"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>Flight / Ref #</label><input type="text" id="tm-num" placeholder="e.g. TG412"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>Departs</label><input type="text" id="tm-depart" placeholder="e.g. 9:15am"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>Arrives</label><input type="text" id="tm-arrive" placeholder="e.g. 6:55pm"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>Terminal</label><input type="text" id="tm-terminal" placeholder="e.g. T1"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>Confirmation Code</label><input type="text" id="tm-code" placeholder="e.g. ABC123"></div>' +
+        '</div>' +
+        '<div class="modal-field"><label>Notes</label><input type="text" id="tm-notes" placeholder="e.g. 4hr layover in KL"></div>',
+        function() {
+          var di = parseInt(document.getElementById('tm-day').value, 10);
+          var day = currentTrip.days[di];
+          if (!day) return;
+          normaliseDayTransport(day);
+          day.transport.push({
+            type: document.getElementById('tm-type').value,
+            from: document.getElementById('tm-from').value.trim(),
+            to: document.getElementById('tm-to').value.trim(),
+            carrier: document.getElementById('tm-carrier').value.trim(),
+            flightNum: document.getElementById('tm-num').value.trim(),
+            depart: document.getElementById('tm-depart').value.trim(),
+            arrive: document.getElementById('tm-arrive').value.trim(),
+            terminal: document.getElementById('tm-terminal').value.trim(),
+            confirmationCode: document.getElementById('tm-code').value.trim(),
+            notes: document.getElementById('tm-notes').value.trim()
+          });
+          saveToStorage();
+          renderTransport();
+        }
+      );
+      if (prefillDi !== undefined) {
+        setTimeout(function() {
+          var sel = document.getElementById('tm-day');
+          if (sel) sel.value = prefillDi;
+        }, 50);
+      }
+    }
+
+    function showEditTransportModal(di, ti) {
+      var day = currentTrip.days[di];
+      if (!day) return;
+      normaliseDayTransport(day);
+      var t = day.transport[ti];
+      if (!t) return;
+      var dayOptions = currentTrip.days.map(function(d, i) {
+        return '<option value="' + i + '"' + (i === di ? ' selected' : '') + '>' + 'Day ' + d.day + ' · ' + d.city + ' · ' + d.date + '</option>';
+      }).join('');
+      showModal('Edit Transport',
+        '<div class="modal-field"><label>Day</label><select id="tm-day">' + dayOptions + '</select></div>' +
+        '<div class="modal-field"><label>Type</label><select id="tm-type"><option' + (t.type==='Flight'?' selected':'') + '>Flight</option><option' + (t.type==='Train'?' selected':'') + '>Train</option><option' + (t.type==='Bus'?' selected':'') + '>Bus</option><option' + (t.type==='Ferry'?' selected':'') + '>Ferry</option><option' + (t.type==='Car'?' selected':'') + '>Car</option><option' + (t.type==='Transfer'?' selected':'') + '>Transfer</option></select></div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>From</label><input type="text" id="tm-from" value="' + (t.from||'') + '" placeholder="e.g. Sydney"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>To</label><input type="text" id="tm-to" value="' + (t.to||'') + '" placeholder="e.g. Bangkok"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>Carrier</label><input type="text" id="tm-carrier" value="' + (t.carrier||'') + '" placeholder="e.g. Thai Airways"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>Flight / Ref #</label><input type="text" id="tm-num" value="' + (t.flightNum||'') + '" placeholder="e.g. TG412"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>Departs</label><input type="text" id="tm-depart" value="' + (t.depart||'') + '" placeholder="e.g. 9:15am"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>Arrives</label><input type="text" id="tm-arrive" value="' + (t.arrive||'') + '" placeholder="e.g. 6:55pm"></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:10px;">' +
+          '<div class="modal-field" style="flex:1;"><label>Terminal</label><input type="text" id="tm-terminal" value="' + (t.terminal||'') + '" placeholder="e.g. T1"></div>' +
+          '<div class="modal-field" style="flex:1;"><label>Confirmation Code</label><input type="text" id="tm-code" value="' + (t.confirmationCode||'') + '" placeholder="e.g. ABC123"></div>' +
+        '</div>' +
+        '<div class="modal-field"><label>Notes</label><input type="text" id="tm-notes" value="' + (t.notes||'') + '" placeholder="e.g. 4hr layover in KL"></div>',
+        function() {
+          var newDi = parseInt(document.getElementById('tm-day').value, 10);
+          var updatedT = {
+            type: document.getElementById('tm-type').value,
+            from: document.getElementById('tm-from').value.trim(),
+            to: document.getElementById('tm-to').value.trim(),
+            carrier: document.getElementById('tm-carrier').value.trim(),
+            flightNum: document.getElementById('tm-num').value.trim(),
+            depart: document.getElementById('tm-depart').value.trim(),
+            arrive: document.getElementById('tm-arrive').value.trim(),
+            terminal: document.getElementById('tm-terminal').value.trim(),
+            confirmationCode: document.getElementById('tm-code').value.trim(),
+            notes: document.getElementById('tm-notes').value.trim()
+          };
+          // Remove from old day
+          day.transport.splice(ti, 1);
+          // Add to new day (may be same or different)
+          var newDay = currentTrip.days[newDi];
+          normaliseDayTransport(newDay);
+          newDay.transport.push(updatedT);
+          saveToStorage();
+          renderTransport();
+        }
+      );
+    }
+
+    function deleteTransportDirect(di, ti) {
+      var day = currentTrip.days[di];
+      if (!day) return;
+      var t = day.transport[ti];
+      var label = t ? ((t.type||'Transport') + ' · ' + (t.from||'') + '→' + (t.to||'')) : 'this entry';
+      if (!confirm('Delete ' + label + '?')) return;
+      day.transport.splice(ti, 1);
+      saveToStorage();
+      renderTransport();
+    }
+
     // ===== TRANSPORT TAB =====
     function normaliseDayTransport(item) {
       if (!item.transport) { item.transport = []; }
+      item.transport.forEach(function(t) {
+        if (!t.terminal) t.terminal = '';
+        if (!t.confirmationCode) t.confirmationCode = '';
+      });
     }
 
     function renderTransportTab(item) {
@@ -3096,7 +3317,11 @@
           var di = days.indexOf(day);
           var hasTransport = day.transport && day.transport.length > 0;
           var hasContent = (day.activities && day.activities.length) || (day.food && day.food.length) || (day.accommodation && day.accommodation.length);
-          var warnHtml = hasTransport ? '<span class="struct-day-warning">⚠️</span>' : '';
+          var warns = [];
+          if (!day.accommodation || !day.accommodation.length) warns.push('No accommodation');
+          if (day.food) day.food.forEach(function(f) { if (f.reservationRequired && !f.reservationBooked) warns.push('Unbooked reservation: ' + f.name); });
+          if (day.transport) day.transport.forEach(function(t) { if (t.type === 'flight' && (!t.depart || !t.arrive)) warns.push('Flight missing depart/arrive: ' + (t.carrier || t.from || 'unknown')); });
+          var warnHtml = warns.length ? '<button class="struct-day-warning" onclick="showStructWarning(' + di + ', event)">⚠️</button>' : '';
           var label = day.note || '';
           return '<div class="struct-day-row" data-di="' + di + '" onclick="structDayTap(' + di + ', event)">' +
             '<span class="struct-day-num">Day ' + day.day + '</span>' +
@@ -3349,6 +3574,38 @@
       renumberDays();
       saveToStorage();
       renderStructure();
+    }
+
+    function showStructWarning(di, e) {
+      e.stopPropagation();
+      document.querySelectorAll('.struct-warn-popover').forEach(function(p) { p.remove(); });
+      var day = currentTrip.days[di];
+      if (!day) return;
+      var warns = [];
+      if (!day.accommodation || !day.accommodation.length) warns.push('No accommodation');
+      if (day.food) day.food.forEach(function(f) { if (f.reservationRequired && !f.reservationBooked) warns.push('Unbooked reservation: ' + f.name); });
+      if (day.transport) day.transport.forEach(function(t) { if (t.type === 'flight' && (!t.depart || !t.arrive)) warns.push('Flight missing depart/arrive: ' + (t.carrier || t.from || 'unknown')); });
+      if (!warns.length) return;
+      var pop = document.createElement('div');
+      pop.className = 'struct-warn-popover';
+      pop.style.cssText = 'position:fixed;z-index:9000;background:var(--white);border:1px solid var(--warn);border-radius:var(--radius-sm);padding:10px 14px;box-shadow:var(--card-shadow-hover);max-width:240px;';
+      pop.innerHTML = '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--warn);margin-bottom:6px;">Day ' + day.day + ' · Missing</div>' +
+        warns.map(function(w) {
+          var isTransport = w.toLowerCase().indexOf('flight') !== -1 || w.toLowerCase().indexOf('transport') !== -1;
+          var style = 'font-size:12px;color:var(--ink);padding:3px 0;border-bottom:1px solid var(--sand-dark);' + (isTransport ? 'cursor:pointer;text-decoration:underline dotted;' : '');
+          var onclick = isTransport ? ' onclick="pop.remove();setView(\'transport\')"' : '';
+          return '<div style="' + style + '"' + onclick + '>' + w + '</div>';
+        }).join('');
+      var rect = e.target.getBoundingClientRect();
+      pop.style.top = (rect.bottom + 6) + 'px';
+      pop.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
+      document.body.appendChild(pop);
+      setTimeout(function() {
+        document.addEventListener('click', function dismiss() {
+          pop.remove();
+          document.removeEventListener('click', dismiss);
+        });
+      }, 10);
     }
 
     function structDeleteDay(di, e) {
@@ -4689,7 +4946,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','structure','itinerary','cards','discovery'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','structure','itinerary','cards','discovery','transport'];
     var HOME_TILE_META = {
       dates:      { emoji: '📅', label: 'Dates' },
       weather:    { emoji: '🌤️', label: 'Weather' },
@@ -4703,7 +4960,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       split:      { emoji: '⬛', label: 'Split' },
       itinerary:  { emoji: '📋', label: 'Itinerary' },
       cards:      { emoji: '🃏', label: 'Cards' },
-      discovery:  { emoji: '🔍', label: 'Discovery' }
+      discovery:  { emoji: '🔍', label: 'Discovery' },
+      transport:  { emoji: '✈️', label: 'Transport' }
     };
 
     function loadHomeTileConfig() {
