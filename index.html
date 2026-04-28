@@ -1500,11 +1500,10 @@
       mobKanbanMode = false;
       var kanban = document.getElementById('mob-kanban-view');
       if (kanban) { kanban.classList.remove('active'); kanban.innerHTML = ''; }
-      document.getElementById('mob-cards-track').style.display = '';
-      document.getElementById('mob-cards-dots').style.display = '';
       document.getElementById('mob-cards-track-wrap').style.overflow = '';
       mobCardsCurrentIndex = dayIndex;
-      mobCardsGoTo(dayIndex, false);
+      renderMobCards();
+      setTimeout(function() { mobCardsGoTo(dayIndex, false); }, 50);
     }
 
     function renderMobCards() {
