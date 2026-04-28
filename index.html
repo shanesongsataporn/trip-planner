@@ -547,6 +547,15 @@
     #disc-add-sheet-body { padding: 16px 20px 32px; }
     #disc-add-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5400; }
     #disc-add-overlay.open { display: block; }
+    #photo-picker-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5600; }
+    #photo-picker-overlay.open { display: block; }
+    #photo-picker-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 5700; background: var(--white); border-radius: 20px 20px 0 0; box-shadow: 0 -8px 40px rgba(0,0,0,0.3); border-top: 1px solid var(--sand-dark); max-height: 85vh; overflow-y: auto; animation: fadeInUp 0.25s ease; }
+    #photo-picker-sheet.open { display: block; }
+    #photo-picker-handle { width: 36px; height: 4px; background: var(--sand-dark); border-radius: 2px; margin: 12px auto 16px; }
+    .photo-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .photo-picker-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: border-color 0.15s; }
+    .photo-picker-thumb:hover { border-color: var(--accent); }
+    .photo-picker-thumb.selected { border-color: var(--accent); }
     .disc-step-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; display: block; }
     .disc-cat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
     .disc-cat-btn { font-family: inherit; font-size: 12px; font-weight: 700; padding: 12px 8px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink); cursor: pointer; text-align: center; transition: all 0.15s; }
@@ -1161,6 +1170,11 @@
     <div id="transport-sheet-handle"></div>
     <div id="transport-sheet-body"></div>
   </div>
+  <div id="photo-picker-overlay" onclick="closePhotoPicker()"></div>
+  <div id="photo-picker-sheet">
+    <div id="photo-picker-handle"></div>
+    <div id="photo-picker-body"></div>
+  </div>
   <div id="panel">
     <div id="panel-head">
       <button id="panel-close">x</button>
@@ -1252,10 +1266,12 @@
       var userNote = (item.cardNotes && item.cardNotes[actIndex]) || '';
       var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
       var photoId = 'kp-' + photoKey;
+      var cleanName = name.replace(/'/g, '');
+      var cleanCity = item.city.split('>').pop().trim().replace(/'/g, '');
+      var placeholderHtml = '<div id="' + photoId + '" onclick="openPhotoPicker(\'' + photoKey + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + dayIndex + ',' + actIndex + ',\'activity\')" style="width:100%;height:120px;background:var(--sand-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;"><div style="font-size:28px;">' + catStyle.emoji + '</div><div style="font-size:10px;color:var(--ink-muted);font-weight:600;">📷 Add photo</div></div>';
       var photoHtml = savedPhoto
-        ? '<img style="width:100%;height:200px;object-fit:cover;display:block;" src="' + savedPhoto + '">'
-        : '<div id="' + photoId + '" style="width:100%;height:120px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:32px;">' + catStyle.emoji + '</div>';
-      if (!savedPhoto && cat !== 'default') fetchKanbanPhoto(name, item, photoId);
+        ? '<img style="width:100%;height:200px;object-fit:cover;display:block;cursor:pointer;" src="' + savedPhoto + '" onclick="openPhotoPicker(\'' + photoKey + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + dayIndex + ',' + actIndex + ',\'activity\')">'
+        : placeholderHtml;
       return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
         photoHtml +
         '<div style="padding:12px 14px;">' +
@@ -1276,7 +1292,7 @@
       normaliseFood(item);
       var fname = f.name;
       var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
-      var foodPhotoKey = 'day' + item.day + '_food' + fi;
+      var foodPhotoKey = f.uid ? 'food_' + f.uid : 'day' + item.day + '_food' + fi;
       var savedFoodPhoto = cardPhotos[foodPhotoKey];
       var foodPhotoHtml = savedFoodPhoto
         ? '<img style="width:100%;height:200px;object-fit:cover;display:block;" src="' + savedFoodPhoto + '">'
@@ -1369,6 +1385,7 @@
         return da - db;
       });
       var today = new Date(); today.setHours(0,0,0,0);
+      var savedMobIndex = mobCardsCurrentIndex;
       mobCardsCurrentIndex = 0;
       for (var si = 0; si < sortedDays.length; si++) {
         var sp = (sortedDays[si].date||'').split(' ');
@@ -1406,6 +1423,7 @@
       });
 
       mobCardsSortedDays = sortedDays;
+      mobCardsCurrentIndex = savedMobIndex < sortedDays.length ? savedMobIndex : 0;
       mobCardsGoTo(mobCardsCurrentIndex, false);
       initMobCardsSwipe();
       initMobDotsSwipe();
@@ -5372,9 +5390,11 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       if (!item.cardNotes) { item.cardNotes = {}; }
       var userNote = item.cardNotes[actIndex] || '';
 
+      var cleanName = name.replace(/'/g, '');
+      var cleanCity = item.city.split('>').pop().trim().replace(/'/g, '');
       var photoHtml = savedPhoto
         ? '<img class="kanban-card-photo" src="' + savedPhoto + '">'
-        : '<div class="kanban-card-photo-placeholder" id="' + photoId + '">' + catStyle.emoji + '</div>';
+        : '<div class="kanban-card-photo-placeholder" id="' + photoId + '" onclick="openPhotoPicker(\'' + photoKey + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + dayIndex + ',' + actIndex + ',\'activity\')" style="cursor:pointer;">' + catStyle.emoji + '<div style="font-size:10px;color:var(--ink-muted);font-weight:600;margin-top:4px;">📷 Add photo</div></div>';
 
       var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
 
@@ -5387,12 +5407,10 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         '</div>' +
         '<div class="kanban-card-footer">' +
           '<button class="kbtn" onclick="openKanbanNote(' + dayIndex + ',' + actIndex + ')">📝 Note</button>' +
-          '<button class="kbtn" onclick="triggerPhotoUpload(\'' + photoKey + '\',' + dayIndex + ',' + actIndex + ')">📷</button>' +
+          '<button class="kbtn" onclick="openPhotoPicker(\'' + photoKey + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + dayIndex + ',' + actIndex + ',\'activity\')">📷</button>' +
           '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
           '<button class="kbtn" onclick="editItinDay(' + dayIndex + ')">Edit</button>' +
         '</div>';
-
-      if (!savedPhoto && cat !== 'default') { fetchKanbanPhoto(name, item, photoId); }
       return card;
     }
 
@@ -5409,31 +5427,114 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       );
     }
 
-    var fetchingPhotos = {};
-    function fetchKanbanPhoto(activity, item, photoId) {
-      var photoKey = photoId.replace('kp-', '');
-      if (fetchingPhotos[photoKey]) { return; }
-      fetchingPhotos[photoKey] = true;
-      var service = new google.maps.places.PlacesService(map);
-      service.findPlaceFromQuery({ query: activity + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination(), fields: ['place_id'] }, function(results, status) {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
-          service.getDetails({ placeId: results[0].place_id, fields: ['photos'] }, function(details, detailStatus) {
-            delete fetchingPhotos[photoKey];
-            if (detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0) {
-              var url = details.photos[0].getUrl({ maxWidth: 270, maxHeight: 120 });
-              cardPhotos[photoKey] = url;
-              var el = document.getElementById(photoId);
-              if (el) { el.outerHTML = '<img class="kanban-card-photo" src="' + url + '">'; }
-              else {
-                var allPlaceholders = document.querySelectorAll('[id="' + photoId + '"]');
-                allPlaceholders.forEach(function(p) { p.outerHTML = '<img class="kanban-card-photo" src="' + url + '">'; });
-              }
-            }
-          });
-        } else {
-          delete fetchingPhotos[photoKey];
+    var _photoPickerKey = null;
+    var _photoPickerDayIndex = null;
+    var _photoPickerActIndex = null;
+    var _photoPickerType = null;
+
+    function openPhotoPicker(photoKey, name, city, dayIndex, actIndex, type) {
+      _photoPickerKey = photoKey;
+      _photoPickerDayIndex = dayIndex;
+      _photoPickerActIndex = actIndex;
+      _photoPickerType = type;
+      var body = document.getElementById('photo-picker-body');
+      body.innerHTML = '<div style="padding:0 16px 8px;">' +
+        '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:2px;letter-spacing:-0.02em;">Add a photo</div>' +
+        '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:16px;">' + name + ' · ' + city + '</div>' +
+        '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin-bottom:10px;">📍 Suggested photos</div>' +
+        '<div id="photo-picker-grid" class="photo-picker-grid"><div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink-muted);font-size:13px;">Searching...</div></div>' +
+        '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin:16px 0 10px;">📷 Upload your own</div>' +
+        '<button onclick="triggerPhotoUpload(\'' + photoKey + '\',' + dayIndex + ',' + actIndex + ',\'' + type + '\')" style="width:100%;padding:12px;border-radius:var(--radius-sm);border:2px dashed var(--sand-dark);background:var(--sand);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:20px;">Choose from camera roll</button>' +
+      '</div>';
+      document.getElementById('photo-picker-overlay').classList.add('open');
+      document.getElementById('photo-picker-sheet').classList.add('open');
+      fetchPlacesPhotos(name, city, photoKey, dayIndex, actIndex, type);
+    }
+
+    function closePhotoPicker() {
+      document.getElementById('photo-picker-overlay').classList.remove('open');
+      document.getElementById('photo-picker-sheet').classList.remove('open');
+    }
+
+    var _allPlacesPhotos = [];
+    var _placesPhotoOffset = 0;
+    var _placesPhotoContext = {};
+
+    function fetchPlacesPhotos(name, city, photoKey, dayIndex, actIndex, type) {
+      _allPlacesPhotos = [];
+      _placesPhotoOffset = 0;
+      _placesPhotoContext = { photoKey: photoKey, dayIndex: dayIndex, actIndex: actIndex, type: type };
+      var query = name + ' ' + city + ' Thailand';
+      fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': 'AIzaSyDXFs5TVkOdKJciflCTQmX2vH9FwWTqfz8',
+          'X-Goog-FieldMask': 'places.photos,places.displayName'
+        },
+        body: JSON.stringify({ textQuery: query, maxResultCount: 1 })
+      }).then(function(r) { return r.json(); }).then(function(data) {
+        var grid = document.getElementById('photo-picker-grid');
+        if (!grid) return;
+        var photos = data.places && data.places[0] && data.places[0].photos;
+        if (!photos || !photos.length) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink-muted);font-size:13px;">No suggested photos found</div>';
+          return;
         }
+        _allPlacesPhotos = photos;
+        renderPlacesPhotoPage();
+      }).catch(function() {
+        var grid = document.getElementById('photo-picker-grid');
+        if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--ink-muted);font-size:13px;">Could not load suggestions</div>';
       });
+    }
+
+    function renderPlacesPhotoPage() {
+      var grid = document.getElementById('photo-picker-grid');
+      if (!grid) return;
+      var ctx = _placesPhotoContext;
+      var page = _allPlacesPhotos.slice(_placesPhotoOffset, _placesPhotoOffset + 4);
+      if (!page.length) { _placesPhotoOffset = 0; page = _allPlacesPhotos.slice(0, 4); }
+      var thumbs = page.map(function(p, i) {
+        var photoName = p.name;
+        return '<img class="photo-picker-thumb" src="" ' +
+          'onclick="selectPlacesPhoto(\'' + photoName + '\',\'' + ctx.photoKey + '\',' + ctx.dayIndex + ',' + ctx.actIndex + ',\'' + ctx.type + '\')" ' +
+          'id="ppt-' + i + '">';
+      }).join('');
+      var moreBtn = _allPlacesPhotos.length > 4
+        ? '<button onclick="morePlacesPhotos()" style="grid-column:1/-1;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;">🔄 More photos</button>'
+        : '';
+      grid.innerHTML = thumbs + moreBtn;
+      page.forEach(function(p, i) {
+        var photoName = p.name;
+        fetch('https://places.googleapis.com/v1/' + photoName + '/media?maxHeightPx=400&maxWidthPx=400&key=AIzaSyDXFs5TVkOdKJciflCTQmX2vH9FwWTqfz8&skipHttpRedirect=true')
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            var imgEl = document.getElementById('ppt-' + i);
+            if (imgEl && d.photoUri) { imgEl.src = d.photoUri; }
+          }).catch(function() {});
+      });
+    }
+
+    function morePlacesPhotos() {
+      _placesPhotoOffset += 4;
+      if (_placesPhotoOffset >= _allPlacesPhotos.length) { _placesPhotoOffset = 0; }
+      renderPlacesPhotoPage();
+    }
+
+    function selectPlacesPhoto(photoName, photoKey, dayIndex, actIndex, type) {
+      fetch('https://places.googleapis.com/v1/' + photoName + '/media?maxHeightPx=800&maxWidthPx=800&key=AIzaSyDXFs5TVkOdKJciflCTQmX2vH9FwWTqfz8&skipHttpRedirect=true')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (!d.photoUri) { alert('Could not get photo. Try another.'); return; }
+          return fetch(d.photoUri);
+        })
+        .then(function(r) { return r.blob(); })
+        .then(function(blob) {
+          var file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+          closePhotoPicker();
+          uploadImageToFirebase(file, photoKey, dayIndex, actIndex, type);
+        }).catch(function() { alert('Could not save photo. Try uploading your own.'); });
     }
 
     function triggerPhotoUpload(photoKey, dayIndex, actIndex, type) {
@@ -5484,7 +5585,10 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           uploadTask.snapshot.ref.getDownloadURL().then(function(url) {
             cardPhotos[photoKey] = url;
             saveCardPhotos();
+            closePhotoPicker();
+            var savedIndex = mobCardsCurrentIndex;
             renderKanban();
+            if (isMobile()) { mobCardsGoTo(savedIndex, false); }
           });
         }
       );
@@ -6441,9 +6545,10 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       if (!item.food) { item.food = []; }
       item.food = item.food.map(function(f) {
         if (typeof f === 'string') {
-          return { name: f, link: '', bookingUrl: '', reservationRequired: false, reservationBooked: false, notes: '', mustOrder: '' };
+          f = { name: f, link: '', bookingUrl: '', reservationRequired: false, reservationBooked: false, notes: '', mustOrder: '' };
         }
         if (f.bookingUrl === undefined) { f.bookingUrl = ''; }
+        if (!f.uid) { f.uid = Math.random().toString(36).substr(2, 6); }
         return f;
       });
     }
