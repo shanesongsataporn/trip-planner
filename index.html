@@ -1501,7 +1501,6 @@
         var dist = Math.sqrt(dx*dx + dy*dy);
         var delta = dist - startDist;
         if (Math.abs(delta) > 40) {
-          alert('pinch detected: delta=' + Math.round(delta));
           if (delta > 0 && !mobKanbanMode) { enterMobKanban(); }
           else if (delta < 0 && mobKanbanMode) { exitMobKanban(getMobKanbanCentreDay()); }
           startDist = null;
@@ -1679,11 +1678,10 @@
           var endDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
           var ratio = endDist / pinchStartDist;
           pinchStartDist = null;
-          if (ratio < 0.8) {
-            cardsViewMode = 'kanban';
-            document.getElementById('mob-cards-view').classList.remove('active');
-            document.getElementById('view-cards').style.display = '';
-            renderKanban();
+          if (ratio < 0.8 && !mobKanbanMode) {
+            enterMobKanban();
+          } else if (ratio > 1.2 && mobKanbanMode) {
+            exitMobKanban(getMobKanbanCentreDay());
           }
           return;
         }
