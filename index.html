@@ -1426,30 +1426,47 @@
         col.dataset.idx = idx;
         var dateParts = (item.date || '').split(' ');
         var shortDate = dateParts.length >= 3 ? dateParts[1] + ' ' + dateParts[2] : item.date || '';
-        var pillsHtml = '';
+        var cardsHtml = '';
         if (item.activities && item.activities.length) {
-          item.activities.forEach(function(a) {
+          item.activities.forEach(function(a, ai) {
             var name = (typeof a === 'object') ? a.name : a;
-            var cat = 'default';
-            var emoji = (activityCategories[cat] || activityCategories['default']).emoji;
-            pillsHtml += '<div class="mob-kb-pill">' + emoji + ' ' + name + '</div>';
+            var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + item.day + '_act' + ai);
+            var cat = (item.activityCategories && item.activityCategories[ai]) || 'default';
+            var catObj = activityCategories[cat] || activityCategories['default'];
+            var photo = cardPhotos['act_' + uid];
+            var photoHtml = photo
+              ? '<img src="' + photo + '" style="width:100%;height:90px;object-fit:cover;display:block;border-radius:6px 6px 0 0;">'
+              : '<div style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;">' + catObj.emoji + '</div>';
+            cardsHtml += '<div style="background:var(--white);border-radius:6px;margin-bottom:6px;overflow:hidden;border:1px solid var(--sand-dark);">' +
+              photoHtml +
+              '<div style="padding:4px 6px;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
+            '</div>';
           });
         } else {
-          pillsHtml += '<div style="font-size:10px;color:var(--ink-muted);font-style:italic;padding:4px 2px;">Empty</div>';
+          cardsHtml += '<div style="font-size:10px;color:var(--ink-muted);font-style:italic;padding:4px 2px;">Empty</div>';
         }
         if (item.food && item.food.length) {
-          pillsHtml += '<div class="mob-kb-divider"></div>';
-          item.food.forEach(function(f) {
+          cardsHtml += '<div class="mob-kb-divider"></div>';
+          item.food.forEach(function(f, fi) {
             var fname = typeof f === 'string' ? f : f.name;
-            pillsHtml += '<div class="mob-kb-pill food">🍽️ ' + fname + '</div>';
+            var uid = (typeof f === 'object' && f.uid) ? f.uid : null;
+            var photo = uid ? cardPhotos['food_' + uid] : null;
+            var photoHtml = photo
+              ? '<img src="' + photo + '" style="width:100%;height:90px;object-fit:cover;display:block;border-radius:6px 6px 0 0;">'
+              : '<div style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;">🍽️</div>';
+            cardsHtml += '<div style="background:var(--white);border-radius:6px;margin-bottom:6px;overflow:hidden;border:1px solid var(--sand-dark);">' +
+              photoHtml +
+              '<div style="padding:4px 6px;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + fname + '</div>' +
+            '</div>';
           });
         }
+        col.style.width = '180px';
         col.innerHTML =
           '<div class="mob-kb-col-header" style="border-bottom-color:' + cityColor + '">' +
             '<div class="mob-kb-col-day">D' + item.day + '</div>' +
             '<div class="mob-kb-col-date">' + shortDate + '</div>' +
           '</div>' +
-          '<div class="mob-kb-col-body">' + pillsHtml + '</div>';
+          '<div class="mob-kb-col-body">' + cardsHtml + '</div>';
         kanban.appendChild(col);
       });
       // Scroll current day into view
