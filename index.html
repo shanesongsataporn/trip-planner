@@ -6267,6 +6267,14 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       if (splitOpenInfoWindow) { splitOpenInfoWindow.close(); splitOpenInfoWindow = null; }
     }
 
+    function saveSplitNote(index) {
+      var inp = document.getElementById('split-note-field');
+      if (!inp) return;
+      currentTrip.days[index].note = inp.value;
+      saveToStorage();
+      inp.nextElementSibling.textContent = '✓ Saved';
+    }
+
     function selectSplitDay(index) {
       splitSelectedIndex = index;
       currentDayItem = currentTrip.days[index];
@@ -6351,8 +6359,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         '<div class="de-section"><div class="de-section-label">Food & Drink</div><div id="de-sort-food">' + foodCards + '</div><button class="de-add-btn">+ Add food</button></div>' +
         '<div class="de-section"><div class="de-section-label">Note</div>' +
           '<textarea class="de-note-field" id="split-note-field" rows="3" placeholder="Day notes..." onblur="updateDayField(\'note\', this.value)">' + (day.note||'') + '</textarea>' +
-          '<button class="kbtn" style="margin-top:8px;font-weight:700;border-color:var(--accent);color:var(--accent);" onclick="updateDayField(\'note\', document.getElementById(\'split-note-field\').value);this.textContent=\'✓ Saved\'">Save note</button>' +
-        '</div>' +
+'<button class="kbtn" style="margin-top:8px;font-weight:700;border-color:var(--accent);color:var(--accent);" onclick="saveSplitNote(' + index + ')">Save note</button>' +        '</div>' +
         '<button class="de-route-btn">🗺 Plan route →</button>';
 
       // Init Sortable on each section
