@@ -5148,6 +5148,10 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             if (calIdx !== -1) cfg.order[calIdx] = 'structure';
             var hiddenCalIdx = cfg.hidden.indexOf('calendar');
             if (hiddenCalIdx !== -1) cfg.hidden[hiddenCalIdx] = 'structure';
+            // Self-heal: add transport tile if missing
+            if (cfg.order.indexOf('transport') === -1 && cfg.hidden.indexOf('transport') === -1) {
+              cfg.order.push('transport');
+            }
             return cfg;
           }
         }
