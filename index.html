@@ -1673,16 +1673,9 @@
       };
       _mobSwipeTouchEnd = function(e) {
         if (pinchStartDist !== null) {
-          var t0 = e.changedTouches[0];
-          var t1 = e.changedTouches[1] || t0;
-          var endDist = Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
-          var ratio = endDist / pinchStartDist;
+          // Only act when both fingers are lifted
+          if (e.touches.length > 0) return;
           pinchStartDist = null;
-          if (ratio < 0.8 && mobKanbanMode) {
-            exitMobKanban(getMobKanbanCentreDay());
-          } else if (ratio > 1.2 && !mobKanbanMode) {
-            enterMobKanban();
-          }
           return;
         }
         if (!isHorizontal) return;
