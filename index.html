@@ -1672,9 +1672,8 @@
         if (isHorizontal) { e.preventDefault(); }
       };
       _mobSwipeTouchEnd = function(e) {
+        if (mobKanbanMode) return;
         if (pinchStartDist !== null) {
-          // Only act when both fingers are lifted
-          if (e.touches.length > 0) return;
           pinchStartDist = null;
           return;
         }
