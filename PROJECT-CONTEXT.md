@@ -1,7 +1,7 @@
 ---
 name: trip-planner-context
 description: Full technical reference for Shane & Cheryl's Trip Planner app. Use this skill at the start of any conversation involving this app, or whenever asked to add features, fix bugs, or modify the trip planner codebase. Trigger on any mention of trip planner, split view, day panel, splitMap, selectSplitDay, kanban, itinerary view, float card, mob-day-pill, home view, home tiles, or any reference to the Thailand trip planner project.
-version: 4.8
+version: 4.9
 updated: 2026-04-28
 ---
 
@@ -214,12 +214,14 @@ loadFromStorage(callback) / setupRealtimeSync()
 normaliseAccom(item) / normaliseFood(item) / normaliseDayTransport(item) / normaliseDayCurrency(day)
 loadApiKeys() — Anthropic key from Firestore into anthropicApiKey
 
-### Photo system
-cardPhotos global — in-memory cache {photoKey: url}
-photoKey: 'day{N}_act{N}' for activities, 'day{N}_food{N}' for food
-fetchKanbanPhoto() — Places API, saves to cardPhotos (TO BE REPLACED by photo picker)
-fetchingPhotos global — prevents duplicate fetches
-Google Places photo URLs expire (403) — will be replaced by photo picker system
+## Known issues
+1. activityLinks not surfaced in UI
+2. Split view openSplitPin retry loop (potential infinite loop)
+3. PlacesService deprecated March 2025 (still works — used for geocoding/discovery)
+4. Claude suggestedOrder sometimes null — Apply button missing
+5. suggestRoute fires twice per tap
+6. cardNotes still keyed by index position (not uid)
+7. activityCategories still a parallel array (not on activity object)
 
 ---
 
@@ -286,8 +288,27 @@ localStorage does NOT store trip data. Firestore is the only source of truth.
 ---
 
 ## Bugs fixed this session (2026-04-28)
-- structAddDay inserted into wrong Bangkok leg — matched by city name, not block. Fixed: pass bi (block index) to structAddDay, read data-di from DOM rows.
-- Home tiles not tappable on mobile — fixed (was fixed last session, confirmed working).
+- fetchKanbanPhoto removed entirely — was causing 403 errors from expired URLs
+- Food items now have stable uids via normaliseFood — photo keys no longer positional
+- Photo picker built: Places API suggestions (4 at a time, cycleable) + camera roll upload
+- Cards view no longer resets to day 1 after photo upload (savedMobIndex pattern)
+- Tapping existing photo reopens picker to change it
+- Duplicate uploadImageToFirebase removed
+
+## Feature roadmap (priority order)
+1. Swipe between days in split view
+2. Surface activityLinks in all views
+3. cardNotes migration to uid-based keys
+4. activityCategories onto activity object
+5. Fix Claude suggestedOrder / Apply button
+6. Today indicator on desktop timeline
+7. Trip progress bar in header
+8. Wishlist → Firestore sync
+9. Plan/Go/Remember mode
+10. Weather on day panel
+11. Currency converter
+12. Packing list
+13. Offline mode
 
 ## Transport view — built this session
 - #view-transport — chronological timeline of all transport entries
@@ -315,25 +336,22 @@ localStorage does NOT store trip data. Firestore is the only source of truth.
 - Save note button also added below the textarea in the Note section
 
 ## Feature roadmap (priority order)
-1. Photo picker system — replace auto-fetch with manual picker
-   - Remove fetchKanbanPhoto / fetchingPhotos auto-fetch system entirely
-   - Cards with no photo show placeholder + "Add photo" button
-   - Tap → sheet shows 3-5 Google Places photos for that location
-   - Pick one → uploaded to Firebase Storage permanently (no expiry)
-2. Swipe between days in split view (left/right)
-3. Surface activityLinks in all views
-4. Fix Claude suggestedOrder / Apply button
-5. Today indicator on desktop timeline
-6. Trip progress bar in header
-7. Plan/Go/Remember mode
-8. Check-in system
-9. Weather on day panel
-10. Currency converter
-11. Packing list
-12. Offline mode
+1. Swipe between days in split view
+2. Surface activityLinks in all views
+3. cardNotes migration to uid-based keys
+4. activityCategories onto activity object
+5. Fix Claude suggestedOrder / Apply button
+6. Today indicator on desktop timeline
+7. Trip progress bar in header
+8. Wishlist → Firestore sync
+9. Plan/Go/Remember mode
+10. Weather on day panel
+11. Currency converter
+12. Packing list
+13. Offline mode
 
 ---
 
 ## Session handoff
-Start new chat: "Trip planner dev session. Read /mnt/skills/user/trip-planner-context/SKILL.md first."
-End of session: regenerate this file.
+Start new chat: "Trip planner dev session. Read /mnt/skills/user/trip-planner-context/SKILL.md first. Tell me the version number before we start."
+End of session: regenerate skill file via bash_tool + give PROJECT-CONTEXT.md sandwiches + state chat name + confirm handoff phrase.
