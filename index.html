@@ -1499,11 +1499,11 @@
     function exitMobKanban(dayIndex) {
       mobKanbanMode = false;
       var kanban = document.getElementById('mob-kanban-view');
-      if (kanban) { kanban.classList.remove('active'); kanban.innerHTML = ''; }
+      if (kanban) { kanban.remove(); }
       document.getElementById('mob-cards-track-wrap').style.overflow = '';
       mobCardsCurrentIndex = dayIndex;
       renderMobCards();
-      setTimeout(function() { mobCardsGoTo(dayIndex, false); }, 50);
+      setTimeout(function() { mobCardsGoTo(dayIndex, false); }, 100);
     }
 
     function renderMobCards() {
