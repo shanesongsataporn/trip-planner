@@ -1049,6 +1049,10 @@
     </div>
   </div>
 
+  <div id="app-loader" style="position:fixed;inset:0;background:var(--sand);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+    <div style="font-size:32px;">✈️</div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-muted);letter-spacing:0.05em;">Loading your trip...</div>
+  </div>
   <div id="map"></div>
   <div id="view-itinerary"></div>
   <div id="view-cards"><div id="kanban-board"></div></div>
@@ -6906,6 +6910,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         } else {
           setTheme(savedTheme);
         }
+        document.getElementById('app-loader').style.display = 'none';
         setView('home');
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
@@ -9071,6 +9076,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (callback) { callback(); }
       }).catch(function(e) {
         console.warn('Firestore load failed, using defaults:', e);
+        var loader = document.getElementById('app-loader');
+        if (loader) { loader.style.display = 'none'; }
         if (callback) { callback(); }
       });
     }
