@@ -1514,6 +1514,10 @@
       var dotsEl = document.getElementById('mob-cards-dots');
       document.getElementById('view-cards').style.display = 'none';
       mobView.classList.add('active');
+      var existingKanban = document.getElementById('mob-kanban-view');
+      if (existingKanban) { existingKanban.remove(); }
+      var trackWrap = document.getElementById('mob-cards-track-wrap');
+      if (trackWrap) { trackWrap.style.display = ''; }
       track.innerHTML = '';
       dotsEl.innerHTML = '';
 
