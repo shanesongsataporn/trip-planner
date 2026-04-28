@@ -1955,17 +1955,16 @@
     }
 
     function splitNoteInlineEdit() {
-      var day = currentDayItem;
+      var day = deCurrentDay || currentDayItem;
       if (!day) return;
       var display = document.getElementById('split-header-note-display');
       if (!display) return;
       var current = day.note || '';
       display.outerHTML =
         '<div id="split-header-note-edit" style="margin-top:4px;">' +
-          '<input id="split-header-note-input" type="text" value="' + current.replace(/"/g,'&quot;') + '" placeholder="Add a note..." style="width:100%;font-family:inherit;font-size:12px;padding:4px 8px;border-radius:var(--radius-sm);border:none;background:rgba(255,255,255,0.15);color:#fff;box-sizing:border-box;">' +
-          '<div style="display:flex;gap:6px;margin-top:6px;">' +
-            '<button onclick="splitNoteSave()" style="font-family:inherit;font-size:11px;font-weight:700;padding:3px 12px;border-radius:var(--radius-sm);border:none;background:#fff;color:var(--ink);cursor:pointer;">Save</button>' +
-            '<button onclick="splitNoteCancel(\'' + current.replace(/'/g,"\\'") + '\')" style="font-family:inherit;font-size:11px;padding:3px 10px;border-radius:var(--radius-sm);border:none;background:rgba(255,255,255,0.15);color:#fff;cursor:pointer;">Cancel</button>' +
+'<input id="split-header-note-input" type="text" value="' + current.replace(/"/g,'&quot;') + '" placeholder="Add a note..." style="width:100%;font-family:inherit;font-size:13px;padding:8px 10px;border-radius:var(--radius-sm);border:2px solid rgba(255,255,255,0.5);background:#2d2d2d;color:#fff;box-sizing:border-box;outline:none;">' +          '<div style="display:flex;gap:8px;margin-top:8px;">' +
+            '<button onclick="splitNoteSave()" style="font-family:inherit;font-size:12px;font-weight:700;padding:6px 16px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">Save</button>' +
+            '<button onclick="splitNoteCancel(\'' + current.replace(/'/g,"\\'") + '\')" style="font-family:inherit;font-size:12px;font-weight:600;padding:6px 12px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.7);cursor:pointer;">Cancel</button>' +
           '</div>' +
         '</div>';
       setTimeout(function() {

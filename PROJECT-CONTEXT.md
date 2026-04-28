@@ -1,11 +1,8 @@
-bash
-
-cat > /mnt/skills/user/trip-planner-context/SKILL.md << 'SKILLEOF'
 ---
 name: trip-planner-context
 description: Full technical reference for Shane & Cheryl's Trip Planner app. Use this skill at the start of any conversation involving this app, or whenever asked to add features, fix bugs, or modify the trip planner codebase. Trigger on any mention of trip planner, split view, day panel, splitMap, selectSplitDay, kanban, itinerary view, float card, mob-day-pill, home view, home tiles, or any reference to the Thailand trip planner project.
-version: 4.4
-updated: 2026-04-23
+version: 4.8
+updated: 2026-04-28
 ---
 
 # Shane & Cheryl's Trip Planner — Context Skill
@@ -54,18 +51,17 @@ Mobile breakpoint: max-width 640px / isMobile() function.
 14. #view-food
 15. #view-calendar
 16. #view-discovery
-17. #de-add-sheet (z-index 5300) — Day Editor add item sheet
-18. #disc-add-overlay + #disc-add-sheet (z-index 5400/5500)
-19. #panel — sliding detail panel
-20. #tl + #tl-inner — desktop timeline strip
-21. #mob-day-strip — legacy (hidden)
-22. Single script block — all JS
-23. #mob-search-btn — FAB bottom-left (mobile map only)
-24. #mob-day-pill — day nav pill bottom-centre (mobile map only)
-25. #mob-day-summary — day summary card
-26. #mob-pin-sheet — pin bottom sheet (mobile)
-27. #map-float-card — pin float card
-28. Google Maps API script tag
+17. #disc-add-overlay + #disc-add-sheet (z-index 5400/5500)
+18. #panel — sliding detail panel
+19. #tl + #tl-inner — desktop timeline strip
+20. #mob-day-strip — legacy (hidden)
+21. Single script block — all JS
+22. #mob-search-btn — FAB bottom-left (mobile map only)
+23. #mob-day-pill — day nav pill bottom-centre (mobile map only)
+24. #mob-day-summary — day summary card
+25. #mob-pin-sheet — pin bottom sheet (mobile)
+26. #map-float-card — pin float card
+27. Google Maps API script tag
 
 ---
 
@@ -75,196 +71,155 @@ Mobile breakpoint: max-width 640px / isMobile() function.
 | home | YES | Dashboard: tiles + today day card |
 | map | | Full map + timeline (desktop) / pill (mobile) |
 | calendar | | Month grid, inline editing |
-| split | | Map top / Day Editor list bottom |
-| itinerary | | Expandable days, sorted by date |
-| cards | | Kanban (desktop) / swipeable (mobile), sorted by date |
+| split | | 55% map / 45% list |
+| itinerary | | Expandable days |
+| cards | | Kanban (desktop) / swipeable (mobile) |
 | budget | | Multi-currency tracker |
 | food | | Reservation tracker |
 | discovery | | Place search + wishlist |
+| structure | | Plan page — city block + day row drag/drop editor |
+| transport | | Chronological flight/transfer timeline |
 
-setView(view) handles all switching. Saves to localStorage.
+setView(view) handles all switching, pill/FAB management, and calls render functions. Saves to localStorage.
 
 ---
 
 ## Home View (#view-home)
-Default view on load. Sortable tile grid, countdown tile locked at top.
-Long-press touch: only call e.preventDefault() after 400ms timer fires — not on every touchend.
 
-### Tile IDs
-dates, weather, flight, visa, stay, food, budget, map, calendar, split, itinerary, cards, discovery
+Default view on load. Structure:
+- Locked countdown tile (row 1, always visible, not sortable)
+- Sortable tile grid (#home-sortable-grid, 3-column)
+- Hidden tile tray (#home-tile-tray, edit mode only)
+- Today's day card (.home-day-card.is-today, only shown during trip)
+- Edit button (#home-edit-btn, fixed top-right)
+- Long-press on grid (400ms) also enters edit mode
+
+### Long-press touch handling — IMPORTANT
+The grid's touchend listener must NOT call e.preventDefault() unconditionally.
+Only preventDefault after the 400ms pressTimer has fired (long-press confirmed).
+If touchend calls preventDefault on every tap, tile onclick handlers are silently swallowed on mobile.
+
+### Tile IDs and purpose
+dates — trip dates, no onclick
+weather — live weather via open-meteo API, no onclick
+flight — next flight, onclick showNextFlightModal()
+visa — visa status dots, onclick showVisaSheet()
+stay — accommodation health, onclick setView('budget')
+food — reservation health, onclick setView('food')
+budget — estimated spend, onclick setView('budget')
+map/calendar/split/itinerary/cards/discovery — nav tiles, onclick setView(id)
+
+### Tile config
+loadHomeTileConfig() / saveHomeTileConfig(order, hidden) — localStorage key home_tile_config
+HOME_TILE_DEFAULTS array, HOME_TILE_META object {emoji, label} per ID
+
+### Edit mode
+enterHomeTileEdit() / exitHomeTileEdit() / toggleHomeTileEdit()
+hideHomeTile(id) / restoreHomeTile(id) / renderHomeTileTray(hiddenIds)
+homeTileSortable global — Sortable instance, destroyed on exit
+
+### Status functions
+getTripStatus() — {mode: pre/during/post, text, sub, dayIndex?}
+getNextTripCity() — {day, index}
+getNextFlight() — {flight, day} or null
+getVisaStatus() — reads currentTrip.visaInfo.travellers
+getBudgetTotal() — sums _est costs, returns {total, sym}
+getStayHealth() — {booked, missing}
+getFoodBookings() — {booked, unbooked}
+getPlanningGaps() — array of gap strings
+
+---
+
+## Structure View (#view-structure) — Plan Page
+
+!! CRITICAL — READ BEFORE TOUCHING THIS VIEW !!
+
+This view has caused serious data corruption. Multiple bugs fixed this session. Understand all of them before making changes.
+
+### HTML
+- #struct-inner — inner container
+- #struct-top-bar — contains 🕐 History button
+- #struct-city-list — Sortable city blocks
+- .struct-city-block[data-city][data-block-index] — one per city leg
+- .struct-day-list[data-city] — Sortable day rows inside each block
+- .struct-day-row[data-di] — one per day, data-di = index in currentTrip.days
+- #struct-toast — undo toast (fixed position)
+- #struct-history-overlay + #struct-history-sheet — changelog sheet
 
 ### Key functions
-getTripStatus() / getNextFlight() / getVisaStatus() / getBudgetTotal() / getStayHealth() / getFoodBookings()
-showVisaSheet() / showNextFlightModal()
-fetchHomeWeather(lat, lng, callback) — open-meteo API
+renderStructure() — groups currentTrip.days by CONSECUTIVE city runs in STORAGE ORDER. NEVER sorts by date.
+structReorderCities() — reads day indices from DOM rows inside each block (NOT by city name match)
+structReorderDays(evt) — rebuilds order from all DOM rows, updates moved day city if cross-block, recalculates ALL dates sequentially
+structDeleteDay(di, e) — splices day, renumbers, saves
+structAddDay(city, e) — inserts blank day after last day of that city, uses parseTripDate/formatTripDate
+renumberDays() — sets day.day = i+1 for all days
+initStructSortables() — creates Sortable for city list + each day list
 
----
+### Undo / changelog system
+structHistory — global array, max 20 entries, [{label, snapshot, time}]
+structToastTimer — global, clearTimeout on each new toast
+pushStructHistory(label) — deep copies currentTrip.days, unshifts to structHistory, shows toast
+showStructToast(label) — shows #struct-toast with label + Undo button, auto-dismisses after 5s
+undoStructAction() — restores last snapshot, saves, re-renders, hides toast
+showStructHistory() / closeStructHistory() — opens/closes history sheet
+restoreStructSnapshot(index) — restores any entry, trims history to entries after that point
 
-## Split View / Day Editor
+pushStructHistory is called at the START of:
+- structReorderCities() → 'City blocks reordered'
+- structReorderDays() → '⚠️ Day N → City (was OldCity)' or 'Day N reordered in City'
+- structDeleteDay() → 'Day N deleted from City'
+- structAddDay() → 'Day added to City'
 
-Map pane top, day list bottom (resizable). Selecting a day opens the Day Editor.
+### CRITICAL BUGS FIXED — do not reintroduce
+1. renderStructure was sorting days by date before grouping → duplication. FIXED: removed date sort.
+2. structReorderCities matched days by city name → merged both Bangkok legs. FIXED: reads data-di from DOM rows.
+3. showAutoShiftSheet called from city reorder, delete, add → removed from all except manual shift button.
+4. structAddDay using new Date(str + 'T00:00:00') on "Sat May 9" format → RangeError. FIXED: uses parseTripDate/formatTripDate.
+5. structReorderDays only updating moved day's date → gaps and duplicates. FIXED: recalculates ALL dates sequentially from day 1 anchor.
 
-### Key globals
-- splitSelectedIndex — which day row is selected
-- deCurrentDay — reference to open day object (GLOBAL)
-- deCurrentIndex — index of open day in currentTrip.days (GLOBAL)
-- deExpandedCard — id of currently expanded card, or null
-- deSuppressSync — prevents Firestore re-render during edits
-
-### Day Editor card system
-Three sections: Stay (#de-sort-accom), Activities (#de-sort-acts), Food (#de-sort-food).
-Card IDs: de-card-act-{i}, de-card-accommodation-{i}, de-card-food-{i}
-Tap to expand inline (.de-card--expanded) → edit name, category, note, link, move to day, delete.
-
-### Day Editor functions
-selectSplitDay(index) — renders day editor (has its OWN activity cards block, separate from renderDeCards)
-renderDeCards() — lightweight card-only re-render (safe, doesn't touch map)
-deToggleCard(section, i) — expand/collapse
-deSaveCard(section, i) — save edits + move-to-day
-deDeleteCard(section, i) — delete item
-showDeAddSheet(section) — open add sheet (Places Autocomplete + manual mode)
-closeDeAddSheet() / confirmDeAdd() / deAddPickCat(cat) / deToggleManualAdd()
-
-### Add sheet (#de-add-sheet)
-z-index 5300. Two modes: Places search (default) / manual text (toggle).
-.pac-container { z-index: 5400 !important } — Google dropdown above sheet.
-Location bias: deCurrentDay.lat/lng.
-
-### Route button
-.de-route-btn → openDayPanelOnTab(deCurrentDay, 'route')
-
----
-
-## !! ACTIVITY DATA MODEL — uid-based photos !!
-Activities are stored as objects with a stable uid:
-  day.activities = [
-    { name: "Wat Pak Nam", uid: "a3f9k2" },
-    { name: "Thong Lor Area", uid: "b7x1m9" }
-  ]
-  day.activityCategories = ["temple", "default"]  ← still a parallel array
-  day.activityLinks = []  ← parallel array, unused
-
-Photo keys use uid: cardPhotos["act_" + uid]
-NOT positional keys like "day5_act0" anymore.
-
-Migration: migrateActivityUids() runs inside loadFromStorage() after data loads.
-generateUid() — returns 6-char random string.
-
-!! NEVER write day.activities[i] = "string" — always preserve the object !!
-When saving a name edit: day.activities[i].name = newName (not reassignment)
-When creating new activity: push { name: "...", uid: generateUid() }
-
-### Places that read activity names — ALL updated to use a.name:
-1. renderDeCards()
-2. selectSplitDay() — has its OWN activity cards block
-3. toggleMobDaySummary()
-4. renderInlineActivities()
-5. renderCalEditActs() (calendar view — may be dead code)
-6. makeSortableActivities()
-7. getRouteStops()
-8. addActivityMarkers()
-9. addSplitActivityMarkers()
-10. renderMobCards()
-11. buildKanbanCard()
-12. callClaudeRouteReview() — prevDayText, nextDayText, actNotes
-13. deToggleCard() — reads a.name for currentName
-14. deSaveCard() — updates a.name, preserves uid
-
-### Photo key pattern (uid-based):
-renderDeCards: photoKey = 'act_' + uid
-selectSplitDay: photoKey = 'act_' + uid
-geocodeActivity: pk = 'act_' + actUid (reads from item.activities[task.index])
-addSplitActivityMarkers: pk = 'act_' + actUid
-renderMobCards: photoKey = 'act_' + uid
-buildKanbanCard: photoKey = 'act_' + uid
+### Shared date utilities (ALWAYS use these)
+parseTripDate(str) — handles "2026-05-09" ISO and "Sat May 9" formats, returns Date or null
+formatTripDate(dateObj) — returns "Sat May 9" format string
+Defined just above fmtShortDate(). Never inline date parsing anywhere.
 
 ---
 
 ## Mobile components
 
 ### Day Pill (#mob-day-pill)
-display:none default, display:flex when .active. State: mobPillIndex.
-Init: initMobPill() from loadFromStorage callback (guarded by mobPillInited flag).
+State: mobPillIndex (global, 0-based)
+Init: initMobPill() from loadFromStorage callback (guarded by mobPillInited flag)
+Arrows -> loadMobPillDay(); centre tap -> toggleMobDaySummary()
 
 ### Day Summary (#mob-day-summary)
-Chips: Stay / Transport / Activities / Food & Drinks.
-Edit → openDayPanel(); Route → openDayPanelOnTab(...,'route').
+Chips: Stay / Transport / Activities / Food & Drinks
+Edit btn -> openDayPanel(); Route btn -> openDayPanelOnTab(...,'route')
+Swipe left/right to change days
 
 ### Search FAB (#mob-search-btn)
-Fixed bottom-left, map view only.
+Fixed bottom-left, map view only. Tap -> setView('discovery') + focus input.
 
 ### Map Float Card (#map-float-card)
+Desktop: fixed bottom-left 260px. Mobile: centred 280px z-index 2600.
 showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex, itemType, doneKey)
 
 ---
 
 ## Key JS functions
 
-### Map
-initMap() / addCityMarkers() / addActivityMarkers(item, callback)
-addSplitActivityMarkers(item, callback) / clearSplitActivityMarkers()
-geocodeActivity(task, item, callback) / resetMapView()
-
-### Navigation
-setView(view) / goBack()
-initMobPill() / updateMobPill() / loadMobPillDay()
-toggleMobDaySummary() / closeMobDaySummary()
-
-### Panel
-openDayPanel(item) / openDayPanelOnTab(item, tabName)
-renderPanelHead(item) / refreshPanelTabs(item) / updateDayField(field, value)
-
-### Structure view (Plan tab)
-renderStructure() — groups days by consecutive city runs, sorted by DATE
-Date sort uses monthMap {Jan:1...Dec:12}, splits day.date ('Sat May 9' format).
-Same sort applied in renderItinerary() and renderMobCards().
-
-### Route Optimiser
-renderRouteTab(item) / suggestRoute(item) / runSegmentRoute(...)
-buildRouteResultsHtml(item) / clearRoute(item) / buildGoogleMapsUrl(item)
-callClaudeRouteReview(item, finalOrder, finalLegs) — spinner shown on first call only (_retries === undefined)
-renderClaudeReview(...) / applyClaudeOrder(newOrder)
-getRouteStops(item) — builds stop list, reads activity.name
-
-### Discovery
-renderDiscovery() / runDiscoverySearch() / initDiscAutocomplete()
-showAddToTripSheet(idx, fromWishlist) / confirmAddToTrip()
-openWishlistDrawer() / closeWishlistDrawer()
-loadDiscWishlist() / saveDiscWishlist()
-
 ### Data & storage — CRITICAL RULES
 saveToStorage() — Firestore .set() with { merge: true } + localStorage
-!! ALWAYS keep { merge: true } — without it, cardPhotos and wishlist get wiped !!
-
-loadFromStorage(callback) — calls migrateActivityUids() after data loads, before callback
-setupRealtimeSync()
+!! ALWAYS keep { merge: true } — without it, cardPhotos and wishlist get wiped on every save !!
+loadFromStorage(callback) / setupRealtimeSync()
 normaliseAccom(item) / normaliseFood(item) / normaliseDayTransport(item) / normaliseDayCurrency(day)
-fetchExchangeRates(callback) / convertToBase(amount, fromCurrency)
 loadApiKeys() — Anthropic key from Firestore into anthropicApiKey
 
-### Activity uid system
-generateUid() — 6-char random string
-migrateActivityUids() — converts string activities to {name, uid} objects, saves if changed
-Called inside loadFromStorage() after trip data is parsed (inside the if(doc.exists) block)
-
-### Photo system (uid-based)
-cardPhotos global — {photoKey: url}
-photoKey format: 'act_{uid}' for activities, 'day{N}_food{index}' for food (food not yet migrated)
-saveCardPhotos() / loadCardPhotos() / loadCardPhotosFromFirestore(callback)
-triggerPhotoUpload(photoKey, dayIndex, actIndex, type)
-uploadImageToFirebase(file, photoKey, ...)
-fetchKanbanPhoto(name, item, photoId) — Places API auto-fetch, takes name string not object
+### Photo system
+cardPhotos global — in-memory cache {photoKey: url}
+photoKey: 'day{N}_act{N}' for activities, 'day{N}_food{N}' for food
+fetchKanbanPhoto() — Places API, saves to cardPhotos (TO BE REPLACED by photo picker)
 fetchingPhotos global — prevents duplicate fetches
-
-### Done system
-toggleDone(dayIndex, doneKey, btnEl)
-Done keys: act_N, food_N, accom_N
-
-### Other views
-renderItinerary() — sorted by date before render
-renderKanban() / renderMobCards() — sorted by date before render
-renderSplit() / selectSplitDay(index)
-renderBudget() / renderFood() / renderCalendar()
+Google Places photo URLs expire (403) — will be replaced by photo picker system
 
 ---
 
@@ -275,85 +230,110 @@ renderBudget() / renderFood() / renderCalendar()
   day, date, city, lat, lng, note,
   currency, currencySymbol,
   accommodation: [{name, notes, price, link}],
-  activities: [{name, uid}],             ← objects with stable uid
-  activityCategories: [],                ← parallel array (still strings)
-  activityLinks: [],                     ← parallel array, unused
+  activities: [],
+  activityCategories: [],
+  activityLinks: [],   // NOT YET SURFACED IN UI
   food: [{name, link, bookingUrl, reservationRequired, reservationBooked, notes, mustOrder}],
   transport: [{type, from, to, carrier, flightNum, depart, arrive, notes}],
-  cardNotes: {"0": "note"},              ← keyed by index string, not yet migrated
-  costs: {"accom_0_est": 120},
-  done: {"act_0": true},
+  cardNotes: {}, costs: {}, done: {},
   routeOrder: [], routeLegs: [],
   routeStartTime, routeReturnToStart, routeDefaultMode
 }
 
 ### citySettings
-{ "Bangkok": {emoji, color:"#E67E22", code:"BKK"},
-  "Chiang Rai": {emoji, color:"#9B59B6", code:"CEI"},
-  "Koh Samui": {emoji, color:"#2D9E75", code:"USM"},
-  "Sydney": {emoji, color:"#3498DB", code:"SYD", noMarker:true} }
-
-### activityCategories
-temple, food, beach, transport, nature, nightlife, shopping, default
-Dwell times (min): temple:45, food:60, beach:180, shopping:120, nature:90, nightlife:120, transport:0, default:60
+{
+  "Bangkok":    {emoji, color: "#E67E22", code: "BKK"},
+  "Chiang Rai": {emoji, color: "#9B59B6", code: "CEI"},
+  "Koh Samui":  {emoji, color: "#2D9E75", code: "USM"},
+  "Sydney":     {emoji, color: "#3498DB", code: "SYD", noMarker: true}
+}
 
 ---
 
 ## Trip data
 Trip: Thailand May 2026
 Dates: Sat May 9 – Sun May 24 (16 days)
-Route: Sydney > Bangkok (days 1-4) > Chiang Rai > Koh Samui > Bangkok (days 5-7 = May 21-23) > Sydney
+Route: Sydney > Bangkok (days 1-4) > Chiang Rai (days 5-7) > Koh Samui (days 8-11) > Bangkok (days 12-16) > Sydney
 Firestore: trips/thailand_2026
-
-!! currentTrip.days array is NOT in chronological order !!
-Days 5,6,7 (May 21-23, second Bangkok leg) appear before day 8 (May 13) in the array.
-Always sort by parsed date string before rendering.
-Never sort by day.day number — it matches array order, not chronological order.
 
 ---
 
 ## Storage — DANGER ZONES
-Firestore fields: data, citySettings, cardPhotos, wishlist, updatedAt
 !! CRITICAL: saveToStorage() uses .set() with { merge: true }. NEVER remove merge:true. !!
+cardPhotos and wishlist saved separately — saveCardPhotos() / saveDiscWishlist() only.
 
-localStorage: current_trip_key, theme, custom-base, custom-hue, card_photos, disc_wishlist, home_tile_config, last_view
-Firebase Storage: images/ path
-Anthropic key: Firestore config/api_keys.anthropic
+## Emergency data recovery
+If days get corrupted, recover via console:
+1. Check: console.log(currentTrip.days.map(function(d) { return d.day + ': ' + d.city + ' - ' + d.date; }))
+2. Deduplicate by city+date key if needed
+3. Reorder using known correct sequence
+4. Reset dates: anchor = new Date(2026,4,9), forEach d.date = formatTripDate(new Date offset by i days)
+5. saveToStorage()
+localStorage does NOT store trip data. Firestore is the only source of truth.
 
 ---
 
 ## Known issues
-1. cardNotes still keyed by index position (not uid) — will break on reorder
-2. activityCategories still a parallel array — will break on reorder
-3. Food photos still use positional keys (day{N}_food{index})
-4. Wishlist not synced to Firestore (Cheryl can't see Shane's wishlist)
-5. Claude suggestRoute fires twice per tap
-6. PlacesService deprecated March 2025 (still works)
-7. Split view openSplitPin retry loop (potential infinite loop)
+1. Google Places photo URLs expire → 403 in cards view. Will be replaced by photo picker (roadmap #4).
+2. activityLinks not surfaced in UI
+3. Split view openSplitPin retry loop (potential infinite loop)
+4. PlacesService deprecated March 2025 (still works)
+5. Claude suggestedOrder sometimes null — Apply button missing
+6. suggestRoute fires twice per tap
+7. ⚠️ warning triangles in structure view not tappable/explanatory
+8. ~~Delete day X button requires hold-to-reveal~~ — FIXED this session
 
 ---
 
+## Bugs fixed this session (2026-04-28)
+- structAddDay inserted into wrong Bangkok leg — matched by city name, not block. Fixed: pass bi (block index) to structAddDay, read data-di from DOM rows.
+- Home tiles not tappable on mobile — fixed (was fixed last session, confirmed working).
+
+## Transport view — built this session
+- #view-transport — chronological timeline of all transport entries
+- normaliseDayTransport updated with terminal + confirmationCode fields
+- Transport sheet: bottom sheet for add/edit (mirrors disc-add-sheet pattern)
+  - Type selector: Flight/Train/Bus/Ferry/Car/Transfer
+  - Single/Multi-leg toggle (flights only)
+  - Multi-leg: per-leg from/to/carrier/flightNum/depart/arrive/confirmationCode/day selector
+  - Flight day selector includes "✈️ Arrival day" option (one day past last trip day)
+  - Notes field, Save/Cancel buttons
+- Multi-leg data structure: { type, multiLeg:true, notes, legs:[{from,to,carrier,flightNum,depart,arrive,confirmationCode,dayIndex}] }
+- Single-leg data: backward compatible, no multiLeg flag
+- renderTransport() handles both single and multi-leg display
+- showAddTransportModal / showEditTransportModal → now forward to openTransportSheet()
+- Home tile: transport tile added, self-heals into saved localStorage config
+- Hamburger menu: desktop + mobile both updated
+- Mobile view menu: transport added
+- ⚠️ popover: flight warnings tap to setView('transport')
+- CSS: #view-transport, .transport-view-card, .transport-type-badge, ts-* sheet classes
+
+## Split view note editing — built this session
+- de-header-note is now tappable — opens inline input with Save/Cancel
+- splitNoteInlineEdit() / splitNoteSave() / splitNoteCancel() functions
+- Uses deCurrentDay (not currentDayItem) — important
+- Save note button also added below the textarea in the Note section
+
 ## Feature roadmap (priority order)
-1. Migrate cardNotes and activityCategories to uid-based (completes the activity object refactor)
-2. Migrate food photos to stable keys
-3. Wishlist sync to Firestore
-4. Swipe left on Day Editor cards (delete + move)
+1. Photo picker system — replace auto-fetch with manual picker
+   - Remove fetchKanbanPhoto / fetchingPhotos auto-fetch system entirely
+   - Cards with no photo show placeholder + "Add photo" button
+   - Tap → sheet shows 3-5 Google Places photos for that location
+   - Pick one → uploaded to Firebase Storage permanently (no expiry)
+2. Swipe between days in split view (left/right)
+3. Surface activityLinks in all views
+4. Fix Claude suggestedOrder / Apply button
 5. Today indicator on desktop timeline
 6. Trip progress bar in header
 7. Plan/Go/Remember mode
-8. Weather on day panel
-9. Currency converter
-10. Packing list
-11. Offline mode
-12. React/PWA rebuild (post-trip)
+8. Check-in system
+9. Weather on day panel
+10. Currency converter
+11. Packing list
+12. Offline mode
 
 ---
 
 ## Session handoff
-Start new chat: "Trip planner dev session. Read /mnt/skills/user/trip-planner-context/SKILL.md first. Tell me the version number — it should be 4.4. Don't write any code until I confirm."
-End of session: regenerate this file AND update PROJECT-CONTEXT.md in VS Code with the same content, then commit and push.
-SKILLEOF
-echo "Done"
-Output
-
-Done
+Start new chat: "Trip planner dev session. Read /mnt/skills/user/trip-planner-context/SKILL.md first."
+End of session: regenerate this file.
