@@ -5718,11 +5718,11 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             saveCardPhotos();
             setTimeout(function() { deSuppressSync = false; }, 2000);
             closePhotoPicker();
-            var savedIndex = mobCardsCurrentIndex;
             if (isMobile() && mobKanbanMode) {
-              mobCardsCurrentIndex = savedIndex;
+              mobCardsCurrentIndex = dayIndex;
               enterMobKanban();
             } else {
+              var savedIndex = mobCardsCurrentIndex;
               renderKanban();
               if (isMobile()) { mobCardsGoTo(savedIndex, false); }
             }
