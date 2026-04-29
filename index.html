@@ -3431,25 +3431,38 @@
       });
 
       // Group consecutive days with same hotel name into stays
-      // Each day can have multiple accommodation entries (overlap days)
       var stays = [];
-      sortedDays.forEach(function(day) {
+      var prevDayIndex = -1;
+      sortedDays.forEach(function(day, si) {
         normaliseAccom(day);
         var di = currentTrip.days.indexOf(day);
         var baseCity = day.city.indexOf('>') !== -1 ? day.city.split('>').pop().trim() : day.city;
         day.accommodation.forEach(function(a, ai) {
           var name = a.name || '';
           if (!name) return;
-          // Find existing stay group for this hotel name
+          // Only extend the LAST stay with this name if it was active on the previous day
           var existing = null;
           for (var i = stays.length - 1; i >= 0; i--) {
-            if (stays[i].name === name) { existing = stays[i]; break; }
+            if (stays[i].name === name) {
+              // Check if previous sorted day was in this stay's dis array
+              var prevDay = si > 0 ? sortedDays[si - 1] : null;
+              var prevDi = prevDay ? currentTrip.days.indexOf(prevDay) : -1;
+              if (prevDi !== -1 && stays[i].dis.indexOf(prevDi) !== -1) {
+                existing = stays[i];
+              }
+              break;
+            }
           }
           if (existing && existing.dis.indexOf(di) === -1) {
             existing.nights++;
             existing.checkoutDate = day.date;
             existing.lastDi = di;
             existing.dis.push(di);
+            if (existing.cities.indexOf(baseCity) === -1) existing.cities.push(baseCity);
+            // Use most common non-transit city
+            var cityCount = {};
+            existing.cities.forEach(function(c) { cityCount[c] = (cityCount[c] || 0) + 1; });
+            existing.city = Object.keys(cityCount).reduce(function(a, b) { return cityCount[a] >= cityCount[b] ? a : b; });
           } else if (!existing) {
             stays.push({
               name: name,
@@ -3462,7 +3475,8 @@
               lastDi: di,
               dis: [di],
               ai: ai,
-              a: a
+              a: a,
+              cities: [baseCity]
             });
           }
         });
