@@ -606,6 +606,9 @@
     .ts-cancel-btn { width: 100%; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: none; color: var(--ink-muted); cursor: pointer; margin-top: 8px; }
     .ts-connector { text-align: center; font-size: 18px; color: var(--ink-muted); margin: -4px 0 6px; }
 
+    #view-discovery { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; background: var(--sand); z-index: 1; overflow: hidden; flex-direction: column; }
+    #view-discovery.active { display: flex; }
+
     @media (max-width: 640px) {
       #view-discovery { top: 54px; bottom: 0; }
       #disc-map { height: 220px; }
@@ -5945,6 +5948,30 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         dragging = true;
         divider.setPointerCapture(e.pointerId);
         e.preventDefault();
+      });
+
+      divider.addEventListener('touchstart', function(e) {
+        dragging = true;
+        e.preventDefault();
+      }, { passive: false });
+
+      divider.addEventListener('touchmove', function(e) {
+        if (!dragging) return;
+        var touch = e.touches[0];
+        var containerRect = container.getBoundingClientRect();
+        var newPct = ((touch.clientY - containerRect.top) / containerRect.height) * 100;
+        newPct = Math.min(Math.max(newPct, 20), 70);
+        applyDividerPct(newPct);
+        e.preventDefault();
+      }, { passive: false });
+
+      divider.addEventListener('touchend', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        var containerRect = container.getBoundingClientRect();
+        var mapH = parseFloat(document.getElementById('split-map').style.height);
+        var pct = (mapH / containerRect.height) * 100;
+        localStorage.setItem('split_divider_pos', pct.toFixed(1));
       });
 
       function applyDividerPct(newPct) {
