@@ -1344,7 +1344,7 @@
     }
 
     function renderKanban() {
-      if (isMobile()) { renderMobCards(); return; }
+      if (isMobile()) { if (!mobKanbanMode) { renderMobCards(); } return; }
 
       var board = document.getElementById('kanban-board');
       board.innerHTML = '';
