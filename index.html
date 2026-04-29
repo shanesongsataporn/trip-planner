@@ -3560,16 +3560,13 @@
         });
       });
 
-      // Add to new date range — only if day has no accommodation already
+      // Add to new date range — replace whatever is on those days
       currentTrip.days.forEach(function(day) {
         var dayDate = parseTripDate(day.date);
         if (!dayDate) return;
         if (dayDate >= checkinDate && dayDate <= checkoutDate) {
           normaliseAccom(day);
-          var alreadyHas = day.accommodation.some(function(a) { return a.name && a.name !== existingAccom.name; });
-          if (!alreadyHas) {
-            day.accommodation.push(existingAccom);
-          }
+          day.accommodation = [existingAccom];
         }
       });
 
