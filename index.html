@@ -5991,6 +5991,15 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         localStorage.setItem('split_divider_pos', pct.toFixed(1));
       });
 
+      document.addEventListener('touchend', function(e) {
+        if (!dragging) return;
+        dragging = false;
+        var containerRect = container.getBoundingClientRect();
+        var mapH = parseFloat(document.getElementById('split-map').style.height);
+        var pct = (mapH / containerRect.height) * 100;
+        localStorage.setItem('split_divider_pos', pct.toFixed(1));
+      });
+
       divider.addEventListener('pointermove', function(e) {
         if (!dragging) return;
         var rect = container.getBoundingClientRect();
