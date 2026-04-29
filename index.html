@@ -5991,19 +5991,6 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         localStorage.setItem('split_divider_pos', pct.toFixed(1));
       });
 
-      function applyDividerPct(newPct) {
-        var containerH = container.getBoundingClientRect().height;
-        var mapH = Math.round(containerH * newPct / 100);
-        var listTop = mapH + 10;
-        var listH = containerH - listTop;
-        mapPane.style.height = mapH + 'px';
-        divider.style.top = mapH + 'px';
-        listPane.style.top = listTop + 'px';
-        listPane.style.height = listH + 'px';
-        listPane.style.bottom = '';
-        if (splitMap) google.maps.event.trigger(splitMap, 'resize');
-      }
-
       divider.addEventListener('pointermove', function(e) {
         if (!dragging) return;
         var rect = container.getBoundingClientRect();
