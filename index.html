@@ -1417,14 +1417,18 @@
     function undoKanbanMove() {
       if (!mobKanbanLastMove) return;
       var m = mobKanbanLastMove;
+      var fromDay = currentTrip.days[m.fromTripIdx];
+      var toDay = currentTrip.days[m.toTripIdx];
       if (m.type === 'act') {
-        var act = m.toDay.activities.splice(m.newIndex, 1)[0];
-        m.fromDay.activities.splice(m.oldIndex, 0, act);
-        var cat = m.toDay.activityCategories.splice(m.newIndex, 1)[0] || 'default';
-        m.fromDay.activityCategories.splice(m.oldIndex, 0, cat);
+        var act = toDay.activities.splice(m.newIndex, 1)[0];
+        fromDay.activities.splice(m.oldIndex, 0, act);
+        if (!toDay.activityCategories) toDay.activityCategories = [];
+        if (!fromDay.activityCategories) fromDay.activityCategories = [];
+        var cat = toDay.activityCategories.splice(m.newIndex, 1)[0] || 'default';
+        fromDay.activityCategories.splice(m.oldIndex, 0, cat);
       } else if (m.type === 'food') {
-        var food = m.toDay.food.splice(m.newIndex, 1)[0];
-        m.fromDay.food.splice(m.oldIndex, 0, food);
+        var food = toDay.food.splice(m.newIndex, 1)[0];
+        fromDay.food.splice(m.oldIndex, 0, food);
       }
       deSuppressSync = true;
       saveToStorage();
@@ -1545,7 +1549,7 @@
             deSuppressSync = true;
             saveToStorage();
             setTimeout(function() { deSuppressSync = false; }, 2000);
-            mobKanbanLastMove = { type: 'act', fromDay: fromDay, toDay: toDay, oldIndex: oldIndex, newIndex: newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
+            mobKanbanLastMove = { type: 'act', fromTripIdx: currentTrip.days.indexOf(fromDay), toTripIdx: currentTrip.days.indexOf(toDay), oldIndex: oldIndex, newIndex: newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
             mobCardsCurrentIndex = toIdx;
             enterMobKanban();
             showKanbanUndo();
@@ -1602,7 +1606,7 @@
               deSuppressSync = true;
               saveToStorage();
               setTimeout(function() { deSuppressSync = false; }, 2000);
-              mobKanbanLastMove = { type: 'food', fromDay: fromDay, toDay: toDay, oldIndex: evt.oldIndex, newIndex: evt.newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
+              mobKanbanLastMove = { type: 'food', fromTripIdx: currentTrip.days.indexOf(fromDay), toTripIdx: currentTrip.days.indexOf(toDay), oldIndex: evt.oldIndex, newIndex: evt.newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
               mobCardsCurrentIndex = toIdx;
               enterMobKanban();
               showKanbanUndo();
