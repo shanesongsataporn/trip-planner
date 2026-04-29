@@ -7478,6 +7478,98 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     function updateAccomNotes(index, value) { if (!currentDayItem) return; normaliseAccom(currentDayItem); currentDayItem.accommodation[index].notes = value.trim(); saveToStorage(); }
     function deleteAccom(index) { normaliseAccom(currentDayItem); currentDayItem.accommodation.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
 
+    // ===== STAYS DATA MODEL (Stage 1 — foundation) =====
+    // Top-level currentTrip.stays[] is the new source of truth for accommodation.
+    // day.accommodation[] is kept in sync for backward compat.
+    function migrateAccommodationToStays() {
+      if (!currentTrip || !Array.isArray(currentTrip.days)) return { migrated: false, reason: 'no trip loaded' };
+      if (Array.isArray(currentTrip.stays) && currentTrip.stays.length > 0) {
+        return { migrated: false, reason: 'already migrated', count: currentTrip.stays.length };
+      }
+      var stays = [];
+      var lookup = {}; // name -> stay object
+      // Walk days in their stored order; each day index maps to a date.
+      currentTrip.days.forEach(function(day, di) {
+        if (!Array.isArray(day.accommodation)) return;
+        day.accommodation.forEach(function(entry) {
+          if (!entry || !entry.name) return;
+          var key = entry.name.trim();
+          if (!lookup[key]) {
+            lookup[key] = {
+              id: 'stay_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+              name: key,
+              link: entry.link || '',
+              city: day.city || '',
+              checkinDate: day.date || '',
+              checkoutDate: day.date || '',
+              checkinDayIndex: di,
+              checkoutDayIndex: di,
+              booked: !!entry.booked,
+              price: entry.price || '',
+              confirmationNumber: '',
+              checkinTime: '',
+              checkoutTime: '',
+              notes: entry.notes || ''
+            };
+            stays.push(lookup[key]);
+          } else {
+            // Extend the range
+            lookup[key].checkoutDate = day.date || lookup[key].checkoutDate;
+            lookup[key].checkoutDayIndex = di;
+            // Keep first non-empty link, etc.
+            if (!lookup[key].link && entry.link) lookup[key].link = entry.link;
+            if (!lookup[key].notes && entry.notes) lookup[key].notes = entry.notes;
+            if (!lookup[key].price && entry.price) lookup[key].price = entry.price;
+          }
+        });
+      });
+      // City correction: prefer a non-transit city in the stay's range.
+      // Walk BACKWARDS from checkout — the destination city is usually the
+      // last clean day, not the first (first day is often the check-in
+      // overlap day from a previous city).
+      stays.forEach(function(stay) {
+        for (var i = stay.checkoutDayIndex; i >= stay.checkinDayIndex; i--) {
+          var d = currentTrip.days[i];
+          if (d && d.city && d.city.indexOf('>') === -1) {
+            stay.city = d.city;
+            break;
+          }
+        }
+      });
+      currentTrip.stays = stays;
+      return { migrated: true, count: stays.length, stays: stays };
+    }
+
+    function getStaysForDay(dayIndex) {
+      if (!currentTrip || !Array.isArray(currentTrip.stays)) return [];
+      return currentTrip.stays.filter(function(s) {
+        return dayIndex >= s.checkinDayIndex && dayIndex <= s.checkoutDayIndex;
+      });
+    }
+
+    function syncStaysToDays() {
+      if (!currentTrip || !Array.isArray(currentTrip.days)) return;
+      if (!Array.isArray(currentTrip.stays)) return;
+      currentTrip.days.forEach(function(day, di) {
+        var covering = getStaysForDay(di);
+        day.accommodation = covering.map(function(s) {
+          return {
+            name: s.name,
+            notes: s.notes || '',
+            price: s.price || '',
+            link: s.link || '',
+            booked: !!s.booked
+          };
+        });
+      });
+    }
+
+    // Console handles for manual testing
+    window.migrateStays = migrateAccommodationToStays;
+    window.getStaysForDay = getStaysForDay;
+    window.syncStaysToDays = syncStaysToDays;
+    // ===== END STAYS DATA MODEL =====
+
     function highlightPanelActivity(index) { var rows = document.querySelectorAll('#sortable-activities-overview > div'); rows.forEach(function(row, i) { row.style.background = i === index ? 'var(--accent-light)' : ''; }); }
     function highlightPanelFood(index) { var rows = document.querySelectorAll('#sortable-food-overview > div'); rows.forEach(function(row, i) { row.style.background = i === index ? 'var(--accent-light)' : ''; }); }
     function highlightPanelAccom(index) { var rows = document.querySelectorAll('#sortable-accom-overview > div'); rows.forEach(function(row, i) { row.style.background = i === index ? 'var(--accent-light)' : ''; }); }
@@ -7566,6 +7658,14 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       loadApiKeys();
       loadFromStorage(function() {
         currentTrip = trips[currentTripKey];
+        // Auto-migrate accommodation to top-level stays array (one-time)
+        if (currentTrip && (!Array.isArray(currentTrip.stays) || currentTrip.stays.length === 0)) {
+          var result = migrateAccommodationToStays();
+          if (result.migrated) {
+            console.log('[stays] migrated', result.count, 'stays from day.accommodation');
+            saveToStorage();
+          }
+        }
         rebuildTimeline();
         rebuildMobStrip();
         populateTripSelector();
@@ -9760,6 +9860,13 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
             currentTrip = trips[currentTripKey];
+            // Defensive: ensure stays exist even if Firestore snapshot pre-dates migration
+            if (currentTrip && (!Array.isArray(currentTrip.stays) || currentTrip.stays.length === 0)) {
+              var migrationResult = migrateAccommodationToStays();
+              if (migrationResult.migrated) {
+                console.log('[stays] migrated via snapshot', migrationResult.count, 'stays');
+              }
+            }
             if (data.cardPhotos) {
               var remote = JSON.parse(data.cardPhotos);
               Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
