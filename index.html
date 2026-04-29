@@ -2617,14 +2617,18 @@
               '<div class="home-visa-travellers">' + visaDots + '</div>' +
               '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
             '</div>';
-          case 'stay':
-            var stayColor = stay.missing > 0 ? 'warn' : 'accent';
-            var stayVal = stay.missing > 0 ? stay.missing + ' unbooked' : stay.booked + ' booked';
-            return '<div class="home-tile" data-tile-id="stay" onclick="setView(\'budget\')">' +
+          case 'accommodation':
+            var accomStays = [];
+            currentTrip.days.forEach(function(day) { normaliseAccom(day); if (day.accommodation[0] && day.accommodation[0].name) accomStays.push(day.accommodation[0]); });
+            var accomBooked = accomStays.filter(function(a) { return a.booked; }).length;
+            var accomTotal = accomStays.length;
+            var accomColor = accomBooked < accomTotal ? 'warn' : 'accent';
+            var accomVal = accomBooked < accomTotal ? (accomTotal - accomBooked) + ' unbooked' : accomBooked + ' booked';
+            return '<div class="home-tile" data-tile-id="accommodation" onclick="setView(\'accommodation\')">' +
               '<div class="home-tile-emoji">🏨</div>' +
-              '<div class="home-tile-label">Stay</div>' +
-              '<div class="home-tile-value ' + stayColor + '">' + stayVal + '</div>' +
-              '<div class="home-tile-sub">' + stay.booked + ' of ' + (stay.booked + stay.missing) + ' nights</div>' +
+              '<div class="home-tile-label">Accommodation</div>' +
+              '<div class="home-tile-value ' + accomColor + '" style="font-size:18px;">' + accomVal + '</div>' +
+              '<div class="home-tile-sub">' + accomBooked + ' of ' + accomTotal + ' nights booked</div>' +
             '</div>';
           case 'food':
             var foodColor = food.unbooked > 0 ? 'warn' : 'accent';
@@ -5907,13 +5911,12 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','structure','itinerary','cards','discovery','transport','accommodation'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport'];
     var HOME_TILE_META = {
       dates:          { emoji: '📅', label: 'Dates' },
       weather:        { emoji: '🌤️', label: 'Weather' },
       flight:         { emoji: '✈️', label: 'Next Flight' },
       visa:           { emoji: '🛂', label: 'Visa & Entry' },
-      stay:           { emoji: '🏨', label: 'Stay' },
       food:           { emoji: '🍜', label: 'Reservations' },
       budget:         { emoji: '💰', label: 'Budget' },
       map:            { emoji: '🗺️', label: 'Map' },
