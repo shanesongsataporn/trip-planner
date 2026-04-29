@@ -1095,9 +1095,9 @@
   </div>
 
   <div id="app-loader" style="position:fixed;inset:0;background:#1a1a1a;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-    <div style="font-size:40px;">✈️</div>
-    <div style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">Let's go, Shane & Cheryl!</div>
-    <div style="font-size:13px;font-weight:600;color:#888888;letter-spacing:0.05em;">Spinning up your adventure...</div>
+    <div id="loader-emoji" style="font-size:40px;">✈️</div>
+    <div id="loader-title" style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">Let's go, Shane & Cheryl!</div>
+    <div id="loader-subtitle" style="font-size:13px;font-weight:600;color:#888888;letter-spacing:0.05em;">Spinning up your adventure...</div>
   </div>
   <div id="map"></div>
   <div id="view-itinerary"></div>
@@ -1289,7 +1289,30 @@
     var db = firebase.firestore();
     var TRIP_DOC = 'trips/thailand_2026';
 
-    var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
+    (function() {
+  var screens = [
+    { emoji: '✈️', title: "Let's go, Shane & Cheryl!", sub: "Spinning up your adventure..." },
+    { emoji: '🌞', title: "Don't forget the sunscreen, Cheryl.", sub: "Loading Thailand one day at a time..." },
+    { emoji: '🌞🌙', title: "Let the sun warm your soul.", sub: "And let the moon ease your mind..." },
+    { emoji: '💛', title: "Two people. One trip. Zero regrets.", sub: "Loading the good stuff..." },
+    { emoji: '🍜', title: "The food alone is worth the flight.", sub: "Loading the good stuff..." },
+    { emoji: '💑', title: "Shane navigates. Cheryl vibes.", sub: "A perfect team..." },
+    { emoji: '📍', title: "Shane planned it. Cheryl improved it.", sub: "Loading version 2.0..." }
+  ];
+  var idx = parseInt(localStorage.getItem('loaderIndex') || '0', 10);
+  var screen = screens[idx % screens.length];
+  localStorage.setItem('loaderIndex', (idx + 1) % screens.length);
+  document.addEventListener('DOMContentLoaded', function() {
+    var e = document.getElementById('loader-emoji');
+    var t = document.getElementById('loader-title');
+    var s = document.getElementById('loader-subtitle');
+    if (e) e.textContent = screen.emoji;
+    if (t) t.textContent = screen.title;
+    if (s) s.textContent = screen.sub;
+  });
+})();
+
+var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var activityMarkers = [], cityMarkerObjs = [], openInfoWindow = null;
     var splitActivityMarkers = [], splitOpenInfoWindow = null;
     var currentDayItem = null, currentView = 'map', lastView = 'map';
@@ -2230,6 +2253,61 @@
       var baseSym = currentTrip.baseCurrencySymbol || '$';
       currentTrip.days.push({ day: lastDay.day + 1, date: 'New day', city: lastDay.city.split('>').pop().trim(), lat: lastDay.lat, lng: lastDay.lng, note: '', accommodation: [], activities: [], activityCategories: [], food: [], transport: [], currency: base, currencySymbol: baseSym });
       saveToStorage(); rebuildTimeline(); rebuildMobStrip();
+    }
+
+    // Extend the trip's days array BACKWARD to include targetDate.
+    // Returns the number of days prepended. Inherits city from the first
+    // clean (non-transit) day. Shifts all stay indices forward to compensate.
+    function extendTripToStartDate(targetDate) {
+      if (!currentTrip || !Array.isArray(currentTrip.days) || currentTrip.days.length === 0) return 0;
+      var firstDay = currentTrip.days[0];
+      var firstDate = parseTripDate(firstDay.date);
+      if (!firstDate) return 0;
+      if (targetDate.getTime() >= firstDate.getTime()) return 0;
+      var base = currentTrip.baseCurrency || 'AUD';
+      var baseSym = currentTrip.baseCurrencySymbol || '$';
+      // Walk forwards through existing days to find the first clean city
+      var inheritCity = '';
+      for (var ci = 0; ci < currentTrip.days.length; ci++) {
+        var c = currentTrip.days[ci].city || '';
+        if (c && c.indexOf('>') === -1) { inheritCity = c; break; }
+      }
+      if (!inheritCity) inheritCity = (firstDay.city || '').split('>')[0].trim();
+      var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var newDays = [];
+      var cursor = new Date(firstDate.getTime());
+      while (cursor.getTime() > targetDate.getTime()) {
+        cursor.setDate(cursor.getDate() - 1);
+        var dateStr = dayNames[cursor.getDay()] + ' ' + monthNames[cursor.getMonth()] + ' ' + cursor.getDate();
+        newDays.unshift({
+          day: 0,
+          date: dateStr,
+          city: inheritCity,
+          lat: firstDay.lat,
+          lng: firstDay.lng,
+          note: '',
+          accommodation: [],
+          activities: [],
+          activityCategories: [],
+          food: [],
+          transport: [],
+          currency: base,
+          currencySymbol: baseSym
+        });
+      }
+      var addedCount = newDays.length;
+      currentTrip.days = newDays.concat(currentTrip.days);
+      // Renumber day.day from 1
+      currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
+      // Shift all stay indices forward
+      if (Array.isArray(currentTrip.stays)) {
+        currentTrip.stays.forEach(function(s) {
+          if (typeof s.checkinDayIndex === 'number') s.checkinDayIndex += addedCount;
+          if (typeof s.checkoutDayIndex === 'number') s.checkoutDayIndex += addedCount;
+        });
+      }
+      return addedCount;
     }
 
     // Extend the trip's days array forward to include targetDate.
@@ -3576,20 +3654,51 @@
       var stay = _findStayById(stayId);
       if (!stay) { alert('Stay not found.'); return; }
 
-      var checkinDayIndex = -1, checkoutDayIndex = -1;
-      var checkinDateStr = '', checkoutDateStr = '';
-      currentTrip.days.forEach(function(day, di) {
-        var dd = parseTripDate(day.date);
-        if (!dd) return;
-        if (dd.getTime() === checkinDate.getTime() && checkinDayIndex === -1) {
-          checkinDayIndex = di;
-          checkinDateStr = day.date;
-        }
-        if (dd.getTime() === checkoutDate.getTime()) {
-          checkoutDayIndex = di;
-          checkoutDateStr = day.date;
-        }
-      });
+      function _matchEditDates() {
+        var ciIdx = -1, coIdx = -1, ciStr = '', coStr = '';
+        currentTrip.days.forEach(function(day, di) {
+          var dd = parseTripDate(day.date);
+          if (!dd) return;
+          if (dd.getTime() === checkinDate.getTime() && ciIdx === -1) {
+            ciIdx = di; ciStr = day.date;
+          }
+          if (dd.getTime() === checkoutDate.getTime()) {
+            coIdx = di; coStr = day.date;
+          }
+        });
+        return { ciIdx: ciIdx, coIdx: coIdx, ciStr: ciStr, coStr: coStr };
+      }
+      var matchedEdit = _matchEditDates();
+      var monthNamesEdit = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+      var firstDayEdit = currentTrip.days[0];
+      var firstDayDateEdit = firstDayEdit ? parseTripDate(firstDayEdit.date) : null;
+      if (matchedEdit.ciIdx === -1 && firstDayDateEdit && checkinDate.getTime() < firstDayDateEdit.getTime()) {
+        var backDiffEdit = Math.round((firstDayDateEdit.getTime() - checkinDate.getTime()) / 86400000);
+        var ciLabelEdit = monthNamesEdit[checkinDate.getMonth()] + ' ' + checkinDate.getDate();
+        if (!confirm(ciLabelEdit + ' is before your trip starts. Extend trip back by ' + backDiffEdit + ' day' + (backDiffEdit !== 1 ? 's' : '') + '?')) return;
+        extendTripToStartDate(checkinDate);
+        rebuildTimeline();
+        rebuildMobStrip();
+        matchedEdit = _matchEditDates();
+      }
+
+      var lastDayEdit = currentTrip.days[currentTrip.days.length - 1];
+      var lastDayDateEdit = lastDayEdit ? parseTripDate(lastDayEdit.date) : null;
+      if (matchedEdit.coIdx === -1 && lastDayDateEdit && checkoutDate.getTime() > lastDayDateEdit.getTime()) {
+        var fwdDiffEdit = Math.round((checkoutDate.getTime() - lastDayDateEdit.getTime()) / 86400000);
+        var coLabelEdit = monthNamesEdit[checkoutDate.getMonth()] + ' ' + checkoutDate.getDate();
+        if (!confirm(coLabelEdit + ' isn\'t part of your trip yet. Extend trip by ' + fwdDiffEdit + ' day' + (fwdDiffEdit !== 1 ? 's' : '') + '?')) return;
+        extendTripToDate(checkoutDate);
+        rebuildTimeline();
+        rebuildMobStrip();
+        matchedEdit = _matchEditDates();
+      }
+
+      var checkinDayIndex = matchedEdit.ciIdx;
+      var checkoutDayIndex = matchedEdit.coIdx;
+      var checkinDateStr = matchedEdit.ciStr;
+      var checkoutDateStr = matchedEdit.coStr;
       if (checkinDayIndex === -1 || checkoutDayIndex === -1) {
         alert('Could not match dates to trip days. Try again.');
         return;
@@ -3807,15 +3916,29 @@
       }
 
       var matched = _matchStayDates();
+      var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-      // If checkout is past the trip's last day, offer to extend the trip
+      // If checkin is before the trip's first day, offer to extend backward
+      var firstDay = currentTrip.days[0];
+      var firstDayDate = firstDay ? parseTripDate(firstDay.date) : null;
+      if (matched.ciIdx === -1 && firstDayDate && checkinDate.getTime() < firstDayDate.getTime()) {
+        var backDiff = Math.round((firstDayDate.getTime() - checkinDate.getTime()) / 86400000);
+        var ciLabel = monthNames[checkinDate.getMonth()] + ' ' + checkinDate.getDate();
+        var ciMsg = ciLabel + ' is before your trip starts. Extend trip back by ' + backDiff + ' day' + (backDiff !== 1 ? 's' : '') + ' to start ' + ciLabel + '?';
+        if (!confirm(ciMsg)) return;
+        extendTripToStartDate(checkinDate);
+        rebuildTimeline();
+        rebuildMobStrip();
+        matched = _matchStayDates();
+      }
+
+      // If checkout is past the trip's last day, offer to extend forward
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
       var lastDayDate = lastDay ? parseTripDate(lastDay.date) : null;
       if (matched.coIdx === -1 && lastDayDate && checkoutDate.getTime() > lastDayDate.getTime()) {
         var diffDays = Math.round((checkoutDate.getTime() - lastDayDate.getTime()) / 86400000);
-        var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var targetLabel = monthNames[checkoutDate.getMonth()] + ' ' + checkoutDate.getDate();
-        var msg = targetLabel + ' isn\'t part of your trip yet. Extend trip by ' + diffDays + ' day' + (diffDays !== 1 ? 's' : '') + ' to ' + targetLabel + '?';
+        var coLabel = monthNames[checkoutDate.getMonth()] + ' ' + checkoutDate.getDate();
+        var msg = coLabel + ' isn\'t part of your trip yet. Extend trip by ' + diffDays + ' day' + (diffDays !== 1 ? 's' : '') + ' to ' + coLabel + '?';
         if (!confirm(msg)) return;
         extendTripToDate(checkoutDate);
         rebuildTimeline();
