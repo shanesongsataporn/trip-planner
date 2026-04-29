@@ -5965,58 +5965,34 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           var pct = (mapH / containerRect.height) * 100;
           localStorage.setItem('split_divider_pos', pct.toFixed(1));
         });
+      } else {
+        divider.addEventListener('touchstart', function(e) {
+          dragging = true;
+          e.preventDefault();
+        }, { passive: false });
+
+        divider.addEventListener('touchmove', function(e) {
+          if (!dragging) return;
+          var touch = e.touches[0];
+          var containerRect = container.getBoundingClientRect();
+          var newPct = ((touch.clientY - containerRect.top) / containerRect.height) * 100;
+          newPct = Math.min(Math.max(newPct, 20), 70);
+          applyDividerPct(newPct);
+          e.preventDefault();
+        }, { passive: false });
+
+        divider.addEventListener('touchend', function(e) {
+          dragging = false;
+          var containerRect = container.getBoundingClientRect();
+          var mapH = parseFloat(document.getElementById('split-map').style.height);
+          var pct = (mapH / containerRect.height) * 100;
+          localStorage.setItem('split_divider_pos', pct.toFixed(1));
+        });
+
+        divider.addEventListener('touchcancel', function(e) {
+          dragging = false;
+        });
       }
-
-      divider.addEventListener('touchstart', function(e) {
-        dragging = true;
-        e.preventDefault();
-      }, { passive: false });
-
-      divider.addEventListener('touchmove', function(e) {
-        if (!dragging) return;
-        var touch = e.touches[0];
-        var containerRect = container.getBoundingClientRect();
-        var newPct = ((touch.clientY - containerRect.top) / containerRect.height) * 100;
-        newPct = Math.min(Math.max(newPct, 20), 70);
-        applyDividerPct(newPct);
-        e.preventDefault();
-      }, { passive: false });
-
-      divider.addEventListener('touchend', function(e) {
-        if (!dragging) return;
-        dragging = false;
-        var containerRect = container.getBoundingClientRect();
-        var mapH = parseFloat(document.getElementById('split-map').style.height);
-        var pct = (mapH / containerRect.height) * 100;
-        localStorage.setItem('split_divider_pos', pct.toFixed(1));
-      });
-
-      document.addEventListener('touchend', function(e) {
-        if (!dragging) return;
-        dragging = false;
-        var containerRect = container.getBoundingClientRect();
-        var mapH = parseFloat(document.getElementById('split-map').style.height);
-        var pct = (mapH / containerRect.height) * 100;
-        localStorage.setItem('split_divider_pos', pct.toFixed(1));
-      });
-
-      divider.addEventListener('pointermove', function(e) {
-        if (!dragging) return;
-        var rect = container.getBoundingClientRect();
-        var newPct = ((e.clientY - rect.top) / rect.height) * 100;
-        newPct = Math.max(20, Math.min(70, newPct));
-        applyDividerPct(newPct);
-      });
-
-      divider.addEventListener('pointerup', function(e) {
-        if (!dragging) return;
-        dragging = false;
-        var rect = container.getBoundingClientRect();
-        var newPct = ((e.clientY - rect.top) / rect.height) * 100;
-        newPct = Math.max(20, Math.min(70, newPct));
-        applyDividerPct(newPct);
-        localStorage.setItem('split_divider_pos', newPct);
-      });
     }
 
     var splitSelectedIndex = -1;
