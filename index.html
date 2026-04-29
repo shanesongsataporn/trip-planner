@@ -1392,6 +1392,7 @@
     }
 
     var mobKanbanMode = false;
+    var mobKanbanLastMove = null;
 
     function toggleMobKanban() {
       if (mobKanbanMode) { exitMobKanban(mobCardsCurrentIndex); }
@@ -1446,6 +1447,7 @@
         actBody.className = 'mob-kb-col-body';
         actBody.dataset.dayIdx = idx;
         actBody.dataset.type = 'acts';
+        actBody.dataset.tripDayIdx = currentTrip.days.indexOf(item);
 
         if (item.activities && item.activities.length) {
           item.activities.forEach(function(a, ai) {
@@ -1485,12 +1487,11 @@
           fallbackTolerance: 3,
           animation: 150,
           onEnd: function(evt) {
-            var fromIdx = parseInt(evt.from.dataset.dayIdx);
-            var toIdx = parseInt(evt.to.dataset.dayIdx);
             var oldIndex = evt.oldIndex;
             var newIndex = evt.newIndex;
-            var fromDay = sortedDays[fromIdx];
-            var toDay = sortedDays[toIdx];
+            var fromDay = currentTrip.days[parseInt(evt.from.dataset.tripDayIdx)];
+            var toDay = currentTrip.days[parseInt(evt.to.dataset.tripDayIdx)];
+            var toIdx = parseInt(evt.to.dataset.dayIdx);
             // Move activity
             var movedAct = fromDay.activities.splice(oldIndex, 1)[0];
             toDay.activities.splice(newIndex, 0, movedAct);
@@ -1502,10 +1503,8 @@
             deSuppressSync = true;
             saveToStorage();
             setTimeout(function() { deSuppressSync = false; }, 2000);
-            mobKanbanLastMove = { fromIdx: fromIdx, toIdx: toIdx, oldIndex: oldIndex, newIndex: newIndex, type: 'act', fromDay: fromDay, toDay: toDay, movedAct: movedAct, movedCat: movedCat };
             mobCardsCurrentIndex = toIdx;
             enterMobKanban();
-            showKanbanUndo();
           }
         });
 
