@@ -1461,8 +1461,8 @@
             card.dataset.uid = uid;
             card.dataset.cat = cat;
             card.innerHTML = (photo
-              ? '<img src="' + photo + '" style="width:100%;height:90px;object-fit:cover;display:block;border-radius:6px 6px 0 0;cursor:pointer;" onclick="openPhotoPicker(\'act_' + uid + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + idx + ',' + ai + ',\'activity\')">'
-              : '<div style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;cursor:pointer;" onclick="openPhotoPicker(\'act_' + uid + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + idx + ',' + ai + ',\'activity\')">' + catObj.emoji + '</div>') +
+              ? '<img src="' + photo + '" oncontextmenu="return false;" style="width:100%;height:90px;object-fit:cover;display:block;border-radius:6px 6px 0 0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;" onclick="openPhotoPicker(\'act_' + uid + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + idx + ',' + ai + ',\'activity\')">'
+              : '<div oncontextmenu="return false;" style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;cursor:pointer;-webkit-touch-callout:none;" onclick="openPhotoPicker(\'act_' + uid + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + idx + ',' + ai + ',\'activity\')">' + catObj.emoji + '</div>') +
               '<div style="padding:4px 6px;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>';
             actBody.appendChild(card);
           });
@@ -1502,8 +1502,10 @@
             deSuppressSync = true;
             saveToStorage();
             setTimeout(function() { deSuppressSync = false; }, 2000);
+            mobKanbanLastMove = { fromIdx: fromIdx, toIdx: toIdx, oldIndex: oldIndex, newIndex: newIndex, type: 'act', fromDay: fromDay, toDay: toDay, movedAct: movedAct, movedCat: movedCat };
             mobCardsCurrentIndex = toIdx;
             enterMobKanban();
+            showKanbanUndo();
           }
         });
 
@@ -1529,8 +1531,8 @@
             fcard.style.cssText = 'background:var(--white);border-radius:6px;margin-bottom:6px;overflow:hidden;border:1px solid var(--sand-dark);';
             if (fuid) { fcard.dataset.fuid = fuid; }
             fcard.innerHTML = (foodPhotoKey ? (photo
-              ? '<img src="' + photo + '" style="width:100%;height:90px;object-fit:cover;display:block;border-radius:6px 6px 0 0;cursor:pointer;" onclick="openPhotoPicker(\'' + foodPhotoKey + '\',\'' + cleanFname + '\',\'' + cleanFCity + '\',' + idx + ',' + fi + ',\'food\')">'
-              : '<div style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;cursor:pointer;" onclick="openPhotoPicker(\'' + foodPhotoKey + '\',\'' + cleanFname + '\',\'' + cleanFCity + '\',' + idx + ',' + fi + ',\'food\')">🍽️</div>')
+              ? '<img src="' + photo + '" oncontextmenu="return false;" style="width:100%;height:90px;object-fit:cover;display:block;border-radius:6px 6px 0 0;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;" onclick="openPhotoPicker(\'' + foodPhotoKey + '\',\'' + cleanFname + '\',\'' + cleanFCity + '\',' + idx + ',' + fi + ',\'food\')">'
+              : '<div oncontextmenu="return false;" style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;cursor:pointer;-webkit-touch-callout:none;" onclick="openPhotoPicker(\'' + foodPhotoKey + '\',\'' + cleanFname + '\',\'' + cleanFCity + '\',' + idx + ',' + fi + ',\'food\')">🍽️</div>')
               : '<div style="width:100%;height:60px;background:var(--sand-dark);display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:6px 6px 0 0;">🍽️</div>') +
               '<div style="padding:4px 6px;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + fname + '</div>';
             foodBody.appendChild(fcard);
