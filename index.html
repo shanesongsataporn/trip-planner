@@ -5714,7 +5714,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         function() {
           uploadTask.snapshot.ref.getDownloadURL().then(function(url) {
             cardPhotos[photoKey] = url;
+            deSuppressSync = true;
             saveCardPhotos();
+            setTimeout(function() { deSuppressSync = false; }, 2000);
             closePhotoPicker();
             var savedIndex = mobCardsCurrentIndex;
             if (isMobile() && mobKanbanMode) {
@@ -6633,7 +6635,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
               rebuildMobStrip();
               document.getElementById('panel').classList.remove('open');
               if (currentView === 'itinerary') { renderItinerary(); }
-              if (currentView === 'cards') { renderKanban(); }
+              if (currentView === 'cards' && !deSuppressSync) { renderKanban(); }
               if (currentView === 'budget') { renderBudget(); }
             }
           );
