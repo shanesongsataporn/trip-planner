@@ -3491,7 +3491,7 @@
             '<div class="accom-card-head">' +
               '<div style="flex:1;cursor:pointer;" onclick="toggleAccomCard(\'' + cardId + '\')">' +
                 '<div class="accom-card-city">' + s.city + ' · ' + dateRange + '</div>' +
-                '<div class="accom-card-name" id="accom-name-' + cardId + '" onclick="event.stopPropagation();activateAccomNameEdit(\'' + cardId + '\',' + JSON.stringify(s.dis) + ')">' + (s.name || 'Unnamed stay') + '</div>' +
+                '<div class="accom-card-name" id="accom-name-' + cardId + '">' + (s.name || 'Unnamed stay') + '</div>' +
                 '<div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">' + nightsLabel + '</div>' +
               '</div>' +
               '<button class="accom-booked-toggle ' + (isBooked ? 'booked' : 'unbooked') + '" onclick="event.stopPropagation();toggleAccomBooked(' + s.di + ',' + s.ai + ',' + JSON.stringify(s.dis) + ')">' +
@@ -3500,8 +3500,12 @@
             '</div>' +
             '<div class="accom-card-body" id="' + cardId + '">' +
               '<div style="display:flex;gap:8px;margin-top:12px;margin-bottom:4px;">' +
-                '<button onclick="showEditStayDatesSheet(' + JSON.stringify(s.dis) + ')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📅 Change Dates</button>' +
+                '<button onclick="activateAccomNameEdit(\'' + cardId + '\',' + JSON.stringify(s.dis) + ')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">🔍 Change Hotel</button>' +
                 (a.link ? '<a href="' + a.link + '" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);text-decoration:none;">📍 Maps</a>' : '<button onclick="promptAccomLink(' + JSON.stringify(s.dis) + ')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">📍 Add Maps Link</button>') +
+              '</div>' +
+              '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
+                '<button onclick="showEditStayDatesSheet(' + JSON.stringify(s.dis) + ')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📅 Change Dates</button>' +
+                '<button onclick="deleteAccomStay(' + JSON.stringify(s.dis) + ',\'' + (s.name || '') + '\')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:#fdecea;color:var(--danger);cursor:pointer;">🗑 Delete Stay</button>' +
               '</div>' +
               '<div class="accom-field"><label>Check-in Time</label><input type="text" value="' + (a.checkinTime || '') + '" onchange="updateAccomField(' + s.di + ',' + s.ai + ',\'checkinTime\',this.value)" placeholder="e.g. 2:00 PM"></div>' +
               '<div class="accom-field"><label>Check-out Time</label><input type="text" value="' + (a.checkoutTime || '') + '" onchange="updateAccomField(' + s.lastDi + ',' + s.ai + ',\'checkoutTime\',this.value)" placeholder="e.g. 11:00 AM"></div>' +
@@ -3565,6 +3569,20 @@
       setTimeout(function() { deSuppressSync = false; }, 2000);
       saveToStorage();
       closeAddStaySheet();
+      renderAccommodation();
+    }
+
+    function deleteAccomStay(dis, name) {
+      if (!confirm('Delete "' + name + '"?')) return;
+      dis.forEach(function(di) {
+        normaliseAccom(currentTrip.days[di]);
+        currentTrip.days[di].accommodation = currentTrip.days[di].accommodation.filter(function(a) {
+          return a.name !== name;
+        });
+      });
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
       renderAccommodation();
     }
 
