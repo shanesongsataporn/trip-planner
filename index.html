@@ -463,7 +463,7 @@
     .accom-card-nights { font-size: 11px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
     .accom-booked-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: none; cursor: pointer; font-family: inherit; }
     .accom-booked-toggle.booked { background: #e6f9f0; color: #1a8a4a; }
-    .accom-booked-toggle.unbooked { background: #fdecea; color: var(--danger); }
+    .accom-booked-toggle.unbooked { background: var(--sand-dark); color: var(--ink-muted); }
     .accom-card-body { padding: 0 16px 16px; border-top: 1px solid var(--sand-dark); display: none; }
     .accom-card-body.open { display: block; }
     .accom-field { margin-top: 12px; }
@@ -3466,10 +3466,6 @@
           var cardId = 'accom-body-' + idx;
           var nightsLabel = s.nights + ' night' + (s.nights !== 1 ? 's' : '');
           var dateRange = s.checkinDate + (s.nights > 1 ? ' → ' + s.checkoutDate : '');
-
-          if (!isBooked) {
-            cardsHtml += '<div class="accom-gap">⚠️ Unbooked — ' + s.city + ' · ' + nightsLabel + '</div>';
-          }
 
           cardsHtml += '<div class="accom-card" style="border-left-color:' + cityColor + '">' +
             '<div class="accom-card-head" onclick="toggleAccomCard(\'' + cardId + '\')">' +
