@@ -3418,8 +3418,9 @@
         var a = day.accommodation[0];
         if (!a) return;
         var name = a.name || '';
+        var baseCity = day.city.indexOf('>') !== -1 ? day.city.split('>').pop().trim() : day.city;
         var last = stays[stays.length - 1];
-        if (last && last.name === name && last.city === day.city) {
+        if (last && last.name === name && last.baseCity === baseCity) {
           last.nights++;
           last.checkoutDate = day.date;
           last.lastDi = di;
@@ -3428,7 +3429,8 @@
         } else {
           stays.push({
             name: name,
-            city: day.city,
+            city: baseCity,
+            baseCity: baseCity,
             checkinDate: day.date,
             checkoutDate: day.date,
             nights: 1,
