@@ -3484,10 +3484,10 @@
           var dateRange = s.checkinDate + (s.nights > 1 ? ' → ' + s.checkoutDate : '');
 
           cardsHtml += '<div class="accom-card" style="border-left-color:' + cityColor + '">' +
-            '<div class="accom-card-head" onclick="toggleAccomCard(\'' + cardId + '\')">' +
-              '<div style="flex:1;">' +
+            '<div class="accom-card-head">' +
+              '<div style="flex:1;cursor:pointer;" onclick="toggleAccomCard(\'' + cardId + '\')">' +
                 '<div class="accom-card-city">' + s.city + ' · ' + dateRange + '</div>' +
-                '<div class="accom-card-name">' + (s.name || 'Unnamed stay') + '</div>' +
+                '<div class="accom-card-name" id="accom-name-' + cardId + '" onclick="event.stopPropagation();activateAccomNameEdit(\'' + cardId + '\',' + JSON.stringify(s.dis) + ')">' + (s.name || 'Unnamed stay') + '</div>' +
                 '<div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">' + nightsLabel + '</div>' +
               '</div>' +
               '<button class="accom-booked-toggle ' + (isBooked ? 'booked' : 'unbooked') + '" onclick="event.stopPropagation();toggleAccomBooked(' + s.di + ',' + s.ai + ',' + JSON.stringify(s.dis) + ')">' +
@@ -3495,14 +3495,14 @@
               '</button>' +
             '</div>' +
             '<div class="accom-card-body" id="' + cardId + '">' +
-              '<div class="accom-field"><label>Hotel Name</label><input type="text" value="' + (a.name || '') + '" onchange="updateAccomStay(' + JSON.stringify(s.dis) + ',\'name\',this.value)" placeholder="e.g. Mandarin Oriental"></div>' +
+              '<div style="display:flex;gap:8px;margin-top:12px;margin-bottom:4px;">' +
+                '<button onclick="showEditStayDatesSheet(' + JSON.stringify(s.dis) + ')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📅 Change Dates</button>' +
+                (a.link ? '<a href="' + a.link + '" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);text-decoration:none;">📍 Maps</a>' : '<button onclick="promptAccomLink(' + JSON.stringify(s.dis) + ')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">📍 Add Maps Link</button>') +
+              '</div>' +
               '<div class="accom-field"><label>Check-in Time</label><input type="text" value="' + (a.checkinTime || '') + '" onchange="updateAccomField(' + s.di + ',' + s.ai + ',\'checkinTime\',this.value)" placeholder="e.g. 2:00 PM"></div>' +
               '<div class="accom-field"><label>Check-out Time</label><input type="text" value="' + (a.checkoutTime || '') + '" onchange="updateAccomField(' + s.lastDi + ',' + s.ai + ',\'checkoutTime\',this.value)" placeholder="e.g. 11:00 AM"></div>' +
               '<div class="accom-field"><label>Confirmation Number</label><input type="text" value="' + (a.confirmationNumber || '') + '" onchange="updateAccomStay(' + JSON.stringify(s.dis) + ',\'confirmationNumber\',this.value)" placeholder="e.g. BK-123456"></div>' +
-              '<div class="accom-field"><label>Price Paid (' + sym + ')</label><input type="number" value="' + (a.price || '') + '" onchange="updateAccomField(' + s.di + ',' + s.ai + ',\'price\',this.value)" placeholder="0"></div>' +
-              '<div class="accom-field"><label>Booking Link</label><input type="url" value="' + (a.link || '') + '" onchange="updateAccomStay(' + JSON.stringify(s.dis) + ',\'link\',this.value)" placeholder="https://">' +
-                (a.link ? '<a class="accom-link-btn" href="' + a.link + '" target="_blank">🔗 Open booking</a>' : '') +
-              '</div>' +
+              '<div class="accom-field"><label>Price Paid (' + sym + ')</label><input type="number" value="' + (a.price || '') + '" onchange="updateAccomField(' + s.di + ',' + s.ai + ',\'price\',this.value)" placeholder=""></div>' +
               '<div class="accom-field"><label>Notes</label><textarea rows="2" onchange="updateAccomStay(' + JSON.stringify(s.dis) + ',\'notes\',this.value)" placeholder="e.g. Cash only, early check-in arranged">' + (a.notes || '') + '</textarea></div>' +
             '</div>' +
           '</div>';
@@ -3513,6 +3513,62 @@
       el.innerHTML = '<div style="max-width:600px;margin:0 auto;">' +
         '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:16px;">🏨 Accommodation</div>' +
         summaryHtml + addBtn + cardsHtml + '</div>';
+    }
+
+    function showEditStayDatesSheet(dis) {
+      window._accomEditDis = dis;
+      window._accomAddCheckin = null;
+      window._accomAddCheckout = null;
+      window._accomCalYear = 2026;
+      window._accomCalMonth = 5;
+      window._accomAddPlaceName = '_edit_';
+      document.getElementById('accom-add-body').innerHTML =
+        '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;">Change Dates</div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;">Select Dates <span id="accom-cal-range-label" style="font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0;margin-left:8px;"></span></div>' +
+        '<div id="accom-cal-wrap"></div>' +
+        '<button class="accom-add-btn" id="accom-add-confirm-btn" onclick="confirmEditStayDates()" disabled>Update Dates</button>' +
+        '<button class="accom-cancel-btn" onclick="closeAddStaySheet()">Cancel</button>';
+      renderAccomCal();
+      document.getElementById('accom-add-overlay').classList.add('open');
+      document.getElementById('accom-add-sheet').classList.add('open');
+    }
+
+    function confirmEditStayDates() {
+      var dis = window._accomEditDis;
+      var checkinDate = window._accomAddCheckin;
+      var checkoutDate = window._accomAddCheckout;
+      if (!checkinDate || !checkoutDate || !dis) return;
+      // Get existing accom data from first day
+      var firstDay = currentTrip.days[dis[0]];
+      normaliseAccom(firstDay);
+      var existingAccom = JSON.parse(JSON.stringify(firstDay.accommodation[0] || {}));
+      // Remove accom from all old days
+      dis.forEach(function(di) {
+        normaliseAccom(currentTrip.days[di]);
+        currentTrip.days[di].accommodation = currentTrip.days[di].accommodation.filter(function(a) {
+          return a.name !== existingAccom.name;
+        });
+      });
+      // Add to new date range
+      currentTrip.days.forEach(function(day) {
+        var dayDate = parseTripDate(day.date);
+        if (dayDate && dayDate >= checkinDate && dayDate <= checkoutDate) {
+          normaliseAccom(day);
+          day.accommodation.push(existingAccom);
+        }
+      });
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      closeAddStaySheet();
+      renderAccommodation();
+    }
+
+    function promptAccomLink(dis) {
+      var url = prompt('Paste Google Maps URL:');
+      if (!url) return;
+      updateAccomStay(dis, 'link', url);
+      renderAccommodation();
     }
 
     function updateAccomStay(dis, field, value) {
@@ -3702,6 +3758,48 @@
       var body = document.getElementById(id);
       if (!body) return;
       body.classList.toggle('open');
+    }
+
+    function activateAccomNameEdit(cardId, dis) {
+      var nameEl = document.getElementById('accom-name-' + cardId);
+      if (!nameEl || nameEl._editing) return;
+      nameEl._editing = true;
+      var currentName = nameEl.textContent;
+      nameEl.innerHTML = '<input id="accom-inline-search-' + cardId + '" type="text" value="' + currentName + '" placeholder="Search hotel..." autocomplete="off" style="width:100%;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);border:none;border-bottom:2px solid var(--accent);background:transparent;outline:none;padding:2px 0;">';
+      var input = document.getElementById('accom-inline-search-' + cardId);
+      if (!input) return;
+      input.focus();
+      input.select();
+
+      if (google && google.maps && google.maps.places) {
+        var autocomplete = new google.maps.places.Autocomplete(input, {
+          types: ['lodging'],
+          componentRestrictions: null
+        });
+        if (currentTrip.days[0] && currentTrip.days[0].lat) {
+          var circle = new google.maps.Circle({ center: { lat: currentTrip.days[0].lat, lng: currentTrip.days[0].lng }, radius: 500000 });
+          autocomplete.setBounds(circle.getBounds());
+        }
+        autocomplete.addListener('place_changed', function() {
+          var place = autocomplete.getPlace();
+          if (!place || !place.name) return;
+          var mapsUrl = place.place_id ? 'https://www.google.com/maps/place/?q=place_id:' + place.place_id : '';
+          updateAccomStay(dis, 'name', place.name);
+          if (mapsUrl) updateAccomStay(dis, 'link', mapsUrl);
+          nameEl._editing = false;
+          renderAccommodation();
+        });
+      }
+
+      // Blur = cancel if no place selected
+      input.addEventListener('blur', function() {
+        setTimeout(function() {
+          if (nameEl._editing) {
+            nameEl._editing = false;
+            nameEl.textContent = currentName;
+          }
+        }, 300);
+      });
     }
 
     function toggleAccomBooked(di, ai) {
