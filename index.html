@@ -3546,25 +3546,33 @@
       var checkinDate = window._accomAddCheckin;
       var checkoutDate = window._accomAddCheckout;
       if (!checkinDate || !checkoutDate || !dis) return;
-      // Get existing accom data from first day
+
+      // Get existing accom data from first day in the group
       var firstDay = currentTrip.days[dis[0]];
       normaliseAccom(firstDay);
       var existingAccom = JSON.parse(JSON.stringify(firstDay.accommodation[0] || {}));
-      // Remove accom from all old days
+
+      // Remove accom ONLY from the exact original days
       dis.forEach(function(di) {
         normaliseAccom(currentTrip.days[di]);
         currentTrip.days[di].accommodation = currentTrip.days[di].accommodation.filter(function(a) {
           return a.name !== existingAccom.name;
         });
       });
-      // Add to new date range
+
+      // Add to new date range — only if day has no accommodation already
       currentTrip.days.forEach(function(day) {
         var dayDate = parseTripDate(day.date);
-        if (dayDate && dayDate >= checkinDate && dayDate <= checkoutDate) {
+        if (!dayDate) return;
+        if (dayDate >= checkinDate && dayDate <= checkoutDate) {
           normaliseAccom(day);
-          day.accommodation.push(existingAccom);
+          var alreadyHas = day.accommodation.some(function(a) { return a.name && a.name !== existingAccom.name; });
+          if (!alreadyHas) {
+            day.accommodation.push(existingAccom);
+          }
         }
       });
+
       deSuppressSync = true;
       setTimeout(function() { deSuppressSync = false; }, 2000);
       saveToStorage();
