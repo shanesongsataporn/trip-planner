@@ -5718,12 +5718,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             closePhotoPicker();
             var savedIndex = mobCardsCurrentIndex;
             if (isMobile() && mobKanbanMode) {
-              mobKanbanMode = false;
-              renderMobCards();
-              setTimeout(function() {
-                mobCardsCurrentIndex = savedIndex;
-                enterMobKanban();
-              }, 100);
+              mobCardsCurrentIndex = savedIndex;
+              enterMobKanban();
             } else {
               renderKanban();
               if (isMobile()) { mobCardsGoTo(savedIndex, false); }
