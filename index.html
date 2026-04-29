@@ -5944,11 +5944,28 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
 
       var dragging = false;
 
-      divider.addEventListener('pointerdown', function(e) {
-        dragging = true;
-        divider.setPointerCapture(e.pointerId);
-        e.preventDefault();
-      });
+      if (!isMobile()) {
+        divider.addEventListener('pointerdown', function(e) {
+          dragging = true;
+          divider.setPointerCapture(e.pointerId);
+          e.preventDefault();
+        });
+        divider.addEventListener('pointermove', function(e) {
+          if (!dragging) return;
+          var containerRect = container.getBoundingClientRect();
+          var newPct = ((e.clientY - containerRect.top) / containerRect.height) * 100;
+          newPct = Math.min(Math.max(newPct, 20), 70);
+          applyDividerPct(newPct);
+        });
+        divider.addEventListener('pointerup', function(e) {
+          if (!dragging) return;
+          dragging = false;
+          var containerRect = container.getBoundingClientRect();
+          var mapH = parseFloat(document.getElementById('split-map').style.height);
+          var pct = (mapH / containerRect.height) * 100;
+          localStorage.setItem('split_divider_pos', pct.toFixed(1));
+        });
+      }
 
       divider.addEventListener('touchstart', function(e) {
         dragging = true;
