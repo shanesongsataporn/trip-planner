@@ -3529,22 +3529,62 @@
       window._accomAddCheckin = null;
       window._accomAddCheckout = null;
       window._accomCalYear = 2026;
-      window._accomCalMonth = 5; // June = month 5 (0-indexed)
+      window._accomCalMonth = 5;
+      window._accomAddPlaceId = null;
 
       document.getElementById('accom-add-body').innerHTML =
         '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;">Add a Stay</div>' +
-        '<div class="accom-field" style="margin-bottom:12px;"><label>Hotel Name</label>' +
-        '<input id="accom-add-name" type="text" placeholder="e.g. Mandarin Oriental"></div>' +
-        '<div class="accom-field" style="margin-bottom:16px;"><label>Google Maps Link</label>' +
-        '<input id="accom-add-link" type="url" placeholder="Paste Google Maps URL"></div>' +
+        '<div class="accom-field" style="margin-bottom:16px;"><label>Search for Hotel</label>' +
+        '<input id="accom-place-search" type="text" placeholder="e.g. Mandarin Oriental Bangkok" autocomplete="off"></div>' +
+        '<div id="accom-place-selected" style="display:none;background:var(--accent-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;display:none;">' +
+          '<div id="accom-place-name" style="font-size:13px;font-weight:700;color:var(--ink);"></div>' +
+          '<div id="accom-place-address" style="font-size:11px;color:var(--ink-muted);margin-top:2px;"></div>' +
+          '<a id="accom-place-link" href="" target="_blank" style="font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">📍 Open in Maps</a>' +
+        '</div>' +
         '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;">Select Dates <span id="accom-cal-range-label" style="font-weight:600;color:var(--accent);text-transform:none;letter-spacing:0;margin-left:8px;"></span></div>' +
         '<div id="accom-cal-wrap"></div>' +
         '<button class="accom-add-btn" id="accom-add-confirm-btn" onclick="confirmAddStay()" disabled>Add Stay</button>' +
         '<button class="accom-cancel-btn" onclick="closeAddStaySheet()">Cancel</button>';
 
       renderAccomCal();
+
+      // Init Places autocomplete
+      var input = document.getElementById('accom-place-search');
+      if (input && google && google.maps && google.maps.places) {
+        var autocomplete = new google.maps.places.Autocomplete(input, {
+          types: ['lodging'],
+          componentRestrictions: null
+        });
+        if (currentTrip.days[0] && currentTrip.days[0].lat) {
+          var circle = new google.maps.Circle({ center: { lat: currentTrip.days[0].lat, lng: currentTrip.days[0].lng }, radius: 500000 });
+          autocomplete.setBounds(circle.getBounds());
+        }
+        autocomplete.addListener('place_changed', function() {
+          var place = autocomplete.getPlace();
+          if (!place || !place.name) return;
+          var mapsUrl = place.place_id ? 'https://www.google.com/maps/place/?q=place_id:' + place.place_id : '';
+          window._accomAddPlaceName = place.name;
+          window._accomAddPlaceUrl = mapsUrl;
+          var selEl = document.getElementById('accom-place-selected');
+          var nameEl = document.getElementById('accom-place-name');
+          var addrEl = document.getElementById('accom-place-address');
+          var linkEl = document.getElementById('accom-place-link');
+          if (selEl) selEl.style.display = 'block';
+          if (nameEl) nameEl.textContent = place.name;
+          if (addrEl) addrEl.textContent = place.formatted_address || '';
+          if (linkEl) { linkEl.href = mapsUrl; linkEl.style.display = mapsUrl ? 'inline-block' : 'none'; }
+          updateAccomConfirmBtn();
+        });
+      }
+
       document.getElementById('accom-add-overlay').classList.add('open');
       document.getElementById('accom-add-sheet').classList.add('open');
+    }
+
+    function updateAccomConfirmBtn() {
+      var btn = document.getElementById('accom-add-confirm-btn');
+      if (!btn) return;
+      btn.disabled = !(window._accomAddPlaceName && window._accomAddCheckin && window._accomAddCheckout);
     }
 
     function renderAccomCal() {
@@ -3625,16 +3665,14 @@
       if (window._accomAddCheckout) label += ' → ' + monthNames[window._accomAddCheckout.getMonth()] + ' ' + window._accomAddCheckout.getDate();
       var labelEl = document.getElementById('accom-cal-range-label');
       if (labelEl) labelEl.textContent = label;
-      // Enable confirm
-      var btn = document.getElementById('accom-add-confirm-btn');
-      if (btn) btn.disabled = !(window._accomAddCheckin && window._accomAddCheckout);
+      updateAccomConfirmBtn();
       renderAccomCal();
     }
 
     function confirmAddStay() {
-      var name = (document.getElementById('accom-add-name').value || '').trim();
-      if (!name) { alert('Please enter a hotel name.'); return; }
-      var link = (document.getElementById('accom-add-link').value || '').trim();
+      var name = window._accomAddPlaceName || '';
+      if (!name) { alert('Please search for and select a hotel.'); return; }
+      var link = window._accomAddPlaceUrl || '';
       var checkinDate = window._accomAddCheckin;
       var checkoutDate = window._accomAddCheckout;
       if (!checkinDate || !checkoutDate) return;
