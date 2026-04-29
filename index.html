@@ -1079,6 +1079,7 @@
   <div id="view-split">
     <div id="split-map"></div>
     <div id="split-divider"></div>
+    <div id="split-drag-overlay"></div>
     <div id="split-list"></div>
 <button id="split-fit-btn" onclick="fitSplitPins()" style="display:none;position:absolute;top:10px;right:10px;z-index:10;font-family:inherit;font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;border:none;background:rgba(0,0,0,0.6);color:#fff;cursor:pointer;backdrop-filter:blur(4px);">⊙ Show day</button>    <div id="split-float-card">
       <button id="split-float-card-close" onclick="closeSplitFloatCard()">x</button>
@@ -5921,7 +5922,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var mapPane = document.getElementById('split-map');
       var divider = document.getElementById('split-divider');
       var listPane = document.getElementById('split-list');
+      var overlay = document.getElementById('split-drag-overlay');
       if (!container || !divider) return;
+
       function applyDividerPct(newPct) {
         var containerH = container.getBoundingClientRect().height;
         var mapH = Math.round(containerH * newPct / 100);
@@ -5932,6 +5935,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         listPane.style.top = listTop + 'px';
         listPane.style.height = listH + 'px';
         listPane.style.bottom = '';
+        if (overlay) {
+          overlay.style.top = (mapH - 16) + 'px';
+        }
         if (splitMap) google.maps.event.trigger(splitMap, 'resize');
       }
 
@@ -5966,35 +5972,42 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           localStorage.setItem('split_divider_pos', pct.toFixed(1));
         });
       } else {
-        divider.addEventListener('touchstart', function(e) {
-          dragging = true;
-          mapPane.style.pointerEvents = 'none';
-          e.preventDefault();
-        }, { passive: false });
+        if (overlay) {
+          overlay.style.position = 'absolute';
+          overlay.style.left = '0';
+          overlay.style.right = '0';
+          overlay.style.height = '40px';
+          overlay.style.zIndex = '50';
+          overlay.style.background = 'transparent';
+          overlay.style.touchAction = 'none';
 
-        divider.addEventListener('touchmove', function(e) {
-          if (!dragging) return;
-          var touch = e.touches[0];
-          var containerRect = container.getBoundingClientRect();
-          var newPct = ((touch.clientY - containerRect.top) / containerRect.height) * 100;
-          newPct = Math.min(Math.max(newPct, 20), 70);
-          applyDividerPct(newPct);
-          e.preventDefault();
-        }, { passive: false });
+          overlay.addEventListener('touchstart', function(e) {
+            dragging = true;
+            e.preventDefault();
+          }, { passive: false });
 
-        divider.addEventListener('touchend', function(e) {
-          dragging = false;
-          mapPane.style.pointerEvents = '';
-          var containerRect = container.getBoundingClientRect();
-          var mapH = parseFloat(document.getElementById('split-map').style.height);
-          var pct = (mapH / containerRect.height) * 100;
-          localStorage.setItem('split_divider_pos', pct.toFixed(1));
-        });
+          overlay.addEventListener('touchmove', function(e) {
+            if (!dragging) return;
+            var touch = e.touches[0];
+            var containerRect = container.getBoundingClientRect();
+            var newPct = ((touch.clientY - containerRect.top) / containerRect.height) * 100;
+            newPct = Math.min(Math.max(newPct, 20), 70);
+            applyDividerPct(newPct);
+            e.preventDefault();
+          }, { passive: false });
 
-        divider.addEventListener('touchcancel', function(e) {
-          dragging = false;
-          mapPane.style.pointerEvents = '';
-        });
+          overlay.addEventListener('touchend', function(e) {
+            dragging = false;
+            var containerRect = container.getBoundingClientRect();
+            var mapH = parseFloat(document.getElementById('split-map').style.height);
+            var pct = (mapH / containerRect.height) * 100;
+            localStorage.setItem('split_divider_pos', pct.toFixed(1));
+          });
+
+          overlay.addEventListener('touchcancel', function() {
+            dragging = false;
+          });
+        }
       }
     }
 
