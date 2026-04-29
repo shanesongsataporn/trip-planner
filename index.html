@@ -472,6 +472,16 @@
     .accom-field textarea { resize: none; }
     .accom-field a.accom-link-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; margin-top: 4px; }
     .accom-gap { background: #fdecea; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--danger); }
+    #accom-add-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 5400; }
+    #accom-add-overlay.open { display: block; }
+    #accom-add-sheet { display: none; position: fixed; left: 0; right: 0; bottom: 0; background: var(--white); border-radius: 20px 20px 0 0; z-index: 5500; padding: 12px 20px 40px; max-height: 80vh; overflow-y: auto; }
+    #accom-add-sheet.open { display: block; }
+    .accom-day-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; border: 2px solid transparent; margin-bottom: 6px; background: var(--sand); }
+    .accom-day-option:active { background: var(--accent-light); }
+    .accom-day-option.selected { border-color: var(--accent); background: var(--accent-light); }
+    .accom-add-btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; margin-top: 16px; }
+    .accom-add-btn:disabled { opacity: 0.4; cursor: default; }
+    .accom-cancel-btn { width: 100%; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: none; color: var(--ink-muted); cursor: pointer; margin-top: 8px; }
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
@@ -1219,6 +1229,11 @@
     <button class="de-add-cancel" onclick="closeDeAddSheet()">Cancel</button>
   </div>
 
+  <div id="accom-add-overlay" onclick="closeAddStaySheet()"></div>
+  <div id="accom-add-sheet">
+    <div class="sheet-handle"></div>
+    <div id="accom-add-body"></div>
+  </div>
   <div id="disc-add-overlay" onclick="closeAddToTripSheet()"></div>
   <div id="disc-add-sheet">
     <div id="disc-add-sheet-handle"></div>
@@ -3493,9 +3508,10 @@
         });
       }
 
+      var addBtn = '<button onclick="showAddStaySheet()" style="width:100%;font-family:inherit;font-size:14px;font-weight:700;padding:13px;border-radius:var(--radius-sm);border:2px dashed var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;margin-bottom:16px;">+ Add Stay</button>';
       el.innerHTML = '<div style="max-width:600px;margin:0 auto;">' +
         '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:16px;">🏨 Accommodation</div>' +
-        summaryHtml + cardsHtml + '</div>';
+        summaryHtml + addBtn + cardsHtml + '</div>';
     }
 
     function updateAccomStay(dis, field, value) {
@@ -3507,6 +3523,105 @@
       deSuppressSync = true;
       setTimeout(function() { deSuppressSync = false; }, 2000);
       saveToStorage();
+    }
+
+    function showAddStaySheet() {
+      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
+        var da = parseTripDate(a.date), db = parseTripDate(b.date);
+        return (da && db) ? da - db : 0;
+      });
+      var dayOptionsHtml = sortedDays.map(function(day) {
+        var di = currentTrip.days.indexOf(day);
+        var cityColor = (citySettings[day.city] && citySettings[day.city].color) || 'var(--accent)';
+        return '<div class="accom-day-option" id="accom-day-opt-' + di + '" onclick="selectAccomDay(' + di + ')" style="border-left:3px solid ' + cityColor + '">' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:13px;font-weight:600;color:var(--ink);">Day ' + day.day + ' · ' + day.city + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-muted);">' + day.date + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      document.getElementById('accom-add-body').innerHTML =
+        '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px;">Add a Stay</div>' +
+        '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:16px;">Select check-in and check-out days</div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;">Hotel Name</div>' +
+        '<input id="accom-add-name" type="text" placeholder="e.g. Mandarin Oriental" style="width:100%;font-family:inherit;font-size:14px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:10px 12px;background:var(--sand);box-sizing:border-box;margin-bottom:16px;">' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;">Check-in Day</div>' +
+        '<div id="accom-checkin-list">' + dayOptionsHtml + '</div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px;margin-top:16px;">Check-out Day</div>' +
+        '<div id="accom-checkout-list">' + dayOptionsHtml + '</div>' +
+        '<button class="accom-add-btn" id="accom-add-confirm-btn" onclick="confirmAddStay()" disabled>Add Stay</button>' +
+        '<button class="accom-cancel-btn" onclick="closeAddStaySheet()">Cancel</button>';
+
+      window._accomAddCheckin = null;
+      window._accomAddCheckout = null;
+
+      document.getElementById('accom-add-overlay').classList.add('open');
+      document.getElementById('accom-add-sheet').classList.add('open');
+    }
+
+    function selectAccomDay(di) {
+      var checkinList = document.getElementById('accom-checkin-list');
+      var checkoutList = document.getElementById('accom-checkout-list');
+      // Determine if this tap is for checkin or checkout
+      // First tap = checkin, second tap (must be >= checkin) = checkout
+      if (window._accomAddCheckin === null) {
+        window._accomAddCheckin = di;
+        var opt = document.getElementById('accom-day-opt-' + di);
+        if (opt && checkinList.contains(opt)) {
+          checkinList.querySelectorAll('.accom-day-option').forEach(function(el) { el.classList.remove('selected'); });
+          opt.classList.add('selected');
+        }
+      } else if (window._accomAddCheckout === null) {
+        window._accomAddCheckout = di;
+        var opt2 = document.getElementById('accom-day-opt-' + di);
+        if (opt2 && checkoutList.contains(opt2)) {
+          checkoutList.querySelectorAll('.accom-day-option').forEach(function(el) { el.classList.remove('selected'); });
+          opt2.classList.add('selected');
+        }
+      }
+      // Enable confirm if both selected
+      if (window._accomAddCheckin !== null && window._accomAddCheckout !== null) {
+        var btn = document.getElementById('accom-add-confirm-btn');
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function confirmAddStay() {
+      var name = (document.getElementById('accom-add-name').value || '').trim();
+      if (!name) { alert('Please enter a hotel name.'); return; }
+      var checkinDi = window._accomAddCheckin;
+      var checkoutDi = window._accomAddCheckout;
+      if (checkinDi === null || checkoutDi === null) return;
+
+      // Get all days between checkin and checkout (inclusive) sorted
+      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
+        var da = parseTripDate(a.date), db = parseTripDate(b.date);
+        return (da && db) ? da - db : 0;
+      });
+      var checkinDate = parseTripDate(currentTrip.days[checkinDi].date);
+      var checkoutDate = parseTripDate(currentTrip.days[checkoutDi].date);
+      if (!checkinDate || !checkoutDate || checkoutDate < checkinDate) {
+        alert('Check-out must be on or after check-in.'); return;
+      }
+
+      sortedDays.forEach(function(day) {
+        var dayDate = parseTripDate(day.date);
+        if (dayDate && dayDate >= checkinDate && dayDate <= checkoutDate) {
+          normaliseAccom(day);
+          day.accommodation.push({ name: name, notes: '', price: '', link: '', booked: false });
+        }
+      });
+
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      closeAddStaySheet();
+      renderAccommodation();
+    }
+
+    function closeAddStaySheet() {
+      document.getElementById('accom-add-overlay').classList.remove('open');
+      document.getElementById('accom-add-sheet').classList.remove('open');
     }
 
     function toggleAccomCard(id) {
