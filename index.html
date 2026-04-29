@@ -1285,7 +1285,8 @@
       var catStyle = activityCategories[cat] || activityCategories['default'];
       var photoKey = 'act_' + uid;
       var savedPhoto = cardPhotos[photoKey];
-      var userNote = (item.cardNotes && item.cardNotes[actIndex]) || '';
+      var noteKey = uid ? 'act_' + uid : String(actIndex);
+      var userNote = (item.cardNotes && item.cardNotes[noteKey]) || '';
       var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
       var photoId = 'kp-' + photoKey;
       var cleanName = name.replace(/'/g, '');
@@ -1303,7 +1304,7 @@
         '</div>' +
         '<div style="padding:8px 14px;border-top:1px solid var(--sand-dark);display:flex;gap:6px;">' +
           '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
-          '<button class="kbtn" onclick="openKanbanNote(' + dayIndex + ',' + actIndex + ')">📝 Note</button>' +
+          '<button class="kbtn" onclick="openKanbanNote(' + dayIndex + ',' + actIndex + ',\'' + uid + '\')">📝 Note</button>' +
           '<button class="kbtn" onclick="triggerPhotoUpload(\'' + photoKey + '\',' + dayIndex + ',' + actIndex + ')">📷</button>' +
           '<button class="kbtn" onclick="editItinDay(' + dayIndex + ')">Edit</button>' +
         '</div>' +
@@ -5548,14 +5549,17 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       return card;
     }
 
-    function openKanbanNote(dayIndex, actIndex) {
+    function openKanbanNote(dayIndex, actIndex, uid) {
       var item = currentTrip.days[dayIndex];
       if (!item.cardNotes) { item.cardNotes = {}; }
-      var current = item.cardNotes[actIndex] || '';
+      var noteKey = uid ? 'act_' + uid : String(actIndex);
+      var activity = item.activities[actIndex];
+      var actName = (typeof activity === 'object') ? activity.name : activity;
+      var current = item.cardNotes[noteKey] || '';
       showModal('Add note',
-        '<div class="modal-field"><label>Note for ' + item.activities[actIndex] + '</label><input type="text" id="kanban-note-input" value="' + current + '" placeholder="e.g. Book tickets in advance"></div>',
+        '<div class="modal-field"><label>Note for ' + actName + '</label><input type="text" id="kanban-note-input" value="' + current + '" placeholder="e.g. Book tickets in advance"></div>',
         function() {
-          item.cardNotes[actIndex] = document.getElementById('kanban-note-input').value.trim();
+          item.cardNotes[noteKey] = document.getElementById('kanban-note-input').value.trim();
           saveToStorage(); renderKanban();
         }
       );
