@@ -1065,6 +1065,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div id="mob-cards-dots"></div>
+        <button id="mob-kanban-undo" onclick="undoKanbanMove()" style="display:none;font-family:inherit;font-size:11px;font-weight:700;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:var(--accent-light);color:var(--accent);cursor:pointer;line-height:1;flex-shrink:0;">↩ Undo</button>
         <button id="mob-kanban-toggle" onclick="toggleMobKanban()" style="font-family:inherit;font-size:16px;padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;line-height:1;flex-shrink:0;">⊞</button>
       </div>
     </div>
@@ -1393,6 +1394,47 @@
 
     var mobKanbanMode = false;
     var mobKanbanLastMove = null;
+    var mobKanbanUndoTimer = null;
+
+    function showKanbanUndo() {
+      var btn = document.getElementById('mob-kanban-undo');
+      if (!btn) return;
+      btn.style.display = 'block';
+      if (mobKanbanUndoTimer) { clearTimeout(mobKanbanUndoTimer); }
+      mobKanbanUndoTimer = setTimeout(function() {
+        btn.style.display = 'none';
+        mobKanbanLastMove = null;
+      }, 10000);
+    }
+
+    function hideKanbanUndo() {
+      var btn = document.getElementById('mob-kanban-undo');
+      if (btn) { btn.style.display = 'none'; }
+      if (mobKanbanUndoTimer) { clearTimeout(mobKanbanUndoTimer); mobKanbanUndoTimer = null; }
+      mobKanbanLastMove = null;
+    }
+
+    function undoKanbanMove() {
+      if (!mobKanbanLastMove) return;
+      var m = mobKanbanLastMove;
+      if (m.type === 'act') {
+        var act = m.toDay.activities.splice(m.newIndex, 1)[0];
+        m.fromDay.activities.splice(m.oldIndex, 0, act);
+        var cat = m.toDay.activityCategories.splice(m.newIndex, 1)[0] || 'default';
+        m.fromDay.activityCategories.splice(m.oldIndex, 0, cat);
+      } else if (m.type === 'food') {
+        var food = m.toDay.food.splice(m.newIndex, 1)[0];
+        m.fromDay.food.splice(m.oldIndex, 0, food);
+      }
+      deSuppressSync = true;
+      saveToStorage();
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      hideKanbanUndo();
+      var btn = document.getElementById('mob-kanban-undo');
+      if (btn) { btn.textContent = '↩ Restored'; btn.style.display = 'block'; setTimeout(function() { btn.style.display = 'none'; btn.textContent = '↩ Undo'; }, 1500); }
+      mobCardsCurrentIndex = m.fromIdx;
+      enterMobKanban();
+    }
 
     function toggleMobKanban() {
       if (mobKanbanMode) { exitMobKanban(mobCardsCurrentIndex); }
@@ -1503,8 +1545,10 @@
             deSuppressSync = true;
             saveToStorage();
             setTimeout(function() { deSuppressSync = false; }, 2000);
+            mobKanbanLastMove = { type: 'act', fromDay: fromDay, toDay: toDay, oldIndex: oldIndex, newIndex: newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
             mobCardsCurrentIndex = toIdx;
             enterMobKanban();
+            showKanbanUndo();
           }
         });
 
@@ -1558,8 +1602,10 @@
               deSuppressSync = true;
               saveToStorage();
               setTimeout(function() { deSuppressSync = false; }, 2000);
+              mobKanbanLastMove = { type: 'food', fromDay: fromDay, toDay: toDay, oldIndex: evt.oldIndex, newIndex: evt.newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
               mobCardsCurrentIndex = toIdx;
               enterMobKanban();
+              showKanbanUndo();
             }
           });
         }
