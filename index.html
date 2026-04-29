@@ -1473,12 +1473,16 @@
           actBody.appendChild(empty);
         }
         col.appendChild(actBody);
+        kanban.appendChild(col);
 
         // Sortable on activities
         Sortable.create(actBody, {
           group: 'mob-kanban-acts',
           delay: 400,
           delayOnTouchOnly: true,
+          touchStartThreshold: 3,
+          forceFallback: true,
+          fallbackTolerance: 3,
           animation: 150,
           onEnd: function(evt) {
             var fromIdx = parseInt(evt.from.dataset.dayIdx);
@@ -1537,6 +1541,9 @@
             group: 'mob-kanban-food',
             delay: 400,
             delayOnTouchOnly: true,
+            touchStartThreshold: 3,
+            forceFallback: true,
+            fallbackTolerance: 3,
             animation: 150,
             onEnd: function(evt) {
               var fromIdx = parseInt(evt.from.dataset.dayIdx);
@@ -1556,8 +1563,7 @@
           });
         }
 
-        kanban.appendChild(col);
-      });
+        });
 
       // Scroll current day into view
       var currentCol = kanban.querySelector('.mob-kb-col.is-current');
