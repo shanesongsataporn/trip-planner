@@ -451,6 +451,27 @@
     .cal-detail-item { font-size: 13px; color: var(--ink-light); padding: 3px 0; display: flex; align-items: center; gap: 8px; }
 
    /* ===== BUDGET VIEW ===== */
+    #view-accommodation { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
+    .accom-summary-bar { background: var(--white); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 16px; box-shadow: var(--card-shadow); }
+    .accom-summary-stat { flex: 1; text-align: center; }
+    .accom-summary-stat .stat-val { font-size: 22px; font-weight: 800; color: var(--ink); }
+    .accom-summary-stat .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-top: 2px; }
+    .accom-card { background: var(--white); border-radius: var(--radius); margin-bottom: 12px; box-shadow: var(--card-shadow); overflow: hidden; border-left: 4px solid var(--accent); }
+    .accom-card-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; }
+    .accom-card-city { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+    .accom-card-name { font-size: 15px; font-weight: 700; color: var(--ink); flex: 1; }
+    .accom-card-nights { font-size: 11px; font-weight: 600; color: var(--ink-muted); white-space: nowrap; }
+    .accom-booked-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: none; cursor: pointer; font-family: inherit; }
+    .accom-booked-toggle.booked { background: #e6f9f0; color: #1a8a4a; }
+    .accom-booked-toggle.unbooked { background: #fdecea; color: var(--danger); }
+    .accom-card-body { padding: 0 16px 16px; border-top: 1px solid var(--sand-dark); display: none; }
+    .accom-card-body.open { display: block; }
+    .accom-field { margin-top: 12px; }
+    .accom-field label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+    .accom-field input, .accom-field textarea { width: 100%; font-family: inherit; font-size: 13px; color: var(--ink); border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--sand); box-sizing: border-box; }
+    .accom-field textarea { resize: none; }
+    .accom-field a.accom-link-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; margin-top: 4px; }
+    .accom-gap { background: #fdecea; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--danger); }
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
@@ -1101,6 +1122,7 @@
       </div>
     </div>
   </div>
+  <div id="view-accommodation"></div>
   <div id="view-home"></div>
   <div id="view-budget"></div>
   <div id="view-food"></div>
@@ -3272,6 +3294,7 @@
       if (view === 'split') { renderSplit(); }
       if (view === 'budget') { renderBudget(); }
       if (view === 'food') { renderFood(); }
+      if (view === 'accommodation') { renderAccommodation(); }
       if (view === 'transport') { renderTransport(); }
       if (view === 'calendar') { renderCalendar(); }
       if (view === 'discovery') { renderDiscovery(); }
@@ -3372,6 +3395,137 @@
       var accentL = b < 50 ? 55 : 40;
       document.getElementById('preview-base').style.background = 'hsl(' + h + ',12%,' + bgL + '%)';
       document.getElementById('preview-accent').style.background = 'hsl(' + h + ',56%,' + accentL + '%)';
+    }
+
+    // ===== ACCOMMODATION VIEW =====
+    function renderAccommodation() {
+      var el = document.getElementById('view-accommodation');
+      if (!el) return;
+
+      // Collect all accommodation blocks across all days
+      var blocks = [];
+      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
+        var da = parseTripDate(a.date), db = parseTripDate(b.date);
+        return (da && db) ? da - db : 0;
+      });
+
+      sortedDays.forEach(function(day, si) {
+        normaliseAccom(day);
+        day.accommodation.forEach(function(a, ai) {
+          var di = currentTrip.days.indexOf(day);
+          blocks.push({ a: a, day: day, di: di, ai: ai });
+        });
+      });
+
+      // Summary stats
+      var totalNights = sortedDays.length;
+      var bookedNights = 0;
+      var totalCost = 0;
+      blocks.forEach(function(b) {
+        if (b.a.booked) bookedNights++;
+        if (b.a.price) totalCost += parseFloat(b.a.price) || 0;
+      });
+      var sym = currentTrip.baseCurrencySymbol || '$';
+
+      // Gap detection — days with no booked accommodation
+      var gapDays = [];
+      sortedDays.forEach(function(day) {
+        normaliseAccom(day);
+        var hasBooked = day.accommodation.some(function(a) { return a.booked; });
+        if (!hasBooked) gapDays.push(day);
+      });
+
+      var summaryHtml = '<div class="accom-summary-bar">' +
+        '<div class="accom-summary-stat"><div class="stat-val">' + bookedNights + '/' + blocks.length + '</div><div class="stat-label">Nights Booked</div></div>' +
+        '<div class="accom-summary-stat"><div class="stat-val">' + sym + (totalCost > 0 ? totalCost.toLocaleString() : '—') + '</div><div class="stat-label">Total Cost</div></div>' +
+        '<div class="accom-summary-stat"><div class="stat-val" style="color:' + (gapDays.length > 0 ? 'var(--danger)' : '#1a8a4a') + '">' + gapDays.length + '</div><div class="stat-label">Unbooked Days</div></div>' +
+      '</div>';
+
+      // Cards
+      var cardsHtml = '';
+      if (blocks.length === 0) {
+        cardsHtml = '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-size:14px;">No accommodation added yet.<br>Add stays in the day panel.</div>';
+      } else {
+        var prevDate = null;
+        blocks.forEach(function(b, idx) {
+          var a = b.a, day = b.day, di = b.di, ai = b.ai;
+          var cityColor = (citySettings[day.city] && citySettings[day.city].color) || 'var(--accent)';
+          var isBooked = !!a.booked;
+
+          // Check for gap before this block
+          if (prevDate) {
+            var prev = parseTripDate(prevDate);
+            var curr = parseTripDate(day.date);
+            if (prev && curr) {
+              var diffDays = Math.round((curr - prev) / 86400000);
+              if (diffDays > 1) {
+                cardsHtml += '<div class="accom-gap">⚠️ No stay — ' + diffDays + ' night gap before ' + day.date + '</div>';
+              }
+            }
+          }
+
+          // Check if unbooked
+          if (!isBooked) {
+            cardsHtml += '<div class="accom-gap">⚠️ Unbooked — ' + day.date + ' · ' + day.city + '</div>';
+          }
+
+          var cardId = 'accom-body-' + di + '-' + ai;
+          cardsHtml += '<div class="accom-card" style="border-left-color:' + cityColor + '">' +
+            '<div class="accom-card-head" onclick="toggleAccomCard(\'' + cardId + '\')">' +
+              '<div>' +
+                '<div class="accom-card-city">' + day.city + ' · ' + day.date + '</div>' +
+                '<div class="accom-card-name">' + (a.name || 'Unnamed stay') + '</div>' +
+              '</div>' +
+              '<button class="accom-booked-toggle ' + (isBooked ? 'booked' : 'unbooked') + '" onclick="event.stopPropagation();toggleAccomBooked(' + di + ',' + ai + ')">' +
+                (isBooked ? '✓ Booked' : '✗ Unbooked') +
+              '</button>' +
+            '</div>' +
+            '<div class="accom-card-body" id="' + cardId + '">' +
+              '<div class="accom-field"><label>Hotel Name</label><input type="text" value="' + (a.name || '') + '" onchange="updateAccomField(' + di + ',' + ai + ',\'name\',this.value)" placeholder="e.g. Mandarin Oriental"></div>' +
+              '<div class="accom-field"><label>Check-in Time</label><input type="text" value="' + (a.checkinTime || '') + '" onchange="updateAccomField(' + di + ',' + ai + ',\'checkinTime\',this.value)" placeholder="e.g. 2:00 PM"></div>' +
+              '<div class="accom-field"><label>Check-out Time</label><input type="text" value="' + (a.checkoutTime || '') + '" onchange="updateAccomField(' + di + ',' + ai + ',\'checkoutTime\',this.value)" placeholder="e.g. 11:00 AM"></div>' +
+              '<div class="accom-field"><label>Confirmation Number</label><input type="text" value="' + (a.confirmationNumber || '') + '" onchange="updateAccomField(' + di + ',' + ai + ',\'confirmationNumber\',this.value)" placeholder="e.g. BK-123456"></div>' +
+              '<div class="accom-field"><label>Price Paid (' + sym + ')</label><input type="number" value="' + (a.price || '') + '" onchange="updateAccomField(' + di + ',' + ai + ',\'price\',this.value)" placeholder="0"></div>' +
+              '<div class="accom-field"><label>Booking Link</label><input type="url" value="' + (a.link || '') + '" onchange="updateAccomField(' + di + ',' + ai + ',\'link\',this.value)" placeholder="https://">' +
+                (a.link ? '<a class="accom-link-btn" href="' + a.link + '" target="_blank">🔗 Open booking</a>' : '') +
+              '</div>' +
+              '<div class="accom-field"><label>Notes</label><textarea rows="2" onchange="updateAccomField(' + di + ',' + ai + ',\'notes\',this.value)" placeholder="e.g. Cash only, early check-in arranged">' + (a.notes || '') + '</textarea></div>' +
+            '</div>' +
+          '</div>';
+          prevDate = day.date;
+        });
+      }
+
+      el.innerHTML = '<div style="max-width:600px;margin:0 auto;">' +
+        '<div style="font-size:20px;font-weight:800;color:var(--ink);margin-bottom:16px;">🏨 Accommodation</div>' +
+        summaryHtml + cardsHtml + '</div>';
+    }
+
+    function toggleAccomCard(id) {
+      var body = document.getElementById(id);
+      if (!body) return;
+      body.classList.toggle('open');
+    }
+
+    function toggleAccomBooked(di, ai) {
+      normaliseAccom(currentTrip.days[di]);
+      var a = currentTrip.days[di].accommodation[ai];
+      if (!a) return;
+      a.booked = !a.booked;
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      renderAccommodation();
+    }
+
+    function updateAccomField(di, ai, field, value) {
+      normaliseAccom(currentTrip.days[di]);
+      var a = currentTrip.days[di].accommodation[ai];
+      if (!a) return;
+      a[field] = value;
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
     }
 
     // ===== TRANSPORT VIEW =====
@@ -5458,22 +5612,23 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','structure','itinerary','cards','discovery','transport'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','stay','food','budget','map','structure','itinerary','cards','discovery','transport','accommodation'];
     var HOME_TILE_META = {
-      dates:      { emoji: '📅', label: 'Dates' },
-      weather:    { emoji: '🌤️', label: 'Weather' },
-      flight:     { emoji: '✈️', label: 'Next Flight' },
-      visa:       { emoji: '🛂', label: 'Visa & Entry' },
-      stay:       { emoji: '🏨', label: 'Stay' },
-      food:       { emoji: '🍜', label: 'Reservations' },
-      budget:     { emoji: '💰', label: 'Budget' },
-      map:        { emoji: '🗺️', label: 'Map' },
-      structure:  { emoji: '✏️', label: 'Plan' },
-      split:      { emoji: '⬛', label: 'Split' },
-      itinerary:  { emoji: '📋', label: 'Itinerary' },
-      cards:      { emoji: '🃏', label: 'Cards' },
-      discovery:  { emoji: '🔍', label: 'Discovery' },
-      transport:  { emoji: '✈️', label: 'Transport' }
+      dates:          { emoji: '📅', label: 'Dates' },
+      weather:        { emoji: '🌤️', label: 'Weather' },
+      flight:         { emoji: '✈️', label: 'Next Flight' },
+      visa:           { emoji: '🛂', label: 'Visa & Entry' },
+      stay:           { emoji: '🏨', label: 'Stay' },
+      food:           { emoji: '🍜', label: 'Reservations' },
+      budget:         { emoji: '💰', label: 'Budget' },
+      map:            { emoji: '🗺️', label: 'Map' },
+      structure:      { emoji: '✏️', label: 'Plan' },
+      split:          { emoji: '⬛', label: 'Split' },
+      itinerary:      { emoji: '📋', label: 'Itinerary' },
+      cards:          { emoji: '🃏', label: 'Cards' },
+      discovery:      { emoji: '🔍', label: 'Discovery' },
+      transport:      { emoji: '✈️', label: 'Transport' },
+      accommodation:  { emoji: '🏨', label: 'Accommodation' }
     };
 
     function loadHomeTileConfig() {
