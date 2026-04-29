@@ -3431,36 +3431,41 @@
       });
 
       // Group consecutive days with same hotel name into stays
+      // Each day can have multiple accommodation entries (overlap days)
       var stays = [];
       sortedDays.forEach(function(day) {
         normaliseAccom(day);
         var di = currentTrip.days.indexOf(day);
-        var a = day.accommodation[0];
-        if (!a) return;
-        var name = a.name || '';
         var baseCity = day.city.indexOf('>') !== -1 ? day.city.split('>').pop().trim() : day.city;
-        var last = stays[stays.length - 1];
-        if (last && last.name === name && last.baseCity === baseCity) {
-          last.nights++;
-          last.checkoutDate = day.date;
-          last.lastDi = di;
-          // Use first day's data for fields, but track all di's
-          last.dis.push(di);
-        } else {
-          stays.push({
-            name: name,
-            city: baseCity,
-            baseCity: baseCity,
-            checkinDate: day.date,
-            checkoutDate: day.date,
-            nights: 1,
-            di: di,
-            lastDi: di,
-            dis: [di],
-            ai: 0,
-            a: a
-          });
-        }
+        day.accommodation.forEach(function(a, ai) {
+          var name = a.name || '';
+          if (!name) return;
+          // Find existing stay group for this hotel name
+          var existing = null;
+          for (var i = stays.length - 1; i >= 0; i--) {
+            if (stays[i].name === name) { existing = stays[i]; break; }
+          }
+          if (existing && existing.dis.indexOf(di) === -1) {
+            existing.nights++;
+            existing.checkoutDate = day.date;
+            existing.lastDi = di;
+            existing.dis.push(di);
+          } else if (!existing) {
+            stays.push({
+              name: name,
+              city: baseCity,
+              baseCity: baseCity,
+              checkinDate: day.date,
+              checkoutDate: day.date,
+              nights: 1,
+              di: di,
+              lastDi: di,
+              dis: [di],
+              ai: ai,
+              a: a
+            });
+          }
+        });
       });
 
       // Summary stats
@@ -3552,21 +3557,22 @@
       normaliseAccom(firstDay);
       var existingAccom = JSON.parse(JSON.stringify(firstDay.accommodation[0] || {}));
 
-      // Remove accom ONLY from the exact original days
-      dis.forEach(function(di) {
-        normaliseAccom(currentTrip.days[di]);
-        currentTrip.days[di].accommodation = currentTrip.days[di].accommodation.filter(function(a) {
+      // Remove this stay from all days
+      currentTrip.days.forEach(function(day) {
+        normaliseAccom(day);
+        day.accommodation = day.accommodation.filter(function(a) {
           return a.name !== existingAccom.name;
         });
       });
 
-      // Add to new date range — replace whatever is on those days
+      // Add to new date range — append, don't replace
       currentTrip.days.forEach(function(day) {
         var dayDate = parseTripDate(day.date);
         if (!dayDate) return;
         if (dayDate >= checkinDate && dayDate <= checkoutDate) {
           normaliseAccom(day);
-          day.accommodation = [existingAccom];
+          var alreadyHas = day.accommodation.some(function(a) { return a.name === existingAccom.name; });
+          if (!alreadyHas) day.accommodation.push(existingAccom);
         }
       });
 
@@ -3765,7 +3771,8 @@
         var dayDate = parseTripDate(day.date);
         if (dayDate && dayDate >= checkinDate && dayDate <= checkoutDate) {
           normaliseAccom(day);
-          day.accommodation.push({ name: name, notes: '', price: '', link: link, booked: false });
+          var alreadyHas = day.accommodation.some(function(a) { return a.name === name; });
+          if (!alreadyHas) day.accommodation.push({ name: name, notes: '', price: '', link: link, booked: false });
         }
       });
 
