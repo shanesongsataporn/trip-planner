@@ -3722,14 +3722,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           html += '<div style="flex:1;font-size:15px;font-weight:700;color:var(--ink);">' + list.name + '</div>';
           html += '<span style="font-size:12px;color:var(--ink-muted);margin-right:4px;">' + itemCount + ' place' + (itemCount !== 1 ? 's' : '') + '</span>';
           html += '<button onclick="event.stopPropagation();var n=prompt(\'Rename list:\',\'' + list.name.replace(/'/g, "\\'") + '\');if(n&&n.trim()){var l=(currentTrip.lists||[]).find(function(x){return x.id===\'' + list.id + '\';});if(l){l.name=n.trim();saveToStorage();renderLists();}}" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;" title="Rename">✏️</button>';
+          html += '<button onclick="event.stopPropagation();deleteList(\'' + list.id + '\')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;" title="Delete">🗑️</button>';
           html += '</div>';
           // Expanded content
           if (isExpanded) {
             html += '<div style="border-top:1px solid var(--sand-dark);">';
-            // Delete row
-            html += '<div style="display:flex;justify-content:flex-end;padding:8px 16px;background:var(--sand);">';
-            html += '<button onclick="deleteList(\'' + list.id + '\')" style="font-family:inherit;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--danger);color:var(--danger);background:none;cursor:pointer;">Delete list</button>';
-            html += '</div>';
             // Items
             if (itemCount === 0) {
               html += '<div style="padding:16px;font-size:13px;color:var(--ink-muted);">No places yet — tap + Add to get started</div>';
@@ -3741,7 +3738,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                 html += '<div style="display:flex;align-items:flex-start;gap:10px;">';
                 html += '<div style="flex:1;min-width:0;cursor:pointer;" onclick="toggleListItemEdit(\'' + list.id + '\',\'' + item.id + '\')">';
                 html += '<div style="font-size:13px;font-weight:700;color:var(--ink);">' + item.name + '</div>';
-                if (item.address) html += '<div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">' + item.address + '</div>';
                 if (item.assignedDayIndex !== null && item.assignedDayIndex !== undefined) {
                   var assignedDay = currentTrip.days[item.assignedDayIndex];
                   var dayLabel = assignedDay ? (assignedDay.city + ' · ' + assignedDay.date) : 'Day ' + (item.assignedDayIndex + 1);
@@ -3793,7 +3789,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function deleteList(listId) {
-      if (!confirm('Delete this list?')) return;
+      if (!confirm('Delete this list and all its places? This cannot be undone.')) return;
       currentTrip.lists = (currentTrip.lists || []).filter(function(l) { return l.id !== listId; });
       saveToStorage();
       renderLists();
