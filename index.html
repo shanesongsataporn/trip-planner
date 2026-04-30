@@ -483,6 +483,7 @@
     .accom-add-btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; margin-top: 16px; }
     .accom-add-btn:disabled { opacity: 0.4; cursor: default; }
     .accom-cancel-btn { width: 100%; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: none; color: var(--ink-muted); cursor: pointer; margin-top: 8px; }
+    #view-lists { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
@@ -3413,6 +3414,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('view-food').style.display = view === 'food' ? 'block' : 'none';
       document.getElementById('view-transport').style.display = view === 'transport' ? 'block' : 'none';
       document.getElementById('view-accommodation').style.display = view === 'accommodation' ? 'block' : 'none';
+      document.getElementById('view-lists').style.display = view === 'lists' ? 'block' : 'none';
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
       document.getElementById('view-structure').style.display = view === 'structure' ? 'block' : 'none';
       if (view === 'structure') renderStructure();
