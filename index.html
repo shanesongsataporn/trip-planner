@@ -1016,7 +1016,7 @@
       <div class="menu-section-label">Logistics</div>
       <button class="menu-item" onclick="setView('accommodation');toggleMenu('hamburger-menu')">🏨 Accommodation</button>
       <button class="menu-item" onclick="setView('transport');toggleMenu('hamburger-menu')">✈️ Transport</button>
-      <button class="menu-item" style="opacity:0.4;cursor:default;">🎯 Activities <span style="font-size:10px;font-weight:700;background:var(--sand-dark);padding:1px 6px;border-radius:999px;margin-left:4px;">soon</span></button>
+      <button class="menu-item" onclick="setView('lists');toggleMenu('hamburger-menu')">📋 Lists</button>
     </div>
     <div class="menu-section">
       <div class="menu-section-label">Trips</div>
@@ -1058,7 +1058,7 @@
       <div class="menu-section-label">Logistics</div>
       <button class="menu-item" onclick="setView('accommodation');toggleMenu('mob-hamburger-menu')">🏨 Accommodation</button>
       <button class="menu-item" onclick="setView('transport');toggleMenu('mob-hamburger-menu')">✈️ Transport</button>
-      <button class="menu-item" style="opacity:0.4;cursor:default;">🎯 Activities <span style="font-size:10px;font-weight:700;background:var(--sand-dark);padding:1px 6px;border-radius:999px;margin-left:4px;">soon</span></button>
+      <button class="menu-item" onclick="setView('lists');toggleMenu('mob-hamburger-menu')">📋 Lists</button>
     </div>
     <div class="menu-section">
       <div class="menu-section-label">Trip</div>
@@ -1134,6 +1134,7 @@
     </div>
   </div>
   <div id="view-accommodation"></div>
+  <div id="view-lists"></div>
   <div id="view-home"></div>
   <div id="view-budget"></div>
   <div id="view-food"></div>
@@ -2738,6 +2739,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '<div class="home-visa-travellers">' + visaDots + '</div>' +
               '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
             '</div>';
+          case 'lists':
+            var listsArr = currentTrip.lists || [];
+            var listsCount = listsArr.length;
+            var listsPlaces = listsArr.reduce(function(sum, l) { return sum + (l.items ? l.items.length : 0); }, 0);
+            return '<div class="home-tile" data-tile-id="lists" onclick="setView(\'lists\')">' +
+              '<div class="home-tile-emoji">📋</div>' +
+              '<div class="home-tile-label">Lists</div>' +
+              '<div class="home-tile-value accent" style="font-size:18px;">' + listsPlaces + ' places</div>' +
+              '<div class="home-tile-sub">' + listsCount + ' list' + (listsCount !== 1 ? 's' : '') + '</div>' +
+            '</div>';
           case 'accommodation':
             var accomStays = [];
             currentTrip.days.forEach(function(day) { normaliseAccom(day); if (day.accommodation[0] && day.accommodation[0].name) accomStays.push(day.accommodation[0]); });
@@ -3437,6 +3448,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (view === 'budget') { renderBudget(); }
       if (view === 'food') { renderFood(); }
       if (view === 'accommodation') { renderAccommodation(); }
+      if (view === 'lists') { renderLists(); }
       if (view === 'transport') { renderTransport(); }
       if (view === 'calendar') { renderCalendar(); }
       if (view === 'discovery') { renderDiscovery(); }
@@ -3537,6 +3549,62 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var accentL = b < 50 ? 55 : 40;
       document.getElementById('preview-base').style.background = 'hsl(' + h + ',12%,' + bgL + '%)';
       document.getElementById('preview-accent').style.background = 'hsl(' + h + ',56%,' + accentL + '%)';
+    }
+
+    // ===== LISTS VIEW =====
+    function renderLists() {
+      var el = document.getElementById('view-lists');
+      if (!el) return;
+      if (!Array.isArray(currentTrip.lists)) currentTrip.lists = [];
+      var lists = currentTrip.lists;
+      var html = '<div style="padding:16px;max-width:680px;margin:0 auto;">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+      html += '<h2 style="margin:0;font-size:20px;">📋 Lists</h2>';
+      html += '<button onclick="createList()" style="font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;">+ New List</button>';
+      html += '</div>';
+      if (lists.length === 0) {
+        html += '<div style="text-align:center;padding:60px 20px;color:var(--ink-muted);">';
+        html += '<div style="font-size:40px;margin-bottom:12px;">📋</div>';
+        html += '<div style="font-size:15px;font-weight:600;margin-bottom:6px;">No lists yet</div>';
+        html += '<div style="font-size:13px;">Create a list to start saving places</div>';
+        html += '</div>';
+      } else {
+        lists.forEach(function(list) {
+          html += '<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--card-shadow);margin-bottom:12px;overflow:hidden;">';
+          html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;">';
+          html += '<div style="font-size:15px;font-weight:700;">' + list.name + '</div>';
+          html += '<div style="display:flex;gap:8px;align-items:center;">';
+          html += '<span style="font-size:12px;color:var(--ink-muted);">' + (list.items ? list.items.length : 0) + ' places</span>';
+          html += '<button onclick="deleteList(\'' + list.id + '\')" style="font-family:inherit;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--danger);color:var(--danger);background:none;cursor:pointer;">Delete</button>';
+          html += '</div></div>';
+          if (!list.items || list.items.length === 0) {
+            html += '<div style="padding:12px 16px 16px;font-size:13px;color:var(--ink-muted);">No places yet</div>';
+          }
+          html += '</div>';
+        });
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function createList() {
+      var name = prompt('List name:');
+      if (!name || !name.trim()) return;
+      if (!Array.isArray(currentTrip.lists)) currentTrip.lists = [];
+      currentTrip.lists.push({
+        id: 'list_' + Date.now(),
+        name: name.trim(),
+        items: []
+      });
+      saveToStorage();
+      renderLists();
+    }
+
+    function deleteList(listId) {
+      if (!confirm('Delete this list?')) return;
+      currentTrip.lists = (currentTrip.lists || []).filter(function(l) { return l.id !== listId; });
+      saveToStorage();
+      renderLists();
     }
 
     // ===== ACCOMMODATION VIEW (Stage 2 — reads from currentTrip.stays) =====
@@ -6146,7 +6214,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','lists'];
     var HOME_TILE_META = {
       dates:          { emoji: '📅', label: 'Dates' },
       weather:        { emoji: '🌤️', label: 'Weather' },
@@ -6161,7 +6229,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       cards:          { emoji: '🃏', label: 'Cards' },
       discovery:      { emoji: '🔍', label: 'Discovery' },
       transport:      { emoji: '✈️', label: 'Transport' },
-      accommodation:  { emoji: '🏨', label: 'Accommodation' }
+      accommodation:  { emoji: '🏨', label: 'Accommodation' },
+      lists:          { emoji: '📋', label: 'Lists' }
     };
 
     function loadHomeTileConfig() {
