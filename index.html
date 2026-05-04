@@ -10300,6 +10300,64 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     }
 
+    // ===== BACKUP / RESTORE / SANDBOX (console-only) =====
+    // Layer 1 of the cascade refactor backup protocol. See CASCADE-REFACTOR-HANDOFF.md.
+    function verifyBackup(backupId) {
+      return db.collection('trips').doc(backupId).get().then(function(doc) {
+        if (!doc.exists) throw new Error('Backup document does not exist: ' + backupId);
+        var data = doc.data();
+        if (!data.data) throw new Error('Backup is missing trip data field');
+        var parsed = JSON.parse(data.data);
+        if (!parsed.days || !parsed.days.length) throw new Error('Backup has no days');
+        console.log('✅ Backup verified:', backupId, '— days:', parsed.days.length);
+        return true;
+      });
+    }
+
+    function restoreFromBackup(backupId, targetKey) {
+      targetKey = targetKey || currentTripKey;
+      console.warn('⚠️ About to restore', backupId, '→', targetKey);
+      return db.collection('trips').doc(backupId).get().then(function(doc) {
+        if (!doc.exists) throw new Error('Backup not found: ' + backupId);
+        return db.collection('trips').doc(targetKey).set(doc.data(), { merge: false });
+      }).then(function() {
+        console.log('✅ Restored', targetKey, 'from', backupId, '— reload the page to see it.');
+      });
+    }
+
+    function cloneTripToSandbox() {
+      var sandboxKey = currentTripKey + '_test';
+      console.log('Cloning', currentTripKey, '→', sandboxKey, '...');
+      return db.collection('trips').doc(currentTripKey).get().then(function(doc) {
+        if (!doc.exists) throw new Error('Source trip does not exist: ' + currentTripKey);
+        return db.collection('trips').doc(sandboxKey).set(doc.data(), { merge: false });
+      }).then(function() {
+        console.log('✅ Sandbox clone created:', sandboxKey);
+        return sandboxKey;
+      });
+    }
+
+    function backupSandbox() {
+      var sandboxKey = currentTripKey + '_test';
+      var backupId = sandboxKey + '_backup_' + Date.now();
+      console.log('Backing up', sandboxKey, '→', backupId, '...');
+      return db.collection('trips').doc(sandboxKey).get().then(function(doc) {
+        if (!doc.exists) throw new Error('Sandbox does not exist — run cloneTripToSandbox() first');
+        return db.collection('trips').doc(backupId).set(doc.data(), { merge: false });
+      }).then(function() {
+        return verifyBackup(backupId);
+      }).then(function() {
+        console.log('✅ Sandbox backup created and verified:', backupId);
+        return backupId;
+      });
+    }
+
+    // Expose to console
+    window.verifyBackup = verifyBackup;
+    window.restoreFromBackup = restoreFromBackup;
+    window.cloneTripToSandbox = cloneTripToSandbox;
+    window.backupSandbox = backupSandbox;
+
     function setupRealtimeSync() {
       db.collection('trips').doc(currentTripKey).onSnapshot(function(doc) {
         if (doc.exists) {
