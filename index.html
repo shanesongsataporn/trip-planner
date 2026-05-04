@@ -10360,6 +10360,38 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     window.cloneTripToSandbox = cloneTripToSandbox;
     window.backupSandbox = backupSandbox;
 
+    // Layer 2 — manual local backup. Independent of Firestore.
+    function downloadTripBackup() {
+      try {
+        var trip = trips[currentTripKey];
+        if (!trip) { alert('No trip loaded — nothing to back up.'); return; }
+        var payload = {
+          tripKey: currentTripKey,
+          exportedAt: new Date().toISOString(),
+          appVersion: 'cascade-refactor-phase-2.7',
+          data: trip,
+          citySettings: citySettings,
+          cardPhotos: cardPhotos
+        };
+        var json = JSON.stringify(payload, null, 2);
+        var blob = new Blob([json], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        var stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        a.href = url;
+        a.download = 'trip-backup-' + currentTripKey + '-' + stamp + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log('✅ Backup downloaded:', a.download);
+      } catch (e) {
+        console.error('Backup download failed:', e);
+        alert('Backup failed: ' + e.message);
+      }
+    }
+    window.downloadTripBackup = downloadTripBackup;
+
     function setupRealtimeSync() {
       db.collection('trips').doc(currentTripKey).onSnapshot(function(doc) {
         if (doc.exists) {
