@@ -5712,13 +5712,15 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           totEst += est; totAct += act; catEst.accommodation += est; catAct.accommodation += act;
         });
         (day.activities || []).forEach(function(a, i) {
-          var key = 'act_' + i;
+          var auid = (typeof a === 'object' && a.uid) ? a.uid : i;
+          var key = 'act_' + auid;
           var est = convertToBase(parseFloat((day.costs[key + '_est']) || 0), dayCur);
           var act = convertToBase(parseFloat((day.costs[key + '_act']) || 0), dayCur);
           totEst += est; totAct += act; catEst.activities += est; catAct.activities += act;
         });
         (day.food || []).forEach(function(f, i) {
-          var key = 'food_' + i;
+          var fuid = (f && f.uid) ? f.uid : i;
+          var key = 'food_' + fuid;
           var est = convertToBase(parseFloat((day.costs[key + '_est']) || 0), dayCur);
           var act = convertToBase(parseFloat((day.costs[key + '_act']) || 0), dayCur);
           totEst += est; totAct += act; catEst.food += est; catAct.food += act;
@@ -5766,11 +5768,14 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         (day.activities || []).forEach(function(a, i) {
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
           var emoji = (activityCategories[cat] || activityCategories['default']).emoji;
-          var k = 'act_' + i;
-          rows += makeRow(a, emoji, k, parseFloat(day.costs[k+'_est']||0), parseFloat(day.costs[k+'_act']||0));
+          var auid = (typeof a === 'object' && a.uid) ? a.uid : i;
+          var aname = (typeof a === 'object' && a.name) ? a.name : a;
+          var k = 'act_' + auid;
+          rows += makeRow(aname, emoji, k, parseFloat(day.costs[k+'_est']||0), parseFloat(day.costs[k+'_act']||0));
         });
         (day.food || []).forEach(function(f, i) {
-          var k = 'food_' + i;
+          var fuid = (f && f.uid) ? f.uid : i;
+          var k = 'food_' + fuid;
           var fname = typeof f === 'string' ? f : f.name;
           rows += makeRow(fname, '🍽️', k, parseFloat(day.costs[k+'_est']||0), parseFloat(day.costs[k+'_act']||0));
         });
@@ -10310,6 +10315,50 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (changed) { saveToStorage(); }
     }
 
+    function migrateCostKeys() {
+      if (!currentTrip || !currentTrip.days) return;
+      var changed = false;
+      currentTrip.days.forEach(function(day) {
+        if (!day.costs) return;
+        if (day.activities) {
+          day.activities.forEach(function(a) { if (typeof a === 'object' && !a.uid) { a.uid = Math.random().toString(36).substr(2, 6); changed = true; } });
+        }
+        if (day.food) { normaliseFood(day); }
+        var newCosts = {};
+        Object.keys(day.costs).forEach(function(key) {
+          var m = key.match(/^act_(\d+)_(est|act)$/);
+          if (m) {
+            var idx = parseInt(m[1], 10);
+            var suffix = m[2];
+            var act = day.activities && day.activities[idx];
+            if (act && typeof act === 'object' && act.uid) {
+              newCosts['act_' + act.uid + '_' + suffix] = day.costs[key];
+              changed = true;
+            } else {
+              changed = true;
+            }
+            return;
+          }
+          m = key.match(/^food_(\d+)_(est|act)$/);
+          if (m) {
+            var fidx = parseInt(m[1], 10);
+            var fsuffix = m[2];
+            var f = day.food && day.food[fidx];
+            if (f && f.uid) {
+              newCosts['food_' + f.uid + '_' + fsuffix] = day.costs[key];
+              changed = true;
+            } else {
+              changed = true;
+            }
+            return;
+          }
+          newCosts[key] = day.costs[key];
+        });
+        day.costs = newCosts;
+      });
+      if (changed) { saveToStorage(); }
+    }
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
@@ -10344,6 +10393,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           }
           migrateActivityUids();
           migrateDoneKeys();
+        migrateCostKeys();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
