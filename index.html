@@ -7677,7 +7677,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
                     catOptions.replace('value="' + cat + '"', 'value="' + cat + '" selected') +
                   '</select>' +
                   '<span onclick="openItinNoteModal(' + (item.day-1) + ',' + i + ')" style="font-size:11px;color:var(--ink-muted);cursor:pointer;padding:3px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);">📝 ' + (note ? 'Edit note' : 'Note') + '</span>' +
-                  (function(dk, dIdx) { var isDone = item.done && item.done[dk]; return '<span onclick="toggleDone(' + dIdx + ',\'' + dk + '\',this);refreshPanelTabs(currentDayItem);" style="font-size:11px;cursor:pointer;padding:3px 8px;border-radius:20px;border:none;font-weight:600;background:' + (isDone ? 'var(--accent)' : 'var(--sand-dark)') + ';color:' + (isDone ? '#fff' : 'var(--ink-muted)') + ';">' + (isDone ? '✓ Done' : 'Done?') + '</span>'; })('act_' + i, currentTrip.days.indexOf(item)) +
+                  (function(dk, dIdx) { var isDone = item.done && item.done[dk]; return '<span onclick="toggleDone(' + dIdx + ',\'' + dk + '\',this);refreshPanelTabs(currentDayItem);" style="font-size:11px;cursor:pointer;padding:3px 8px;border-radius:20px;border:none;font-weight:600;background:' + (isDone ? 'var(--accent)' : 'var(--sand-dark)') + ';color:' + (isDone ? '#fff' : 'var(--ink-muted)') + ';">' + (isDone ? '✓ Done' : 'Done?') + '</span>'; })('act_' + ((typeof a === 'object' && a.uid) ? a.uid : i), currentTrip.days.indexOf(item)) +
                 '</div>' +
                 (note ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + note + '</div>' : '') +
               '</div>' +
@@ -7707,7 +7707,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
                   (resBadge ? '<div style="margin-top:3px;">' + resBadge + '</div>' : '') +
                 '</div>' +
                 '<span onclick="toggleFoodExpand(\'' + cardId + '\')" style="font-size:14px;color:var(--ink-muted);cursor:pointer;padding:4px 8px;flex-shrink:0;">▾</span>' +
-                (function(dk, dIdx) { var isDone = item.done && item.done[dk]; return '<span onclick="toggleDone(' + dIdx + ',\'' + dk + '\',this);refreshPanelTabs(currentDayItem);" style="font-size:11px;cursor:pointer;padding:3px 8px;border-radius:20px;font-weight:600;background:' + (isDone ? 'var(--accent)' : 'var(--sand-dark)') + ';color:' + (isDone ? '#fff' : 'var(--ink-muted)') + ';">' + (isDone ? '✓ Done' : 'Done?') + '</span>'; })('food_' + i, currentTrip.days.indexOf(item)) +
+                (function(dk, dIdx) { var isDone = item.done && item.done[dk]; return '<span onclick="toggleDone(' + dIdx + ',\'' + dk + '\',this);refreshPanelTabs(currentDayItem);" style="font-size:11px;cursor:pointer;padding:3px 8px;border-radius:20px;font-weight:600;background:' + (isDone ? 'var(--accent)' : 'var(--sand-dark)') + ';color:' + (isDone ? '#fff' : 'var(--ink-muted)') + ';">' + (isDone ? '✓ Done' : 'Done?') + '</span>'; })('food_' + (f.uid || i), currentTrip.days.indexOf(item)) +
                 makeDeleteBtn('deleteFood(' + i + ')') +
               '</div>' +
               '<div id="' + cardId + '" style="display:none;padding:0 0 12px 32px;">' +
@@ -8411,7 +8411,16 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
           var place = results[0];
           service.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_address', 'opening_hours', 'photos', 'url'] }, function(details, detailStatus) {
             var dayIdx2 = currentTrip.days.indexOf(item);
-            var doneKey = task.type === 'food' ? 'food_' + task.index : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + task.index;
+            var doneKey;
+            if (task.type === 'food') {
+              var fItem = item.food && item.food[task.index];
+              doneKey = 'food_' + ((fItem && fItem.uid) ? fItem.uid : task.index);
+            } else if (task.type === 'accommodation') {
+              doneKey = 'accom_' + task.index;
+            } else {
+              var aItem = item.activities && item.activities[task.index];
+              doneKey = 'act_' + ((aItem && typeof aItem === 'object' && aItem.uid) ? aItem.uid : task.index);
+            }
             var isDone = item.done && item.done[doneKey];
 var pinDelay = Math.floor(Math.random() * 150);
             var el = document.createElement('div');
@@ -8565,7 +8574,7 @@ var pinDelay = Math.floor(Math.random() * 150);
           var photoKey = 'act_' + uid;
           var photo = cardPhotos[photoKey] || '';
           var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : '';
-          var dk = 'act_' + i;
+          var dk = 'act_' + uid;
           var isDone = day.done && day.done[dk];
           var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
           chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + name.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + note.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ',\'activity\',\'' + dk + '\')">' + emoji + ' ' + name + '</div>';
@@ -8579,7 +8588,7 @@ var pinDelay = Math.floor(Math.random() * 150);
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(fname.split(' for ')[0].trim() + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
           var photoKey = 'day' + day.day + '_food' + i;
           var photo = cardPhotos[photoKey] || '';
-          var dk = 'food_' + i;
+          var dk = 'food_' + ((typeof f === 'object' && f.uid) ? f.uid : i);
           var isDone = day.done && day.done[dk];
           var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
           chips += '<div class="mob-day-summary-chip" style="cursor:pointer;' + style + '" onclick="closeMobDaySummary();showMapFloatCard(\'' + fname.replace(/'/g,"\\'") + '\',\'' + photo + '\',\'' + fnote.replace(/'/g,"\\'") + '\',\'' + mapsUrl + '\',' + dIdx + ',' + i + ',\'food\',\'' + dk + '\')">\uD83C\uDF7D\uFE0F ' + fname + '</div>';
@@ -10259,6 +10268,48 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (changed) { saveToStorage(); }
     }
 
+    function migrateDoneKeys() {
+      if (!currentTrip || !currentTrip.days) return;
+      var changed = false;
+      currentTrip.days.forEach(function(day) {
+        if (!day.done) return;
+        if (day.activities) {
+          day.activities.forEach(function(a) { if (typeof a === 'object' && !a.uid) { a.uid = Math.random().toString(36).substr(2, 6); changed = true; } });
+        }
+        if (day.food) { normaliseFood(day); }
+        var newDone = {};
+        Object.keys(day.done).forEach(function(key) {
+          var m = key.match(/^act_(\d+)$/);
+          if (m) {
+            var idx = parseInt(m[1], 10);
+            var act = day.activities && day.activities[idx];
+            if (act && typeof act === 'object' && act.uid) {
+              newDone['act_' + act.uid] = day.done[key];
+              changed = true;
+            } else {
+              changed = true;
+            }
+            return;
+          }
+          m = key.match(/^food_(\d+)$/);
+          if (m) {
+            var fidx = parseInt(m[1], 10);
+            var f = day.food && day.food[fidx];
+            if (f && f.uid) {
+              newDone['food_' + f.uid] = day.done[key];
+              changed = true;
+            } else {
+              changed = true;
+            }
+            return;
+          }
+          newDone[key] = day.done[key];
+        });
+        day.done = newDone;
+      });
+      if (changed) { saveToStorage(); }
+    }
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
@@ -10292,6 +10343,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
           }
           migrateActivityUids();
+          migrateDoneKeys();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
