@@ -2953,7 +2953,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + (di+1) + '_act' + i);
             var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
             var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-            var note = (day.cardNotes && day.cardNotes[String(i)]) || '';
+            var noteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
+            var note = (day.cardNotes && day.cardNotes[noteKey]) || '';
             var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
             var actDetailId = 'home-act-detail-' + di + '-' + i;
             var photoKey = 'act_' + uid;
@@ -5380,7 +5381,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
                   ? 'act_' + sd.activities[itemIndex].uid
                   : 'day' + sd.day + '_act' + itemIndex;
                 var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
-                var note = (type === 'act' && sd.cardNotes && sd.cardNotes[String(itemIndex)]) ? sd.cardNotes[String(itemIndex)] : '';
+                var noteKey = (type === 'act' && sd.activities && sd.activities[itemIndex] && sd.activities[itemIndex].uid) ? ('act_' + sd.activities[itemIndex].uid) : String(itemIndex);
+                var note = (type === 'act' && sd.cardNotes && sd.cardNotes[noteKey]) ? sd.cardNotes[noteKey] : '';
                 return '<div style="border-bottom:1px solid var(--sand-dark);">' +
                   '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;" onclick="toggleItinItem(\'' + detailId + '\')">' +
                     '<span>' + emoji + '</span>' +
@@ -5889,7 +5891,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             ? 'act_' + item.activities[itemIndex].uid
             : 'day' + item.day + '_act' + itemIndex;
           var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
-          var note = (type === 'act' && item.cardNotes && item.cardNotes[String(itemIndex)]) ? item.cardNotes[String(itemIndex)] : '';
+          var itinAct = item.activities && item.activities[itemIndex];
+          var itinNoteKey = (type === 'act' && itinAct && typeof itinAct === 'object' && itinAct.uid) ? ('act_' + itinAct.uid) : String(itemIndex);
+          var note = (type === 'act' && item.cardNotes && item.cardNotes[itinNoteKey]) ? item.cardNotes[itinNoteKey] : '';
           return '<div class="itin-item" style="flex-direction:column;align-items:flex-start;padding:0;">' +
             '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;width:100%;cursor:pointer;" onclick="toggleItinItem(\'' + detailId + '\')">' +
               '<span>' + emoji + '</span>' +
@@ -6011,7 +6015,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var item = currentTrip.days[dayIndex];
       if (!item) return;
       if (!item.cardNotes) { item.cardNotes = {}; }
-      item.cardNotes[String(actIndex)] = value.trim();
+      var act = item.activities && item.activities[actIndex];
+      var noteKey = (act && typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(actIndex);
+      item.cardNotes[noteKey] = value.trim();
       saveToStorage();
     }
 
@@ -6364,7 +6370,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     function inlineUpdateActivityNote(dayIndex, i, value) {
       var item = currentTrip.days[dayIndex];
       if (!item.cardNotes) { item.cardNotes = {}; }
-      item.cardNotes[String(i)] = value.trim();
+      var act = item.activities && item.activities[i];
+      var noteKey = (act && typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(i);
+      item.cardNotes[noteKey] = value.trim();
       saveToStorage();
     }
 
@@ -7015,10 +7023,14 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           var iconHtml = photo
             ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
             : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
+          var splitNoteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
+          var splitNote = (day.cardNotes && day.cardNotes[splitNoteKey]) || '';
           actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
             iconHtml +
             '<div style="flex:1;"><div class="de-card-name">' + name + '</div>' +
-            '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div></div>' +
+            '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div>' +
+            (splitNote ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + splitNote + '</div>' : '') +
+            '</div>' +
             '<span class="de-card-handle">⠿</span>' +
           '</div>';
         });
@@ -7357,13 +7369,17 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var item = splitFloatCardItem.item;
       var actIndex = splitFloatCardItem.actIndex;
       if (!item.cardNotes) { item.cardNotes = {}; }
-      var current = item.cardNotes[String(actIndex)] || '';
-      showModal('Note for ' + item.activities[actIndex],
+      var act = item.activities && item.activities[actIndex];
+      if (!act) return;
+      var actName = (typeof act === 'object') ? act.name : act;
+      var noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(actIndex);
+      var current = item.cardNotes[noteKey] || '';
+      showModal('Note for ' + actName,
         '<div class="modal-field"><label>Note</label><input type="text" id="split-note-input" value="' + current.replace(/"/g, '&quot;') + '" placeholder="e.g. Book tickets in advance"></div>',
         function() {
-          item.cardNotes[String(actIndex)] = document.getElementById('split-note-input').value.trim();
+          item.cardNotes[noteKey] = document.getElementById('split-note-input').value.trim();
           saveToStorage();
-          var newNote = item.cardNotes[String(actIndex)];
+          var newNote = item.cardNotes[noteKey];
           var noteEl = document.getElementById('split-float-card-note');
           if (noteEl) {
             noteEl.innerHTML = newNote
@@ -7675,7 +7691,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             var name = (typeof a === 'object') ? a.name : a;
             var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
             var catStyle = activityCategories[cat] || activityCategories['default'];
-            var note = (item.cardNotes && item.cardNotes[String(i)]) || '';
+            var noteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
+            var note = (item.cardNotes && item.cardNotes[noteKey]) || '';
             return '<div style="padding:8px 0;border-bottom:1px solid var(--sand-dark);display:flex;align-items:flex-start;gap:6px;">' +
               dragHandleHtml +
               '<span style="font-size:16px;padding-top:2px;flex-shrink:0;">' + catStyle.emoji + '</span>' +
@@ -8364,8 +8381,10 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
 
               // check for user note
               var userNote = '';
-              if (task.type === 'activity' && item.cardNotes && item.cardNotes[String(task.index)]) {
-                userNote = item.cardNotes[String(task.index)];
+              if (task.type === 'activity' && item.cardNotes) {
+                var splitAct = item.activities && item.activities[task.index];
+                var splitNoteKey = (splitAct && typeof splitAct === 'object' && splitAct.uid) ? ('act_' + splitAct.uid) : String(task.index);
+                if (item.cardNotes[splitNoteKey]) { userNote = item.cardNotes[splitNoteKey]; }
               }
 
               var itemContext = (task.type === 'activity') ? { item: item, actIndex: task.index } : null;
@@ -8461,7 +8480,9 @@ var pinDelay = Math.floor(Math.random() * 150);
               var pk = 'act_' + actUid;
               if (cardPhotos[pk]) { photoUrl = cardPhotos[pk]; }
             }
-            var userNote = (task.type === 'activity' && item.cardNotes && item.cardNotes[String(task.index)]) ? item.cardNotes[String(task.index)] : '';
+            var geoAct = item.activities && item.activities[task.index];
+            var geoNoteKey = (geoAct && typeof geoAct === 'object' && geoAct.uid) ? ('act_' + geoAct.uid) : String(task.index);
+            var userNote = (task.type === 'activity' && item.cardNotes && item.cardNotes[geoNoteKey]) ? item.cardNotes[geoNoteKey] : '';
             (function(dn, pu, un, mu, t, idx, dayIdx, dk) {
               var handler = function(e) {
                 if (e && e.stopPropagation) { e.stopPropagation(); }
@@ -8582,7 +8603,8 @@ var pinDelay = Math.floor(Math.random() * 150);
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(name + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
           var photoKey = 'act_' + uid;
           var photo = cardPhotos[photoKey] || '';
-          var note = (day.cardNotes && day.cardNotes[String(i)]) ? day.cardNotes[String(i)] : '';
+          var mobNoteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
+          var note = (day.cardNotes && day.cardNotes[mobNoteKey]) ? day.cardNotes[mobNoteKey] : '';
           var dk = 'act_' + uid;
           var isDone = day.done && day.done[dk];
           var style = isDone ? 'opacity:0.5;text-decoration:line-through;' : '';
@@ -8746,13 +8768,17 @@ var pinDelay = Math.floor(Math.random() * 150);
       var actIndex = mapFloatCardItem.actIndex;
       if (!item) return;
       if (!item.cardNotes) { item.cardNotes = {}; }
-      var current = item.cardNotes[String(actIndex)] || '';
-      showModal('Note for ' + item.activities[actIndex],
+      var act = item.activities && item.activities[actIndex];
+      if (!act) return;
+      var actName = (typeof act === 'object') ? act.name : act;
+      var noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(actIndex);
+      var current = item.cardNotes[noteKey] || '';
+      showModal('Note for ' + actName,
         '<div class="modal-field"><label>Note</label><input type="text" id="map-float-note-input" value="' + current.replace(/"/g, '&quot;') + '" placeholder="e.g. Book tickets in advance"></div>',
         function() {
-          item.cardNotes[String(actIndex)] = document.getElementById('map-float-note-input').value.trim();
+          item.cardNotes[noteKey] = document.getElementById('map-float-note-input').value.trim();
           saveToStorage();
-          var newNote = item.cardNotes[String(actIndex)];
+          var newNote = item.cardNotes[noteKey];
           var noteEl = document.getElementById('map-float-card-note');
           if (noteEl) {
             noteEl.innerHTML = newNote
