@@ -7090,7 +7090,9 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var currentName = section === 'acts' ? (typeof day.activities[i] === 'object' ? day.activities[i].name : (day.activities[i] || '')) :
                         section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].name : '') :
                         (day.food[i] ? (typeof day.food[i] === 'string' ? day.food[i] : day.food[i].name) : '');
-      var currentNote = section === 'acts' ? '' :
+      var actForNote = (section === 'acts') ? day.activities[i] : null;
+      var actNoteKey = (actForNote && typeof actForNote === 'object' && actForNote.uid) ? ('act_' + actForNote.uid) : String(i);
+      var currentNote = section === 'acts' ? ((day.cardNotes && day.cardNotes[actNoteKey]) || '') :
                         section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].notes || '' : '') :
                         (day.food[i] ? day.food[i].notes || '' : '');
       var currentLink = section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].link || '' : '') :
@@ -7151,6 +7153,11 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             deCurrentDay.activities[i] = { name: newName, uid: generateUid() };
           }
         }
+        if (!deCurrentDay.cardNotes) { deCurrentDay.cardNotes = {}; }
+        var savedAct = deCurrentDay.activities[i];
+        var savedNoteKey = (savedAct && typeof savedAct === 'object' && savedAct.uid) ? ('act_' + savedAct.uid) : String(i);
+        if (newNote) { deCurrentDay.cardNotes[savedNoteKey] = newNote; }
+        else { delete deCurrentDay.cardNotes[savedNoteKey]; }
       } else if (section === 'accom') {
         normaliseAccom(deCurrentDay);
         if (newName) deCurrentDay.accommodation[i].name = newName;
