@@ -5992,11 +5992,15 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var item = currentTrip.days[dayIndex];
       if (!item) return;
       if (!item.cardNotes) { item.cardNotes = {}; }
-      var current = item.cardNotes[String(actIndex)] || '';
-      showModal('Note for ' + item.activities[actIndex],
+      var act = item.activities[actIndex];
+      if (!act) return;
+      var actName = (typeof act === 'object') ? act.name : act;
+      var noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(actIndex);
+      var current = item.cardNotes[noteKey] || '';
+      showModal('Note for ' + actName,
         '<div class="modal-field"><label>Note</label><input type="text" id="itin-note-modal-input" value="' + current.replace(/"/g, '&quot;') + '" placeholder="e.g. Book tickets in advance"></div>',
         function() {
-          item.cardNotes[String(actIndex)] = document.getElementById('itin-note-modal-input').value.trim();
+          item.cardNotes[noteKey] = document.getElementById('itin-note-modal-input').value.trim();
           saveToStorage();
           renderItinerary();
         }
@@ -6268,7 +6272,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
                 }).join('') +
               '</div>' +
             '</div>' +
-            '<button onclick="openItinNoteModal(' + dayIndex + ',' + i + ')" style="font-family:inherit;font-size:11px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">📝 ' + ((item.cardNotes && item.cardNotes[String(i)]) ? 'Edit note' : 'Note') + '</button>' +
+            '<button onclick="openItinNoteModal(' + dayIndex + ',' + i + ')" style="font-family:inherit;font-size:11px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;">📝 ' + ((item.cardNotes && a && a.uid && item.cardNotes['act_' + a.uid]) ? 'Edit note' : 'Note') + '</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -10359,6 +10363,34 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (changed) { saveToStorage(); }
     }
 
+    function migrateCardNotesKeys() {
+      if (!currentTrip || !currentTrip.days) return;
+      var changed = false;
+      currentTrip.days.forEach(function(day) {
+        if (!day.cardNotes) return;
+        if (day.activities) {
+          day.activities.forEach(function(a) { if (typeof a === 'object' && !a.uid) { a.uid = Math.random().toString(36).substr(2, 6); changed = true; } });
+        }
+        var newNotes = {};
+        Object.keys(day.cardNotes).forEach(function(key) {
+          if (/^\d+$/.test(key)) {
+            var idx = parseInt(key, 10);
+            var act = day.activities && day.activities[idx];
+            if (act && typeof act === 'object' && act.uid) {
+              newNotes['act_' + act.uid] = day.cardNotes[key];
+              changed = true;
+            } else {
+              changed = true;
+            }
+            return;
+          }
+          newNotes[key] = day.cardNotes[key];
+        });
+        day.cardNotes = newNotes;
+      });
+      if (changed) { saveToStorage(); }
+    }
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
@@ -10393,7 +10425,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           }
           migrateActivityUids();
           migrateDoneKeys();
-        migrateCostKeys();
+          migrateCostKeys();
+          migrateCardNotesKeys();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
