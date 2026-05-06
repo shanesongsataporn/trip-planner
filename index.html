@@ -10469,6 +10469,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       // IMPORTANT: always use { merge: true } here.
       // cardPhotos and wishlist are saved separately by saveCardPhotos() and saveDiscWishlist().
       // Without merge:true, .set() overwrites the whole Firestore doc and wipes those fields.
+      if (window.__TEST_MODE) {
+        console.log('🧪 [TEST_MODE] saveToStorage() blocked — no Firestore/localStorage write');
+        return;
+      }
       db.collection('trips').doc(currentTripKey).set({
         data: JSON.stringify(trips[currentTripKey]),
         citySettings: JSON.stringify(citySettings),
