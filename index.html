@@ -10464,6 +10464,82 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }
     };
 
+    // ===== TEST 1 — Schema integrity (read-only) =====
+    window.__test.test_schema_integrity = function() {
+      console.log('%c--- TEST 1: schema_integrity ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      assert(!!currentTrip, 'currentTrip exists');
+      assert(Array.isArray(currentTrip.days) && currentTrip.days.length > 0, 'currentTrip.days is non-empty array');
+      assert(Array.isArray(currentTrip.stays), 'currentTrip.stays is array (may be empty)');
+      var allDaysHaveDateOrId = currentTrip.days.every(function(d) { return d.date || d.id; });
+      assert(allDaysHaveDateOrId, 'every day has either .date or .id');
+      var stays = currentTrip.stays || [];
+      var allStaysResolve = stays.every(function(s) {
+        var ci = typeof s.checkinDayIndex === 'number' && currentTrip.days[s.checkinDayIndex];
+        var co = typeof s.checkoutDayIndex === 'number' && currentTrip.days[s.checkoutDayIndex];
+        return (ci && co) || (s.checkinDayId && s.checkoutDayId);
+      });
+      assert(allStaysResolve, 'every stay resolves via checkinDayIndex/checkoutDayIndex OR checkinDayId/checkoutDayId');
+      var hasStartDateOrLegacyDate = !!currentTrip.startDate || !!(currentTrip.days[0] && currentTrip.days[0].date);
+      assert(hasStartDateOrLegacyDate, 'trip has either .startDate (new model) or days[0].date (legacy model)');
+    };
+
+    // ===== TEST 7 — Audit day consistency (read-only diagnostic) =====
+    window.__test.auditDayConsistency = function() {
+      console.log('%c--- TEST 7: auditDayConsistency ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      var issues = { stayRefs: [], orphanCardNotes: [], orphanCosts: [], orphanDone: [], routeOutOfBounds: [], dayDateMissing: [] };
+      // Stay refs resolve
+      (currentTrip.stays || []).forEach(function(s) {
+        if (typeof s.checkinDayIndex !== 'number' || !currentTrip.days[s.checkinDayIndex]) {
+          issues.stayRefs.push(s.name + ' checkinDayIndex=' + s.checkinDayIndex + ' invalid');
+        }
+        if (typeof s.checkoutDayIndex !== 'number' || !currentTrip.days[s.checkoutDayIndex]) {
+          issues.stayRefs.push(s.name + ' checkoutDayIndex=' + s.checkoutDayIndex + ' invalid');
+        }
+      });
+      // Orphaned uid-based keys & out-of-bounds routes
+      currentTrip.days.forEach(function(day, di) {
+        if (!day.date) { issues.dayDateMissing.push('day index ' + di + ' has no .date'); }
+        var actUids = (day.activities || []).filter(function(a) { return a && typeof a === 'object' && a.uid; }).map(function(a) { return a.uid; });
+        var foodUids = (day.food || []).filter(function(f) { return f && typeof f === 'object' && f.uid; }).map(function(f) { return f.uid; });
+        // cardNotes
+        Object.keys(day.cardNotes || {}).forEach(function(k) {
+          var m = k.match(/^act_(.+)$/);
+          if (m && actUids.indexOf(m[1]) === -1) { issues.orphanCardNotes.push('day ' + di + ' cardNotes[' + k + '] has no matching activity'); }
+          if (/^\d+$/.test(k)) { issues.orphanCardNotes.push('day ' + di + ' cardNotes[' + k + '] is positional (should be uid-based)'); }
+        });
+        // costs
+        Object.keys(day.costs || {}).forEach(function(k) {
+          var ma = k.match(/^act_([^_]+)_(?:est|act)$/);
+          var mf = k.match(/^food_([^_]+)_(?:est|act)$/);
+          if (ma && actUids.indexOf(ma[1]) === -1) { issues.orphanCosts.push('day ' + di + ' costs[' + k + '] has no matching activity'); }
+          if (mf && foodUids.indexOf(mf[1]) === -1) { issues.orphanCosts.push('day ' + di + ' costs[' + k + '] has no matching food'); }
+        });
+        // done
+        Object.keys(day.done || {}).forEach(function(k) {
+          var ma = k.match(/^act_(.+)$/);
+          var mf = k.match(/^food_(.+)$/);
+          if (ma && actUids.indexOf(ma[1]) === -1) { issues.orphanDone.push('day ' + di + ' done[' + k + '] has no matching activity'); }
+          if (mf && foodUids.indexOf(mf[1]) === -1) { issues.orphanDone.push('day ' + di + ' done[' + k + '] has no matching food'); }
+        });
+        // routeOrder bounds
+        var stopCount = (day.activities || []).length + (day.food || []).length;
+        (day.routeOrder || []).forEach(function(idx) {
+          if (idx < 0 || idx >= stopCount) { issues.routeOutOfBounds.push('day ' + di + ' routeOrder index ' + idx + ' out of bounds (stops=' + stopCount + ')'); }
+        });
+      });
+      // Report
+      assert(issues.stayRefs.length === 0, 'all stay refs resolve' + (issues.stayRefs.length ? ': ' + JSON.stringify(issues.stayRefs) : ''));
+      assert(issues.orphanCardNotes.length === 0, 'no orphaned cardNotes keys' + (issues.orphanCardNotes.length ? ': ' + JSON.stringify(issues.orphanCardNotes) : ''));
+      assert(issues.orphanCosts.length === 0, 'no orphaned costs keys' + (issues.orphanCosts.length ? ': ' + JSON.stringify(issues.orphanCosts) : ''));
+      assert(issues.orphanDone.length === 0, 'no orphaned done keys' + (issues.orphanDone.length ? ': ' + JSON.stringify(issues.orphanDone) : ''));
+      assert(issues.routeOutOfBounds.length === 0, 'no routeOrder indices out of bounds' + (issues.routeOutOfBounds.length ? ': ' + JSON.stringify(issues.routeOutOfBounds) : ''));
+      assert(issues.dayDateMissing.length === 0, 'every day has a .date string' + (issues.dayDateMissing.length ? ': ' + JSON.stringify(issues.dayDateMissing) : ''));
+      window.__test._lastAudit = issues;
+      return issues;
+    };
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
