@@ -10540,6 +10540,46 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       return issues;
     };
 
+    // ===== TEST 6 — Migration idempotency =====
+    // Verifies that re-running on-load migrations against already-migrated data produces no changes.
+    // Uses a deep-equal helper that ignores object key ordering (JSON.stringify can vary by insertion order).
+    window.__test._deepEqual = function(a, b) {
+      if (a === b) return true;
+      if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+      if (Array.isArray(a) !== Array.isArray(b)) return false;
+      var ka = Object.keys(a), kb = Object.keys(b);
+      if (ka.length !== kb.length) return false;
+      for (var i = 0; i < ka.length; i++) {
+        if (!Object.prototype.hasOwnProperty.call(b, ka[i])) return false;
+        if (!window.__test._deepEqual(a[ka[i]], b[ka[i]])) return false;
+      }
+      return true;
+    };
+
+    window.__test.test_migration = function() {
+      console.log('%c--- TEST 6: test_migration ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var before = JSON.parse(JSON.stringify(currentTrip));
+        try { migrateActivityUids(); } catch(e) { assert(false, 'migrateActivityUids threw: ' + e.message); }
+        try { migrateDoneKeys(); } catch(e) { assert(false, 'migrateDoneKeys threw: ' + e.message); }
+        try { migrateCostKeys(); } catch(e) { assert(false, 'migrateCostKeys threw: ' + e.message); }
+        try { migrateCardNotesKeys(); } catch(e) { assert(false, 'migrateCardNotesKeys threw: ' + e.message); }
+        var equal = window.__test._deepEqual(before, currentTrip);
+        assert(equal, 'all 4 on-load migrations are idempotent (no changes on second run)');
+        if (!equal) {
+          for (var i = 0; i < before.days.length; i++) {
+            if (!window.__test._deepEqual(before.days[i], currentTrip.days[i])) {
+              console.warn('Day ' + i + ' (' + before.days[i].date + ', ' + before.days[i].city + ') changed:');
+              console.warn('  before:', JSON.stringify(before.days[i]));
+              console.warn('  after: ', JSON.stringify(currentTrip.days[i]));
+              break;
+            }
+          }
+        }
+      });
+    };
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
@@ -10566,6 +10606,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           if (data.data) {
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
+            currentTrip = trips[currentTripKey];
           }
           if (data.citySettings) {
             var pc = JSON.parse(data.citySettings);
