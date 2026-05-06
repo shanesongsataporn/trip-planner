@@ -10424,6 +10424,46 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (changed) { saveToStorage(); }
     }
 
+    // ===== PHASE 3 TEST HARNESS — HELPERS =====
+    // All test infrastructure lives in window.__test for easy console access.
+    // Destructive tests set window.__TEST_MODE = true to block Firestore/localStorage writes.
+
+    window.__test = window.__test || {};
+
+    window.__test.assert = function(condition, message) {
+      var entry = { pass: !!condition, message: message };
+      if (window.__test._currentRun) { window.__test._currentRun.push(entry); }
+      if (condition) { console.log('%c✅ PASS:', 'color:#2D9E75;font-weight:bold', message); }
+      else { console.error('❌ FAIL:', message); }
+      return !!condition;
+    };
+
+    window.__test.snapshotTrip = function() {
+      return JSON.parse(JSON.stringify(currentTrip));
+    };
+
+    window.__test.restoreSnapshot = function(snap) {
+      if (!snap) { console.warn('No snapshot to restore'); return; }
+      trips[currentTripKey] = JSON.parse(JSON.stringify(snap));
+    };
+
+    window.__test.resetSandbox = function() {
+      window.__TEST_MODE = false;
+      window.__test._currentRun = null;
+      console.log('🧹 Test mode cleared. Reload page to refresh from Firestore if needed.');
+    };
+
+    window.__test.withTestMode = function(fn) {
+      var snap = window.__test.snapshotTrip();
+      window.__TEST_MODE = true;
+      try { fn(); }
+      catch (e) { console.error('Test threw:', e); window.__test.assert(false, 'Test threw exception: ' + e.message); }
+      finally {
+        window.__test.restoreSnapshot(snap);
+        window.__TEST_MODE = false;
+      }
+    };
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
