@@ -10580,6 +10580,66 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     };
 
+    // ===== Helper: build a clean empty day for cascade tests =====
+    window.__test._makeTestDay = function(city) {
+      return {
+        day: 0, date: '', city: city || 'Bangkok', lat: 0, lng: 0, note: '',
+        accommodation: [], activities: [], activityCategories: [], activityLinks: [],
+        food: [], transport: [], cardNotes: {}, costs: {}, done: {},
+        routeOrder: [], routeLegs: []
+      };
+    };
+
+    // ===== TEST 2 — Add day cascades dates and stay refs =====
+    window.__test.test_add_day = function() {
+      console.log('%c--- TEST 2: test_add_day ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var beforeLen = currentTrip.days.length;
+        var lastIdxBefore = beforeLen - 1;
+        var lastDateBefore = currentTrip.days[lastIdxBefore].date;
+        var insertAt = 2;
+        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        currentTrip.days.splice(insertAt, 0, window.__test._makeTestDay('Bangkok'));
+        assert(currentTrip.days.length === beforeLen + 1, 'day count incremented by 1');
+        var newLastDate = currentTrip.days[currentTrip.days.length - 1].date;
+        assert(newLastDate && newLastDate !== lastDateBefore, 'last day date shifted forward (cascade) — was "' + lastDateBefore + '", now "' + newLastDate + '"');
+        var staysShifted = (currentTrip.stays || []).every(function(s, i) {
+          var snap = staysSnap[i];
+          if (!snap) return true;
+          if (typeof snap.checkinDayIndex !== 'number') return true;
+          if (snap.checkinDayIndex >= insertAt) { return s.checkinDayIndex === snap.checkinDayIndex + 1; }
+          return s.checkinDayIndex === snap.checkinDayIndex;
+        });
+        assert(staysShifted, 'all stays at or after insert point shifted checkinDayIndex +1');
+      });
+    };
+
+    // ===== TEST 3 — Delete day shrinks stay that covered it =====
+    window.__test.test_delete_day_with_stay = function() {
+      console.log('%c--- TEST 3: test_delete_day_with_stay ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        var deleteAt = 2;
+        var coveringStay = staysSnap.find(function(s) {
+          return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
+            && s.checkinDayIndex <= deleteAt && s.checkoutDayIndex >= deleteAt;
+        });
+        assert(!!coveringStay, 'found a stay covering day index ' + deleteAt + ' (test setup)');
+        if (!coveringStay) return;
+        var nightsBefore = coveringStay.checkoutDayIndex - coveringStay.checkinDayIndex;
+        var beforeLen = currentTrip.days.length;
+        currentTrip.days.splice(deleteAt, 1);
+        assert(currentTrip.days.length === beforeLen - 1, 'day count decremented by 1');
+        var stayAfter = (currentTrip.stays || []).find(function(s) { return s.id === coveringStay.id || s.name === coveringStay.name; });
+        assert(!!stayAfter, 'stay still exists after delete');
+        if (!stayAfter) return;
+        var nightsAfter = stayAfter.checkoutDayIndex - stayAfter.checkinDayIndex;
+        assert(nightsAfter === nightsBefore - 1, 'stay nights count dropped by 1 — was ' + nightsBefore + ', now ' + nightsAfter);
+      });
+    };
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
