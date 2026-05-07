@@ -8102,6 +8102,73 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       return s ? s.emoji : '\uD83D\uDCCD';
     }
 
+    // ===== CASCADE HELPERS (Phase 4) =====
+    // Pure-read helpers. New model uses trip.startDate + index. Legacy fallback to day.date string.
+    function getDayDate(day, trip) {
+      if (!day) return '';
+      if (trip && trip.startDate) {
+        var idx = (trip.days || []).indexOf(day);
+        if (idx >= 0) {
+          var year = trip.year || 2026;
+          var parts = trip.startDate.split('-');
+          if (parts.length === 3) {
+            var d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+            d.setDate(d.getDate() + idx);
+            var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            var monNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return dayNames[d.getDay()] + ' ' + monNames[d.getMonth()] + ' ' + d.getDate();
+          }
+        }
+      }
+      return day.date || '';
+    }
+
+    function isTransitDay(day) {
+      if (!day) return false;
+      var transport = day.transport || [];
+      for (var i = 0; i < transport.length; i++) {
+        var t = transport[i];
+        if (!t) continue;
+        var typeStr = (t.type || '').toLowerCase();
+        if (typeStr === 'flight' && t.legs && t.legs.length) {
+          var firstFrom = t.legs[0] && t.legs[0].from && t.legs[0].from.city;
+          var lastTo = t.legs[t.legs.length - 1] && t.legs[t.legs.length - 1].to && t.legs[t.legs.length - 1].to.city;
+          if (firstFrom && lastTo && firstFrom !== lastTo) return true;
+        }
+      }
+      // Legacy fallback: city string with ">"
+      return !!(day.city && day.city.indexOf('>') !== -1);
+    }
+
+    // Phase 4 Step 4 — resolve a stay's checkin/checkout day. Prefers id, falls back to index.
+    // Used by readers during the strangle period — once every reader uses these helpers,
+    // legacy checkinDayIndex/checkoutDayIndex can be deleted.
+    function getDayByCheckinRef(stay, trip) {
+      if (!stay || !trip || !trip.days) return null;
+      if (stay.checkinDayId) {
+        for (var i = 0; i < trip.days.length; i++) {
+          if (trip.days[i].id === stay.checkinDayId) return trip.days[i];
+        }
+      }
+      if (typeof stay.checkinDayIndex === 'number') {
+        return trip.days[stay.checkinDayIndex] || null;
+      }
+      return null;
+    }
+
+    function getDayByCheckoutRef(stay, trip) {
+      if (!stay || !trip || !trip.days) return null;
+      if (stay.checkoutDayId) {
+        for (var i = 0; i < trip.days.length; i++) {
+          if (trip.days[i].id === stay.checkoutDayId) return trip.days[i];
+        }
+      }
+      if (typeof stay.checkoutDayIndex === 'number') {
+        return trip.days[stay.checkoutDayIndex] || null;
+      }
+      return null;
+    }
+
     // ===== TRIP DATA =====
     var trips = {
       thailand_2026: {
@@ -10424,6 +10491,74 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (changed) { saveToStorage(); }
     }
 
+    // Phase 4 Step 3 — assign stable id to every day. Idempotent.
+    function migrateDayIds() {
+      if (!currentTrip || !currentTrip.days) return;
+      if (currentTrip !== trips[currentTripKey]) {
+        console.error('[migrateDayIds] currentTrip reference drift detected — aborting');
+        return;
+      }
+      var changed = false;
+      currentTrip.days.forEach(function(day) {
+        if (!day.id) {
+          day.id = 'day_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+          changed = true;
+        }
+      });
+      if (changed) {
+        console.log('[migrateDayIds] assigned ids to ' + currentTrip.days.length + ' days');
+        saveToStorage();
+      }
+    }
+
+    // Phase 4 Step 4 — give every stay a checkinDayId / checkoutDayId.
+    // Strangle pattern: keeps existing checkinDayIndex / checkoutDayIndex untouched.
+    // Guarded against accidental live-trip runs via localStorage.__ALLOW_LIVE_MIGRATION.
+    function migrateStayDayIds() {
+      if (!currentTrip || !currentTrip.stays || !currentTrip.stays.length) return;
+      if (currentTrip !== trips[currentTripKey]) {
+        console.error('[migrateStayDayIds] currentTrip reference drift detected — aborting');
+        return;
+      }
+      // Live-trip guard — sandbox runs unguarded; live requires explicit opt-in.
+      if (currentTripKey !== 'thailand_2026_test' && localStorage.getItem('__ALLOW_LIVE_MIGRATION') !== 'true') {
+        var stayMissingIds = currentTrip.stays.some(function(s) { return !s.checkinDayId || !s.checkoutDayId; });
+        if (stayMissingIds) {
+          console.warn('[migrateStayDayIds] live trip detected, would migrate stays but __ALLOW_LIVE_MIGRATION is not set');
+          console.warn('[migrateStayDayIds] to run: localStorage.setItem("__ALLOW_LIVE_MIGRATION", "true"); location.reload();');
+        }
+        return;
+      }
+      var changed = false;
+      var skipped = 0;
+      currentTrip.stays.forEach(function(stay) {
+        if (stay.checkinDayId && stay.checkoutDayId) return; // already migrated
+        var ciDay = currentTrip.days[stay.checkinDayIndex];
+        var coDay = currentTrip.days[stay.checkoutDayIndex];
+        if (!ciDay || !coDay || !ciDay.id || !coDay.id) {
+          console.warn('[migrateStayDayIds] skipping stay "' + stay.name + '" — checkin/checkout index does not resolve to a day with an id', {
+            checkinDayIndex: stay.checkinDayIndex,
+            checkoutDayIndex: stay.checkoutDayIndex,
+            ciDay: ciDay,
+            coDay: coDay
+          });
+          skipped++;
+          return;
+        }
+        if (!stay.checkinDayId) { stay.checkinDayId = ciDay.id; changed = true; }
+        if (!stay.checkoutDayId) { stay.checkoutDayId = coDay.id; changed = true; }
+      });
+      if (changed) {
+        console.log('[migrateStayDayIds] assigned ids to ' + currentTrip.stays.length + ' stays' + (skipped ? ' (' + skipped + ' skipped)' : ''));
+        saveToStorage();
+        // Auto-clear the live flag after a successful live migration so it doesn't linger.
+        if (localStorage.getItem('__ALLOW_LIVE_MIGRATION') === 'true') {
+          localStorage.removeItem('__ALLOW_LIVE_MIGRATION');
+          console.log('[migrateStayDayIds] cleared __ALLOW_LIVE_MIGRATION flag');
+        }
+      }
+    }
+
     // ===== PHASE 3 TEST HARNESS — HELPERS =====
     // All test infrastructure lives in window.__test for easy console access.
     // Destructive tests set window.__TEST_MODE = true to block Firestore/localStorage writes.
@@ -10566,8 +10701,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         try { migrateDoneKeys(); } catch(e) { assert(false, 'migrateDoneKeys threw: ' + e.message); }
         try { migrateCostKeys(); } catch(e) { assert(false, 'migrateCostKeys threw: ' + e.message); }
         try { migrateCardNotesKeys(); } catch(e) { assert(false, 'migrateCardNotesKeys threw: ' + e.message); }
+        try { migrateDayIds(); } catch(e) { assert(false, 'migrateDayIds threw: ' + e.message); }
+        try { migrateStayDayIds(); } catch(e) { assert(false, 'migrateStayDayIds threw: ' + e.message); }
         var equal = window.__test._deepEqual(before, currentTrip);
-        assert(equal, 'all 4 on-load migrations are idempotent (no changes on second run)');
+        assert(equal, 'all 6 on-load migrations are idempotent (no changes on second run)');
         if (!equal) {
           for (var i = 0; i < before.days.length; i++) {
             if (!window.__test._deepEqual(before.days[i], currentTrip.days[i])) {
@@ -10719,6 +10856,41 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     };
 
+    // ===== RUNNER — Run all tests, collect results, print summary =====
+    window.__test.runAllTests = function() {
+      console.clear();
+      console.log('%c=== PHASE 3 TEST HARNESS — FULL RUN ===', 'color:#3498DB;font-size:14px;font-weight:bold');
+      console.log('Trip: ' + (currentTrip.name || '(unnamed)'));
+      console.log('Days: ' + currentTrip.days.length + ' | Stays: ' + ((currentTrip.stays || []).length));
+      console.log('Timestamp: ' + new Date().toISOString());
+      console.log('');
+      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block'];
+      var results = [];
+      tests.forEach(function(name) {
+        window.__test._currentRun = [];
+        try { window.__test[name](); }
+        catch (e) {
+          console.error('Test threw:', e);
+          window.__test._currentRun.push({ pass: false, message: 'EXCEPTION: ' + e.message });
+        }
+        var entries = window.__test._currentRun.slice();
+        var passCount = entries.filter(function(e) { return e.pass; }).length;
+        var allPass = entries.length > 0 && passCount === entries.length;
+        results.push({ name: name, allPass: allPass, passCount: passCount, total: entries.length, entries: entries });
+        window.__test._currentRun = null;
+      });
+      console.log('');
+      console.log('%c=== SUMMARY ===', 'color:#3498DB;font-size:14px;font-weight:bold');
+      results.forEach(function(r) {
+        var icon = r.allPass ? '✅' : '❌';
+        console.log(icon + ' ' + r.name + ' (' + r.passCount + '/' + r.total + ' assertions passed)');
+      });
+      console.log('');
+      console.log('Full results stored at window.__test._lastRun');
+      window.__test._lastRun = results;
+      return results;
+    };
+
     // ===== STORAGE =====
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
@@ -10738,28 +10910,42 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
 
     function loadFromStorage(callback) {
       var savedKey = localStorage.getItem('current_trip_key');
-      if (savedKey && trips[savedKey]) { currentTripKey = savedKey; }
+      if (savedKey) { currentTripKey = savedKey; }
       db.collection('trips').doc(currentTripKey).get().then(function(doc) {
         if (doc.exists) {
           var data = doc.data();
           if (data.data) {
-            var parsed = JSON.parse(data.data);
-            trips[currentTripKey] = parsed;
-            currentTrip = trips[currentTripKey];
+            try {
+              var parsed = JSON.parse(data.data);
+              trips[currentTripKey] = parsed;
+              currentTrip = trips[currentTripKey];
+            } catch (e) {
+              console.error('[loadFromStorage] data field unparseable — keeping defaults:', e.message);
+            }
           }
           if (data.citySettings) {
-            var pc = JSON.parse(data.citySettings);
-            Object.keys(pc).forEach(function(key) { citySettings[key] = pc[key]; });
+            try {
+              var pc = JSON.parse(data.citySettings);
+              Object.keys(pc).forEach(function(key) { citySettings[key] = pc[key]; });
+            } catch (e) {
+              console.error('[loadFromStorage] citySettings unparseable — keeping defaults:', e.message);
+            }
           }
           if (data.cardPhotos) {
-            var remote = JSON.parse(data.cardPhotos);
-            Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
-            try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+            try {
+              var remote = JSON.parse(data.cardPhotos);
+              Object.keys(remote).forEach(function(key) { cardPhotos[key] = remote[key]; });
+              try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
+            } catch (e) {
+              console.error('[loadFromStorage] cardPhotos unparseable — skipping (probably corrupted):', e.message);
+            }
           }
           migrateActivityUids();
           migrateDoneKeys();
           migrateCostKeys();
           migrateCardNotesKeys();
+          migrateDayIds();
+          migrateStayDayIds();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
