@@ -10445,6 +10445,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     window.__test.restoreSnapshot = function(snap) {
       if (!snap) { console.warn('No snapshot to restore'); return; }
       trips[currentTripKey] = JSON.parse(JSON.stringify(snap));
+      currentTrip = trips[currentTripKey];
     };
 
     window.__test.resetSandbox = function() {
@@ -10637,6 +10638,84 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (!stayAfter) return;
         var nightsAfter = stayAfter.checkoutDayIndex - stayAfter.checkinDayIndex;
         assert(nightsAfter === nightsBefore - 1, 'stay nights count dropped by 1 — was ' + nightsBefore + ', now ' + nightsAfter);
+      });
+    };
+
+    // ===== TEST 4 — Change flight date moves transit day =====
+    window.__test.test_change_flight_date = function() {
+      console.log('%c--- TEST 4: test_change_flight_date ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var sourceIdx = -1, flight = null;
+        for (var i = 1; i < currentTrip.days.length; i++) {
+          var d = currentTrip.days[i];
+          var isTransit = (d.city || '').indexOf('>') !== -1;
+          var hasFlight = (d.transport || []).some(function(x) { return (x.type || '').toLowerCase() === 'flight'; });
+          if (isTransit && hasFlight) {
+            sourceIdx = i;
+            flight = d.transport.find(function(x) { return (x.type || '').toLowerCase() === 'flight'; });
+            break;
+          }
+        }
+        assert(sourceIdx >= 0 && !!flight, 'found a transit day with a flight to move (test setup) — sourceIdx=' + sourceIdx);
+        if (sourceIdx < 0 || !flight) return;
+        var targetIdx = sourceIdx + 1;
+        assert(targetIdx < currentTrip.days.length, 'target day exists at index ' + targetIdx);
+        if (targetIdx >= currentTrip.days.length) return;
+        currentTrip.days[sourceIdx].transport = (currentTrip.days[sourceIdx].transport || []).filter(function(x) { return x !== flight; });
+        currentTrip.days[targetIdx].transport = (currentTrip.days[targetIdx].transport || []).concat([flight]);
+        var hasIsTransit = typeof window.isTransitDay === 'function';
+        assert(hasIsTransit, 'isTransitDay helper exists (will be built in Phase 4)');
+        if (!hasIsTransit) return;
+        try {
+          assert(window.isTransitDay(currentTrip.days[sourceIdx]) === false, 'source day no longer detected as transit');
+          assert(window.isTransitDay(currentTrip.days[targetIdx]) === true, 'target day now detected as transit');
+        } catch (e) { assert(false, 'isTransitDay threw: ' + e.message); }
+      });
+    };
+
+    // ===== TEST 5 — Reorder city block cascades dates and stay refs =====
+    window.__test.test_reorder_city_block = function() {
+      console.log('%c--- TEST 5: test_reorder_city_block ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var blockCity = 'Koh Samui';
+        var blockStart = -1, blockEnd = -1;
+        for (var i = 0; i < currentTrip.days.length; i++) {
+          if ((currentTrip.days[i].city || '').indexOf(blockCity) !== -1 && (currentTrip.days[i].city || '').indexOf('>') === -1) {
+            if (blockStart === -1) blockStart = i;
+            blockEnd = i;
+          }
+        }
+        assert(blockStart >= 0 && blockEnd >= blockStart, 'found ' + blockCity + ' block at indices ' + blockStart + '–' + blockEnd);
+        if (blockStart < 0) return;
+        var blockLen = blockEnd - blockStart + 1;
+        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        var blockDays = currentTrip.days.splice(blockStart, blockLen);
+        var insertAt = 1;
+        currentTrip.days.splice.apply(currentTrip.days, [insertAt, 0].concat(blockDays));
+        var firstFiveAreBlock = true;
+        for (var j = insertAt; j < insertAt + blockLen; j++) {
+          if ((currentTrip.days[j].city || '').indexOf(blockCity) === -1) { firstFiveAreBlock = false; break; }
+        }
+        assert(firstFiveAreBlock, blockCity + ' block now occupies indices ' + insertAt + '–' + (insertAt + blockLen - 1));
+        var blockStays = staysSnap.filter(function(s) {
+          return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
+            && s.checkoutDayIndex >= blockStart && s.checkinDayIndex <= blockEnd;
+        });
+        assert(blockStays.length > 0, 'found ' + blockStays.length + ' stays overlapping the moved ' + blockCity + ' block');
+        var blockStaysStillResolve = blockStays.every(function(snap) {
+          var live = (currentTrip.stays || []).find(function(s) { return s.id === snap.id || s.name === snap.name; });
+          if (!live) return false;
+          var refDay = currentTrip.days[live.checkinDayIndex];
+          if (!refDay) return false;
+          return (refDay.city || '').indexOf(blockCity) !== -1;
+        });
+        assert(blockStaysStillResolve, blockCity + ' stays still point at days whose city contains "' + blockCity + '"');
+        var firstDateAfter = currentTrip.days[0].date;
+        var firstDateBefore = (staysSnap.length && currentTrip.days[0]) ? currentTrip.days[0].date : null;
+        assert(currentTrip.days[insertAt].date && currentTrip.days[insertAt].date !== blockDays[0].date,
+          'dates re-derived for moved block — was "' + blockDays[0].date + '", now "' + currentTrip.days[insertAt].date + '"');
       });
     };
 
