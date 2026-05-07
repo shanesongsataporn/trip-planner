@@ -3806,9 +3806,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var sym = currentTrip.baseCurrencySymbol || '$';
       if (!Array.isArray(currentTrip.stays)) currentTrip.stays = [];
 
-      // Sort stays by check-in day index
+      // Sort stays by check-in day (via ref helper — survives day reorder)
       var stays = currentTrip.stays.slice().sort(function(a, b) {
-        return (a.checkinDayIndex || 0) - (b.checkinDayIndex || 0);
+        var dayA = getDayByCheckinRef(a, currentTrip);
+        var dayB = getDayByCheckinRef(b, currentTrip);
+        var idxA = dayA ? currentTrip.days.indexOf(dayA) : -1;
+        var idxB = dayB ? currentTrip.days.indexOf(dayB) : -1;
+        return idxA - idxB;
       });
 
       // Summary stats
@@ -3831,7 +3835,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var isBooked = !!s.booked;
           var cityColor = (citySettings[s.city] && citySettings[s.city].color) || 'var(--accent)';
           var cardId = 'accom-body-' + idx;
-          var nights = (s.checkoutDayIndex || 0) - (s.checkinDayIndex || 0);
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          var coDay = getDayByCheckoutRef(s, currentTrip);
+          var ciIdx = ciDay ? currentTrip.days.indexOf(ciDay) : -1;
+          var coIdx = coDay ? currentTrip.days.indexOf(coDay) : -1;
+          var nights = (ciIdx >= 0 && coIdx >= 0) ? (coIdx - ciIdx) : 0;
           if (nights < 1) nights = 1;
           var nightsLabel = nights + ' night' + (nights !== 1 ? 's' : '');
           var dateRange = s.checkinDate + ' → ' + s.checkoutDate;
@@ -8026,7 +8034,12 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     function getStaysForDay(dayIndex) {
       if (!currentTrip || !Array.isArray(currentTrip.stays)) return [];
       return currentTrip.stays.filter(function(s) {
-        return dayIndex >= s.checkinDayIndex && dayIndex <= s.checkoutDayIndex;
+        var ciDay = getDayByCheckinRef(s, currentTrip);
+        var coDay = getDayByCheckoutRef(s, currentTrip);
+        if (!ciDay || !coDay) return false;
+        var ciIdx = currentTrip.days.indexOf(ciDay);
+        var coIdx = currentTrip.days.indexOf(coDay);
+        return dayIndex >= ciIdx && dayIndex <= coIdx;
       });
     }
 
