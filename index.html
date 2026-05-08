@@ -4976,15 +4976,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       renumberDays();
-      // Recalculate all dates sequentially from day 1 as anchor
-      var anchorDate = parseTripDate(currentTrip.days[0].date);
-      if (anchorDate) {
-        currentTrip.days.forEach(function(d, i) {
-          var newDate = new Date(anchorDate);
-          newDate.setDate(anchorDate.getDate() + i);
-          d.date = formatTripDate(newDate);
-        });
-      }
+      // Phase 4 Step 6.1 — date recalc removed. Dates are now derived from
+      // trip.startDate + index via getDayDate(). day.date strings remain on
+      // every day during the strangle (deleted in Step 8) but are no longer
+      // re-anchored on reorder — that caused silent drift between two
+      // independent date-computation paths.
       saveToStorage();
       renderStructure();
     }
@@ -10572,6 +10568,47 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }
     }
 
+    // Phase 4 Step 6.1 — set trip.startDate from days[0].date.
+    // Once set, getDayDate(day, trip) starts deriving dates from startDate + index
+    // instead of falling back to the legacy day.date string. This is the bridge
+    // that makes insert/delete/reorder cascade correctly.
+    // Strangle pattern: day.date strings remain on every day for now (deleted in Step 8).
+    // Guarded against accidental live-trip runs via localStorage.__ALLOW_LIVE_MIGRATION.
+    function migrateTripStartDate() {
+      if (!currentTrip || !currentTrip.days || !currentTrip.days.length) return;
+      if (currentTrip !== trips[currentTripKey]) {
+        console.error('[migrateTripStartDate] currentTrip reference drift detected — aborting');
+        return;
+      }
+      if (currentTrip.startDate) return; // already migrated — idempotent no-op
+      // Live-trip guard — sandbox runs unguarded; live requires explicit opt-in.
+      if (currentTripKey !== 'thailand_2026_test' && localStorage.getItem('__ALLOW_LIVE_MIGRATION') !== 'true') {
+        console.warn('[migrateTripStartDate] live trip detected, would set startDate but __ALLOW_LIVE_MIGRATION is not set');
+        console.warn('[migrateTripStartDate] to run: localStorage.setItem("__ALLOW_LIVE_MIGRATION", "true"); location.reload();');
+        return;
+      }
+      var firstDate = currentTrip.days[0].date;
+      if (!firstDate) {
+        console.warn('[migrateTripStartDate] days[0] has no date — aborting');
+        return;
+      }
+      var parsed = parseTripDate(firstDate);
+      if (!parsed) {
+        console.warn('[migrateTripStartDate] could not parse days[0].date "' + firstDate + '" — aborting');
+        return;
+      }
+      // Use trip.year if available (parseTripDate hardcodes 2026 as fallback)
+      if (currentTrip.year) { parsed.setFullYear(currentTrip.year); }
+      var iso = parsed.getFullYear() + '-' + String(parsed.getMonth() + 1).padStart(2, '0') + '-' + String(parsed.getDate()).padStart(2, '0');
+      currentTrip.startDate = iso;
+      console.log('[migrateTripStartDate] set trip.startDate = "' + iso + '" (from "' + firstDate + '")');
+      saveToStorage();
+      if (localStorage.getItem('__ALLOW_LIVE_MIGRATION') === 'true') {
+        localStorage.removeItem('__ALLOW_LIVE_MIGRATION');
+        console.log('[migrateTripStartDate] cleared __ALLOW_LIVE_MIGRATION flag');
+      }
+    }
+
     // ===== PHASE 3 TEST HARNESS — HELPERS =====
     // All test infrastructure lives in window.__test for easy console access.
     // Destructive tests set window.__TEST_MODE = true to block Firestore/localStorage writes.
@@ -10716,8 +10753,9 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         try { migrateCardNotesKeys(); } catch(e) { assert(false, 'migrateCardNotesKeys threw: ' + e.message); }
         try { migrateDayIds(); } catch(e) { assert(false, 'migrateDayIds threw: ' + e.message); }
         try { migrateStayDayIds(); } catch(e) { assert(false, 'migrateStayDayIds threw: ' + e.message); }
+        try { migrateTripStartDate(); } catch(e) { assert(false, 'migrateTripStartDate threw: ' + e.message); }
         var equal = window.__test._deepEqual(before, currentTrip);
-        assert(equal, 'all 6 on-load migrations are idempotent (no changes on second run)');
+        assert(equal, 'all 7 on-load migrations are idempotent (no changes on second run)');
         if (!equal) {
           for (var i = 0; i < before.days.length; i++) {
             if (!window.__test._deepEqual(before.days[i], currentTrip.days[i])) {
@@ -10748,12 +10786,12 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       window.__test.withTestMode(function() {
         var beforeLen = currentTrip.days.length;
         var lastIdxBefore = beforeLen - 1;
-        var lastDateBefore = currentTrip.days[lastIdxBefore].date;
+        var lastDateBefore = getDayDate(currentTrip.days[lastIdxBefore], currentTrip);
         var insertAt = 2;
         var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
         currentTrip.days.splice(insertAt, 0, window.__test._makeTestDay('Bangkok'));
         assert(currentTrip.days.length === beforeLen + 1, 'day count incremented by 1');
-        var newLastDate = currentTrip.days[currentTrip.days.length - 1].date;
+        var newLastDate = getDayDate(currentTrip.days[currentTrip.days.length - 1], currentTrip);
         assert(newLastDate && newLastDate !== lastDateBefore, 'last day date shifted forward (cascade) — was "' + lastDateBefore + '", now "' + newLastDate + '"');
         var staysShifted = (currentTrip.stays || []).every(function(s, i) {
           var snap = staysSnap[i];
@@ -10862,10 +10900,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           return (refDay.city || '').indexOf(blockCity) !== -1;
         });
         assert(blockStaysStillResolve, blockCity + ' stays still point at days whose city contains "' + blockCity + '"');
-        var firstDateAfter = currentTrip.days[0].date;
-        var firstDateBefore = (staysSnap.length && currentTrip.days[0]) ? currentTrip.days[0].date : null;
-        assert(currentTrip.days[insertAt].date && currentTrip.days[insertAt].date !== blockDays[0].date,
-          'dates re-derived for moved block — was "' + blockDays[0].date + '", now "' + currentTrip.days[insertAt].date + '"');
+        var movedBlockDateBefore = blockDays[0].date;
+        var movedBlockDateAfter = getDayDate(currentTrip.days[insertAt], currentTrip);
+        assert(movedBlockDateAfter && movedBlockDateAfter !== movedBlockDateBefore,
+          'dates re-derived for moved block — was "' + movedBlockDateBefore + '", now "' + movedBlockDateAfter + '"');
       });
     };
 
@@ -10959,6 +10997,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           migrateCardNotesKeys();
           migrateDayIds();
           migrateStayDayIds();
+          migrateTripStartDate();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
