@@ -3973,8 +3973,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       stay.checkinDate = checkinDateStr;
       stay.checkoutDate = checkoutDateStr;
-      stay.checkinDayIndex = checkinDayIndex;
-      stay.checkoutDayIndex = checkoutDayIndex;
+      _setStayDayRefs(stay, checkinDayIndex, checkoutDayIndex);
 
       syncStaysToDays();
       deSuppressSync = true;
@@ -4231,22 +4230,22 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       if (!Array.isArray(currentTrip.stays)) currentTrip.stays = [];
-      currentTrip.stays.push({
+      var newStay = {
         id: 'stay_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         name: name,
         link: link,
         city: city,
         checkinDate: checkinDateStr,
         checkoutDate: checkoutDateStr,
-        checkinDayIndex: checkinDayIndex,
-        checkoutDayIndex: checkoutDayIndex,
         booked: false,
         price: '',
         confirmationNumber: '',
         checkinTime: '',
         checkoutTime: '',
         notes: ''
-      });
+      };
+      _setStayDayRefs(newStay, checkinDayIndex, checkoutDayIndex);
+      currentTrip.stays.push(newStay);
 
       syncStaysToDays();
       deSuppressSync = true;
@@ -8176,6 +8175,20 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         return trip.days[stay.checkoutDayIndex] || null;
       }
       return null;
+    }
+
+    // Phase 4 Step 6.2 — write stay day refs ID-first, index-secondary.
+    // Indices are kept in sync during the strangle so any code still reading
+    // them (including the test harness) keeps working. Step 7 deletes the
+    // indices and this helper drops to a single-line ID write.
+    function _setStayDayRefs(stay, ciIdx, coIdx) {
+      if (!stay) return;
+      var ciDay = currentTrip.days[ciIdx];
+      var coDay = currentTrip.days[coIdx];
+      stay.checkinDayId = ciDay && ciDay.id ? ciDay.id : '';
+      stay.checkoutDayId = coDay && coDay.id ? coDay.id : '';
+      stay.checkinDayIndex = ciIdx;
+      stay.checkoutDayIndex = coIdx;
     }
 
     // ===== TRIP DATA =====
