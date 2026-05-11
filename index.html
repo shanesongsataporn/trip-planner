@@ -2294,6 +2294,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         cursor.setDate(cursor.getDate() - 1);
         var dateStr = dayNames[cursor.getDay()] + ' ' + monthNames[cursor.getMonth()] + ' ' + cursor.getDate();
         newDays.unshift({
+          id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           day: 0,
           date: dateStr,
           city: inheritCity,
@@ -2313,11 +2314,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentTrip.days = newDays.concat(currentTrip.days);
       // Renumber day.day from 1
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
-      // Shift all stay indices forward
+      // Shift all stay indices forward — use _setStayDayRefs so checkinDayId
+      // stays in sync with the (unchanged) day objects the stays anchor to.
       if (Array.isArray(currentTrip.stays)) {
         currentTrip.stays.forEach(function(s) {
-          if (typeof s.checkinDayIndex === 'number') s.checkinDayIndex += addedCount;
-          if (typeof s.checkoutDayIndex === 'number') s.checkoutDayIndex += addedCount;
+          var ciIdx = (typeof s.checkinDayIndex === 'number') ? s.checkinDayIndex + addedCount : s.checkinDayIndex;
+          var coIdx = (typeof s.checkoutDayIndex === 'number') ? s.checkoutDayIndex + addedCount : s.checkoutDayIndex;
+          _setStayDayRefs(s, ciIdx, coIdx);
         });
       }
       return addedCount;
@@ -7988,6 +7991,8 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
               city: day.city || '',
               checkinDate: day.date || '',
               checkoutDate: day.date || '',
+              checkinDayId: '',
+              checkoutDayId: '',
               checkinDayIndex: di,
               checkoutDayIndex: di,
               booked: !!entry.booked,
@@ -7997,11 +8002,12 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
               checkoutTime: '',
               notes: entry.notes || ''
             };
+            _setStayDayRefs(lookup[key], di, di);
             stays.push(lookup[key]);
           } else {
             // Extend the range
             lookup[key].checkoutDate = day.date || lookup[key].checkoutDate;
-            lookup[key].checkoutDayIndex = di;
+            _setStayDayRefs(lookup[key], lookup[key].checkinDayIndex, di);
             // Keep first non-empty link, etc.
             if (!lookup[key].link && entry.link) lookup[key].link = entry.link;
             if (!lookup[key].notes && entry.notes) lookup[key].notes = entry.notes;
