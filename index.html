@@ -4518,6 +4518,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       _transportSheet.type = 'Flight';
       _transportSheet.multiLeg = false;
       _transportSheet.legs = [];
+      _transportSheet._editUid = null;
 
       // If editing, prefill from existing entry
       if (mode === 'edit') {
@@ -4527,11 +4528,28 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var t = day.transport[ti];
         if (!t) return;
         _transportSheet.type = t.type || 'Flight';
-        _transportSheet.multiLeg = !!t.multiLeg;
-        if (t.multiLeg && t.legs) {
-          _transportSheet.legs = t.legs.map(function(l) { return Object.assign({}, l); });
+        // Detect multi-leg from legs[] length — t.multiLeg is deleted in unified shape
+        var hasLegs = Array.isArray(t.legs) && t.legs.length > 0;
+        _transportSheet.multiLeg = hasLegs && t.legs.length > 1;
+        _transportSheet._editUid = t.uid || null;
+        if (hasLegs) {
+          // Unified shape: legs[i].from is {city} object — flatten to string for scratch state
+          _transportSheet.legs = t.legs.map(function(l, li) {
+            return {
+              uid: l.uid || '',
+              from: (l.from && l.from.city) || '',
+              to: (l.to && l.to.city) || '',
+              carrier: l.carrier || '',
+              flightNum: l.flightNum || '',
+              depart: l.depart || '',
+              arrive: l.arrive || '',
+              confirmationCode: l.confirmationCode || '',
+              dayIndex: di
+            };
+          });
         } else {
-          _transportSheet.legs = [{ from: t.from||'', to: t.to||'', carrier: t.carrier||'', flightNum: t.flightNum||'', depart: t.depart||'', arrive: t.arrive||'', confirmationCode: t.confirmationCode||'', dayIndex: di }];
+          // Fallback for any unmigrated entry — should not occur after 6.4a
+          _transportSheet.legs = [{ from: '', to: '', carrier: '', flightNum: '', depart: '', arrive: '', confirmationCode: '', dayIndex: di }];
         }
       } else {
         _transportSheet.legs = [{ from: '', to: '', carrier: '', flightNum: '', depart: '', arrive: '', confirmationCode: '', dayIndex: di != null ? di : 0 }];
@@ -4561,16 +4579,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (ad) { ad.setDate(ad.getDate() + 1); arrivalDate = formatTripDate(ad); }
         }
         dayOptions += '<option value="' + currentTrip.days.length + '">✈️ Arrival day · ' + arrivalDate + '</option>';
-      }
-      // For flights: add one extra "arrival day" option past the end of the trip
-      if (isFlight) {
-        var lastDay = currentTrip.days[currentTrip.days.length - 1];
-        var arrivalDate = '';
-        if (lastDay && lastDay.date) {
-          var ad = parseTripDate(lastDay.date);
-          if (ad) { ad.setDate(ad.getDate() + 1); arrivalDate = formatTripDate(ad); }
-        }
-        dayOptions += '<option value="' + currentTrip.days.length + '">Arrival day · ' + arrivalDate + '</option>';
       }
 
       var types = [
@@ -4687,37 +4695,47 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function saveTransportSheet() {
       tsSaveCurrentLegInputs();
       var notes = (document.getElementById('ts-notes') || {}).value || '';
-      var isMulti = _transportSheet.multiLeg;
       var legs = _transportSheet.legs;
       if (!legs.length) { closeTransportSheet(); return; }
 
-      var newEntry;
-      if (isMulti) {
-        newEntry = { type: _transportSheet.type, multiLeg: true, notes: notes, legs: legs.map(function(l) { return Object.assign({}, l); }) };
-      } else {
-        var leg = legs[0];
-        newEntry = { type: _transportSheet.type, from: leg.from, to: leg.to, carrier: leg.carrier, flightNum: leg.flightNum, depart: leg.depart, arrive: leg.arrive, confirmationCode: leg.confirmationCode, terminal: '', notes: notes };
-      }
+      // Build unified shape — always legs[], never flat top-level fields
+      var newEntry = {
+        uid: (_transportSheet.mode === 'edit' && _transportSheet._editUid) ? _transportSheet._editUid : Math.random().toString(36).slice(2, 8),
+        type: _transportSheet.type,
+        notes: notes,
+        legs: legs.map(function(l) {
+          return {
+            uid: l.uid || Math.random().toString(36).slice(2, 8),
+            from: { city: l.from || '' },
+            to: { city: l.to || '' },
+            carrier: l.carrier || '',
+            flightNum: l.flightNum || '',
+            depart: l.depart || '',
+            arrive: l.arrive || '',
+            confirmationCode: l.confirmationCode || ''
+          };
+        })
+      };
 
+      // For edit: remove old entry via canonical API
       if (_transportSheet.mode === 'edit') {
-        var oldDay = currentTrip.days[_transportSheet.di];
-        if (oldDay) { normaliseDayTransport(oldDay); oldDay.transport.splice(_transportSheet.ti, 1); }
+        var oldUid = _transportSheet._editUid;
+        if (oldUid) {
+          _removeFlightFromDay(_transportSheet.di, oldUid);
+        } else {
+          // Fallback: raw splice if uid missing (should not occur after 6.4a)
+          var oldDay = currentTrip.days[_transportSheet.di];
+          if (oldDay && oldDay.transport) { oldDay.transport.splice(_transportSheet.ti, 1); }
+        }
       }
 
-      if (isMulti) {
-        // Multi-leg: store on first leg's day
-        var targetDi = legs[0].dayIndex;
-        var targetDay = currentTrip.days[targetDi];
-        if (targetDay) { normaliseDayTransport(targetDay); targetDay.transport.push(newEntry); }
-      } else {
-        var targetDi = legs[0].dayIndex;
-        var targetDay = currentTrip.days[targetDi];
-        if (targetDay) { normaliseDayTransport(targetDay); targetDay.transport.push(newEntry); }
-      }
+      // Add to target day via canonical API — always use first leg's dayIndex
+      var targetDi = legs[0].dayIndex;
+      _addFlightToDay(targetDi, newEntry);
 
-      saveToStorage();
       closeTransportSheet();
       renderTransport();
+      if (typeof selectSplitDay === 'function' && deCurrentIndex != null) { selectSplitDay(deCurrentIndex); }
     }
 
     function showAddTransportModal(prefillDi) { openTransportSheet('add', prefillDi, null); }
@@ -11381,6 +11399,74 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     };
 
+    // ===== TEST 11: test_save_flight_via_modal =====
+    // Verifies that saveTransportSheet writes unified shape (no zombie fields).
+    // Programmatically sets _transportSheet state and calls saveTransportSheet
+    // in TEST_MODE so Firestore is never touched.
+    window.__test.test_save_flight_via_modal = function() {
+      console.log('--- TEST 11: test_save_flight_via_modal ---');
+      window.__test.withTestMode(function() {
+        var a = window.__test.assert;
+
+        // Find a day with no transport to use as target (Day 1 — Bangkok, no flight)
+        var targetDi = 1;
+        var before = (currentTrip.days[targetDi].transport || []).length;
+
+        // Set up _transportSheet as if user filled in the Add modal
+        _transportSheet.mode = 'add';
+        _transportSheet.di = targetDi;
+        _transportSheet.ti = null;
+        _transportSheet._editUid = null;
+        _transportSheet.type = 'Flight';
+        _transportSheet.multiLeg = false;
+        _transportSheet.legs = [{
+          uid: '',
+          from: 'TestCity',
+          to: 'TestDest',
+          carrier: 'TestAir',
+          flightNum: 'TA001',
+          depart: '9:00am',
+          arrive: '11:00am',
+          confirmationCode: 'TESTXX',
+          dayIndex: targetDi
+        }];
+
+        // Stub out DOM reads and close behaviour for test context
+        var origGetEl = document.getElementById;
+        var origClose = closeTransportSheet;
+        var origSelectSplitDay = selectSplitDay;
+        document.getElementById = function(id) {
+          if (id === 'ts-notes') return { value: 'test notes' };
+          // leg inputs — return null so tsSaveCurrentLegInputs falls back to leg values
+          return null;
+        };
+        closeTransportSheet = function() { /* no-op in test */ };
+        selectSplitDay = function() { /* no-op in test */ };
+
+        saveTransportSheet();
+
+        document.getElementById = origGetEl;
+        closeTransportSheet = origClose;
+        selectSplitDay = origSelectSplitDay;
+        
+
+        // Inspect result
+        var transport = currentTrip.days[targetDi].transport || [];
+        a(transport.length === before + 1, 'transport entry was added to day ' + targetDi);
+
+        var entry = transport[transport.length - 1];
+        a(!!entry, 'entry exists');
+        a(typeof entry.uid === 'string' && entry.uid.length > 0, 'entry has uid');
+        a(Array.isArray(entry.legs) && entry.legs.length === 1, 'entry has legs[] with 1 leg');
+        a(entry.from === undefined && entry.to === undefined && entry.carrier === undefined, 'no zombie top-level fields');
+
+        var leg = entry.legs[0];
+        a(leg && typeof leg.from === 'object' && leg.from.city === 'TestCity', 'leg.from is {city} object');
+        a(leg && typeof leg.to === 'object' && leg.to.city === 'TestDest', 'leg.to is {city} object');
+        a(entry.notes === 'test notes', 'notes saved correctly');
+      });
+    };
+
     // ===== RUNNER — Run all tests, collect results, print summary =====
     window.__test.runAllTests = function() {
       console.clear();
@@ -11389,7 +11475,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       console.log('Days: ' + currentTrip.days.length + ' | Stays: ' + ((currentTrip.stays || []).length));
       console.log('Timestamp: ' + new Date().toISOString());
       console.log('');
-      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block', 'test_extend_backward', 'test_extend_forward', 'test_transport_shape'];
+      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block', 'test_extend_backward', 'test_extend_forward', 'test_transport_shape', 'test_save_flight_via_modal'];
       var results = [];
       tests.forEach(function(name) {
         window.__test._currentRun = [];
