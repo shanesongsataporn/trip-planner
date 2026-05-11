@@ -2264,8 +2264,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
       var base = currentTrip.baseCurrency || 'AUD';
       var baseSym = currentTrip.baseCurrencySymbol || '$';
-      currentTrip.days.push({
-        id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      _insertDayAt(currentTrip.days.length, {
         day: lastDay.day + 1,
         date: 'New day',
         city: lastDay.city.split('>').pop().trim(),
@@ -2393,8 +2392,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
       var base = currentTrip.baseCurrency || 'AUD';
       var baseSym = currentTrip.baseCurrencySymbol || '$';
-      currentTrip.days.push({
-        id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      _insertDayAt(currentTrip.days.length, {
         day: lastDay.day + 1,
         date: 'New day',
         city: lastDay.city.split('>').pop().trim(),
@@ -2426,9 +2424,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<select id="del-day-select" style="width:100%;padding:8px;border-radius:8px;background:var(--sand);color:var(--ink);border:1px solid var(--sand-dark);font-size:13px;">' + opts + '</select>',
         function() {
           var i = parseInt(document.getElementById('del-day-select').value);
-          currentTrip.days.splice(i, 1);
-          currentTrip.days.forEach(function(d, idx) { d.day = idx + 1; });
+          var coveringStays = (currentTrip.stays || []).filter(function(s) {
+            return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
+              && s.checkinDayIndex <= i && s.checkoutDayIndex >= i;
+          });
+          if (coveringStays.length) {
+            var names = coveringStays.map(function(s) { return s.name; }).join(', ');
+            if (!confirm(names + ' covers this day. Deleting will shorten the stay by 1 night. Continue?')) return;
+          }
+          _deleteDayAt(i);
           saveToStorage(); rebuildTimeline(); rebuildMobStrip();
+          // Refresh mob-cards cache if Cards view is showing — prevents stale day sequence.
+          if (typeof enterMobKanban === 'function' && document.getElementById('mob-cards-view') && document.getElementById('mob-cards-view').classList.contains('active')) {
+            enterMobKanban();
+          }
         }
       );
     }
@@ -2444,9 +2453,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<select id="del-day-select" style="width:100%;padding:8px;border-radius:8px;background:var(--sand);color:var(--ink);border:1px solid var(--sand-dark);font-size:13px;">' + opts + '</select>',
         function() {
           var i = parseInt(document.getElementById('del-day-select').value);
-          currentTrip.days.splice(i, 1);
-          currentTrip.days.forEach(function(d, idx) { d.day = idx + 1; });
+          var coveringStays = (currentTrip.stays || []).filter(function(s) {
+            return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
+              && s.checkinDayIndex <= i && s.checkoutDayIndex >= i;
+          });
+          if (coveringStays.length) {
+            var names = coveringStays.map(function(s) { return s.name; }).join(', ');
+            if (!confirm(names + ' covers this day. Deleting will shorten the stay by 1 night. Continue?')) return;
+          }
+          _deleteDayAt(i);
           saveToStorage(); rebuildTimeline(); rebuildMobStrip();
+          // Refresh mob-cards cache if Cards view is showing — prevents stale day sequence.
+          if (typeof enterMobKanban === 'function' && document.getElementById('mob-cards-view') && document.getElementById('mob-cards-view').classList.contains('active')) {
+            enterMobKanban();
+          }
         }
       );
     }
@@ -5065,6 +5085,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (d) { d.setDate(d.getDate() + 1); newDate = formatTripDate(d); }
       }
       var newDay = {
+        id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         day: 0, date: newDate, city: city,
         lat: cs ? cs.lat : 0, lng: cs ? cs.lng : 0,
         note: '', accommodation: [], activities: [], activityCategories: [],
@@ -5072,8 +5093,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       };
 
       pushStructHistory('Day added to ' + city);
-      days.splice(lastIdx + 1, 0, newDay);
-      renumberDays();
+      _insertDayAt(lastIdx + 1, newDay);
       saveToStorage();
       renderStructure();
     }
@@ -8289,6 +8309,30 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       });
     }
 
+    // Phase 4 Step 6.3 — canonical mutation API.
+    // Use these EVERYWHERE you want to insert or delete a day. They wrap
+    // splice + cascade + renumber so callers can't accidentally skip the
+    // cascade step. Handlers and tests should both go through these.
+    function _insertDayAt(insertAt, newDay) {
+      if (!Array.isArray(currentTrip.days)) return;
+      if (insertAt < 0) insertAt = 0;
+      if (insertAt > currentTrip.days.length) insertAt = currentTrip.days.length;
+      if (!newDay.id) newDay.id = 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      currentTrip.days.splice(insertAt, 0, newDay);
+      _cascadeInsertDay(insertAt);
+      currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
+    }
+
+    function _deleteDayAt(deletedAt) {
+      if (!Array.isArray(currentTrip.days)) return null;
+      if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
+      if (currentTrip.days.length <= 1) return null;
+      var removed = currentTrip.days.splice(deletedAt, 1)[0];
+      _cascadeDeleteDay(deletedAt);
+      currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
+      return removed;
+    }
+
     // ===== TRIP DATA =====
     var trips = {
       thailand_2026: {
@@ -10900,7 +10944,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         var lastDateBefore = getDayDate(currentTrip.days[lastIdxBefore], currentTrip);
         var insertAt = 2;
         var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
-        currentTrip.days.splice(insertAt, 0, window.__test._makeTestDay('Bangkok'));
+        _insertDayAt(insertAt, window.__test._makeTestDay('Bangkok'));
         assert(currentTrip.days.length === beforeLen + 1, 'day count incremented by 1');
         var newLastDate = getDayDate(currentTrip.days[currentTrip.days.length - 1], currentTrip);
         assert(newLastDate && newLastDate !== lastDateBefore, 'last day date shifted forward (cascade) — was "' + lastDateBefore + '", now "' + newLastDate + '"');
@@ -10930,7 +10974,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (!coveringStay) return;
         var nightsBefore = coveringStay.checkoutDayIndex - coveringStay.checkinDayIndex;
         var beforeLen = currentTrip.days.length;
-        currentTrip.days.splice(deleteAt, 1);
+        _deleteDayAt(deleteAt);
         assert(currentTrip.days.length === beforeLen - 1, 'day count decremented by 1');
         var stayAfter = (currentTrip.stays || []).find(function(s) { return s.id === coveringStay.id || s.name === coveringStay.name; });
         assert(!!stayAfter, 'stay still exists after delete');
