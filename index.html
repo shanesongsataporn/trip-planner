@@ -2351,6 +2351,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var dateStr = dayNames[cursor.getDay()] + ' ' + monthNames[cursor.getMonth()] + ' ' + cursor.getDate();
         var prev = currentTrip.days[currentTrip.days.length - 1];
         currentTrip.days.push({
+          id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           day: prev.day + 1,
           date: dateStr,
           city: inheritCity,
@@ -10926,6 +10927,68 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     };
 
+    // ===== TEST 8 — Backward extension assigns IDs and preserves stay refs =====
+    window.__test.test_extend_backward = function() {
+      console.log('%c--- TEST 8: test_extend_backward ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var beforeLen = currentTrip.days.length;
+        var firstDay = currentTrip.days[0];
+        var firstDate = parseTripDate(firstDay.date);
+        if (!firstDate) { assert(false, 'could not parse first day date — bailing'); return; }
+        var target = new Date(firstDate.getTime());
+        target.setDate(target.getDate() - 3);
+        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        var addedCount = extendTripToStartDate(target);
+        assert(addedCount === 3, 'extendTripToStartDate returned 3 (was ' + addedCount + ')');
+        assert(currentTrip.days.length === beforeLen + 3, 'day count increased by 3 (was ' + beforeLen + ', now ' + currentTrip.days.length + ')');
+        var newDaysHaveIds = true;
+        for (var i = 0; i < 3; i++) { if (!currentTrip.days[i].id) { newDaysHaveIds = false; break; } }
+        assert(newDaysHaveIds, 'all 3 prepended days have .id fields');
+        var staysAnchored = (currentTrip.stays || []).every(function(s, i) {
+          var snap = staysSnap[i];
+          if (!snap) return true;
+          if (!snap.checkinDayId) return true;
+          return s.checkinDayId === snap.checkinDayId;
+        });
+        assert(staysAnchored, 'all stays still anchor to the same day objects (checkinDayId unchanged)');
+        var refsResolve = (currentTrip.stays || []).every(function(s) {
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          return !!ciDay;
+        });
+        assert(refsResolve, 'all stays still resolve via getDayByCheckinRef');
+      });
+    };
+
+    // ===== TEST 9 — Forward extension assigns IDs and leaves stays alone =====
+    window.__test.test_extend_forward = function() {
+      console.log('%c--- TEST 9: test_extend_forward ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      window.__test.withTestMode(function() {
+        var beforeLen = currentTrip.days.length;
+        var lastDay = currentTrip.days[beforeLen - 1];
+        var lastDate = parseTripDate(lastDay.date);
+        if (!lastDate) { assert(false, 'could not parse last day date — bailing'); return; }
+        var target = new Date(lastDate.getTime());
+        target.setDate(target.getDate() + 3);
+        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        extendTripToDate(target);
+        assert(currentTrip.days.length === beforeLen + 3, 'day count increased by 3 (was ' + beforeLen + ', now ' + currentTrip.days.length + ')');
+        var newDaysHaveIds = true;
+        for (var i = beforeLen; i < currentTrip.days.length; i++) { if (!currentTrip.days[i].id) { newDaysHaveIds = false; break; } }
+        assert(newDaysHaveIds, 'all 3 appended days have .id fields');
+        var staysUnchanged = (currentTrip.stays || []).every(function(s, i) {
+          var snap = staysSnap[i];
+          if (!snap) return true;
+          return s.checkinDayId === snap.checkinDayId
+            && s.checkoutDayId === snap.checkoutDayId
+            && s.checkinDayIndex === snap.checkinDayIndex
+            && s.checkoutDayIndex === snap.checkoutDayIndex;
+        });
+        assert(staysUnchanged, 'all stays unchanged (forward extension does not shift indices)');
+      });
+    };
+
     // ===== RUNNER — Run all tests, collect results, print summary =====
     window.__test.runAllTests = function() {
       console.clear();
@@ -10934,7 +10997,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       console.log('Days: ' + currentTrip.days.length + ' | Stays: ' + ((currentTrip.stays || []).length));
       console.log('Timestamp: ' + new Date().toISOString());
       console.log('');
-      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block'];
+      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block', 'test_extend_backward', 'test_extend_forward'];
       var results = [];
       tests.forEach(function(name) {
         window.__test._currentRun = [];
