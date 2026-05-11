@@ -8217,8 +8217,10 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
           if (firstFrom && lastTo && firstFrom !== lastTo) return true;
         }
       }
-      // Legacy fallback: city string with ">"
-      return !!(day.city && day.city.indexOf('>') !== -1);
+      // Phase 4 Step 6.4b — legacy fallback removed. Now transport shape is
+      // enforced and self-healing, stale day.city ">" strings should never
+      // mask transit state. isTransitDay is now purely flight-derived.
+      return false;
     }
 
     // Phase 4 Step 4 — resolve a stay's checkin/checkout day. Prefers id, falls back to index.
@@ -8366,6 +8368,42 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       if (idx === -1) return null;
       var removed = day.transport.splice(idx, 1)[0];
       _refreshDayTransitState(dayIdx);
+      return removed;
+    }
+
+    // _moveFlight: removes flight from source day, adds to target day, refreshes
+    // transit state on BOTH days. Returns the moved flight (or null if not found).
+    function _moveFlight(fromDayIdx, toDayIdx, flightUid) {
+      if (fromDayIdx === toDayIdx) return null;
+      var flight = _removeFlightFromDay(fromDayIdx, flightUid);
+      if (!flight) return null;
+      _addFlightToDay(toDayIdx, flight);
+      return flight;
+    }
+
+    // _removeFlightLeg: removes a single leg from a multi-leg flight by leg uid.
+    // If the flight has no legs left after removal, removes the whole flight entry.
+    // Refreshes transit state. Returns the removed leg (or null if not found).
+    function _removeFlightLeg(dayIdx, flightUid, legUid) {
+      if (!currentTrip.days || !currentTrip.days[dayIdx]) return null;
+      var day = currentTrip.days[dayIdx];
+      if (!Array.isArray(day.transport)) return null;
+      var flight = null;
+      for (var i = 0; i < day.transport.length; i++) {
+        if (day.transport[i].uid === flightUid) { flight = day.transport[i]; break; }
+      }
+      if (!flight || !Array.isArray(flight.legs)) return null;
+      var legIdx = -1;
+      for (var j = 0; j < flight.legs.length; j++) {
+        if (flight.legs[j].uid === legUid) { legIdx = j; break; }
+      }
+      if (legIdx === -1) return null;
+      var removed = flight.legs.splice(legIdx, 1)[0];
+      if (flight.legs.length === 0) {
+        _removeFlightFromDay(dayIdx, flightUid);
+      } else {
+        _refreshDayTransitState(dayIdx);
+      }
       return removed;
     }
 
@@ -11177,10 +11215,15 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         var targetIdx = sourceIdx + 1;
         assert(targetIdx < currentTrip.days.length, 'target day exists at index ' + targetIdx);
         if (targetIdx >= currentTrip.days.length) return;
-        currentTrip.days[sourceIdx].transport = (currentTrip.days[sourceIdx].transport || []).filter(function(x) { return x !== flight; });
-        currentTrip.days[targetIdx].transport = (currentTrip.days[targetIdx].transport || []).concat([flight]);
+        // Phase 4 Step 6.4b — use canonical _moveFlight API instead of raw splice.
+        // _moveFlight handles transport mutation + _refreshDayTransitState on both days.
+        var hasMoveFlight = typeof window._moveFlight === 'function';
+        assert(hasMoveFlight, '_moveFlight helper exists');
+        if (!hasMoveFlight) return;
+        var moved = window._moveFlight(sourceIdx, targetIdx, flight.uid);
+        assert(!!moved, 'flight moved from day ' + sourceIdx + ' to day ' + targetIdx);
         var hasIsTransit = typeof window.isTransitDay === 'function';
-        assert(hasIsTransit, 'isTransitDay helper exists (will be built in Phase 4)');
+        assert(hasIsTransit, 'isTransitDay helper exists');
         if (!hasIsTransit) return;
         try {
           assert(window.isTransitDay(currentTrip.days[sourceIdx]) === false, 'source day no longer detected as transit');
