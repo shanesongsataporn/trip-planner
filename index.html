@@ -2786,12 +2786,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
             '</div>';
           case 'flight':
+            var nfDisp = nextFlight ? getFlightDisplay(nextFlight.flight) : null;
             return nextFlight
               ? '<div class="home-tile" data-tile-id="flight" onclick="showNextFlightModal()">' +
                   '<div class="home-tile-emoji">✈️</div>' +
                   '<div class="home-tile-label">Next flight</div>' +
-                  '<div class="home-tile-value" style="font-size:14px;">' + (nextFlight.flight.from||'') + ' → ' + (nextFlight.flight.to||'') + '</div>' +
-                  '<div class="home-tile-sub">' + nextFlight.day.date + (nextFlight.flight.depart ? ' · ' + nextFlight.flight.depart : '') + '</div>' +
+                  '<div class="home-tile-value" style="font-size:14px;">' + nfDisp.from + ' → ' + nfDisp.to + '</div>' +
+                  '<div class="home-tile-sub">' + nextFlight.day.date + (nfDisp.depart ? ' · ' + nfDisp.depart : '') + '</div>' +
                 '</div>'
               : '<div class="home-tile" data-tile-id="flight" onclick="">' +
                   '<div class="home-tile-emoji">✈️</div>' +
@@ -3395,13 +3396,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var nf = getNextFlight();
       if (!nf) return;
       var f = nf.flight;
+      var disp = getFlightDisplay(f);
       showModal('✈️ Next Flight',
         '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:14px;">' +
-          '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:8px;">' + (f.from||'') + ' → ' + (f.to||'') + '</div>' +
+          '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:8px;">' + disp.from + ' → ' + disp.to + '</div>' +
           '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:4px;">' + nf.day.date + '</div>' +
-          (f.carrier ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">' + f.carrier + (f.flightNum?' · '+f.flightNum:'') + '</div>' : '') +
-          (f.depart ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Departs: ' + f.depart + '</div>' : '') +
-          (f.arrive ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Arrives: ' + f.arrive + '</div>' : '') +
+          (disp.carrier ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">' + disp.carrier + (disp.flightNum?' · '+disp.flightNum:'') + '</div>' : '') +
+          (disp.depart ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Departs: ' + disp.depart + '</div>' : '') +
+          (disp.arrive ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Arrives: ' + disp.arrive + '</div>' : '') +
           (f.notes ? '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-top:8px;">' + f.notes + '</div>' : '') +
         '</div>',
         function() {}
@@ -4420,11 +4422,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">Transport</div>' +
           '<div style="font-size:12px;color:var(--ink-muted);">' + totalCount + ' entr' + (totalCount === 1 ? 'y' : 'ies') + ' · ' + flightCount + ' flight' + (flightCount === 1 ? '' : 's') + '</div>' +
         '</div>' +
-        (nextFlight ? '<div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;">' +
-          '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:2px;">Next Flight</div>' +
-          '<div style="font-size:13px;font-weight:800;color:var(--ink);">' + (nextFlight.t.from||'?') + ' → ' + (nextFlight.t.to||'?') + '</div>' +
-          '<div style="font-size:11px;color:var(--ink-muted);">' + nextFlight.day.date + (nextFlight.t.depart ? ' · ' + nextFlight.t.depart : '') + '</div>' +
-        '</div>' : '') +
+        (nextFlight ? (function() {
+          var nfd = getFlightDisplay(nextFlight.t);
+          return '<div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;">' +
+            '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:2px;">Next Flight</div>' +
+            '<div style="font-size:13px;font-weight:800;color:var(--ink);">' + (nfd.from||'?') + ' → ' + (nfd.to||'?') + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-muted);">' + nextFlight.day.date + (nfd.depart ? ' · ' + nfd.depart : '') + '</div>' +
+          '</div>';
+        })() : '') +
       '</div>';
 
       // Add transport button
@@ -4436,7 +4441,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var typeEmoji = typeKey === 'flight' ? '✈️' : typeKey === 'train' ? '🚆' : typeKey === 'ferry' ? '⛴️' : typeKey === 'bus' ? '🚌' : typeKey === 'car' ? '🚗' : '🚐';
 
         var cardBody = '';
-        if (t.multiLeg && t.legs && t.legs.length) {
+        if (t.legs && t.legs.length > 1) {
           // Multi-leg card
           cardBody = t.legs.map(function(leg, li) {
             var legDay = currentTrip.days[leg.dayIndex] || day;
@@ -4452,8 +4457,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var isArrivalDay = !legDay;
             var legDayLabel = isArrivalDay ? '✈️ Arrival day' : ('Day ' + legDay.day + ' · ' + (legDay.date||''));
             legDay = legDay || day;
+            var legFromCity = (leg.from && leg.from.city) || '—';
+            var legToCity = (leg.to && leg.to.city) || '—';
             return (li > 0 ? '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><div style="width:1px;background:var(--sand-dark);flex:1;"></div><span style="font-size:10px;color:var(--ink-muted);white-space:nowrap;">Leg ' + (li+1) + ' · ' + legDayLabel + '</span><div style="width:1px;background:var(--sand-dark);flex:1;"></div></div>' : '<div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;">Leg 1 · ' + legDayLabel + '</div>') +
-            '<div class="transport-view-detail"><strong>' + (leg.from||'—') + ' → ' + (leg.to||'—') + '</strong>' + (leg.carrier||leg.flightNum ? ' · ' + (leg.carrier||'') + (leg.flightNum ? ' ' + leg.flightNum : '') : '') + '</div>' +
+            '<div class="transport-view-detail"><strong>' + legFromCity + ' → ' + legToCity + '</strong>' + (leg.carrier||leg.flightNum ? ' · ' + (leg.carrier||'') + (leg.flightNum ? ' ' + leg.flightNum : '') : '') + '</div>' +
             (leg.depart || leg.arrive ? '<div class="transport-view-detail">🕐 ' + (leg.depart||'?') + ' → ' + (leg.arrive||'?') + '</div>' : '') +
             (leg.confirmationCode ? '<div class="transport-view-detail">🔖 ' + leg.confirmationCode + '</div>' : '') +
             (missingLeg.length ? '<div style="font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingLeg.join(', ') + '</div>' : '');
@@ -4461,23 +4468,23 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:8px;padding-top:8px;border-top:1px solid var(--sand-dark);">' + t.notes + '</div>' : '');
         } else {
           // Single leg card
+          var tDisp = getFlightDisplay(t);
           var missingFields = [];
-          if (typeKey === 'flight' && (t.carrier || t.flightNum)) {
-            if (!t.depart) missingFields.push('depart time');
-            if (!t.arrive) missingFields.push('arrive time');
-            if (!t.confirmationCode) missingFields.push('confirmation code');
+          if (typeKey === 'flight' && (tDisp.carrier || tDisp.flightNum)) {
+            if (!tDisp.depart) missingFields.push('depart time');
+            if (!tDisp.arrive) missingFields.push('arrive time');
+            if (!tDisp.confirmationCode) missingFields.push('confirmation code');
           }
           cardBody =
-            (t.carrier || t.flightNum ? '<div class="transport-view-detail"><strong>' + (t.carrier||'') + (t.flightNum ? ' · ' + t.flightNum : '') + '</strong></div>' : '') +
-            (t.depart || t.arrive ? '<div class="transport-view-detail">🕐 ' + (t.depart||'?') + ' → ' + (t.arrive||'?') + '</div>' : '') +
-            (t.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + t.confirmationCode + '</strong></div>' : '') +
+            (tDisp.carrier || tDisp.flightNum ? '<div class="transport-view-detail"><strong>' + tDisp.carrier + (tDisp.flightNum ? ' · ' + tDisp.flightNum : '') + '</strong></div>' : '') +
+            (tDisp.depart || tDisp.arrive ? '<div class="transport-view-detail">🕐 ' + (tDisp.depart||'?') + ' → ' + (tDisp.arrive||'?') + '</div>' : '') +
+            (tDisp.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + tDisp.confirmationCode + '</strong></div>' : '') +
             (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:4px;">' + t.notes + '</div>' : '') +
             (missingFields.length ? '<div style="margin-top:8px;font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingFields.join(', ') + '</div>' : '');
         }
 
-        var routeLabel = t.multiLeg && t.legs && t.legs.length
-          ? (t.legs[0].from||'—') + ' → ' + (t.legs[t.legs.length-1].to||'—')
-          : (t.from||'—') + ' → ' + (t.to||'—');
+        var routeDisp = getFlightDisplay(t);
+        var routeLabel = (routeDisp.from||'—') + ' → ' + (routeDisp.to||'—');
 
         return '<div class="transport-view-card">' +
           '<div class="transport-view-card-header">' +
@@ -4731,8 +4738,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function normaliseDayTransport(item) {
       if (!item.transport) { item.transport = []; }
       item.transport.forEach(function(t) {
-        if (!t.terminal) t.terminal = '';
-        if (!t.confirmationCode) t.confirmationCode = '';
+        // Phase 4 Step 6.4a — top-level terminal/confirmationCode have moved to legs[].
+        // Clean up any stragglers left by older migrations or saves.
+        if (t.terminal !== undefined) delete t.terminal;
+        if (t.confirmationCode !== undefined) delete t.confirmationCode;
       });
     }
 
@@ -4740,15 +4749,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       normaliseDayTransport(item);
       var listHtml = item.transport.length
         ? item.transport.map(function(t, i) {
+            var d = getFlightDisplay(t);
             return '<div class="transport-card">' +
-              '<div class="transport-card-type">' + (t.type || 'Transport') + '</div>' +
+              '<div class="transport-card-type">' + (t.type || 'Transport') + (d.isMultiLeg ? ' · ' + d.legs.length + ' legs' : '') + '</div>' +
               '<div class="transport-card-route">' +
-                '<span>' + (t.from || '—') + '</span>' +
+                '<span>' + (d.from || '—') + '</span>' +
                 '<span style="color:var(--ink-muted);font-size:12px;">→</span>' +
-                '<span>' + (t.to || '—') + '</span>' +
+                '<span>' + (d.to || '—') + '</span>' +
               '</div>' +
-              (t.carrier ? '<div class="transport-card-detail">' + t.carrier + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>' : '') +
-              (t.depart ? '<div class="transport-card-detail">Departs: ' + t.depart + (t.arrive ? ' → Arrives: ' + t.arrive : '') + '</div>' : '') +
+              (d.carrier ? '<div class="transport-card-detail">' + d.carrier + (d.flightNum ? ' · ' + d.flightNum : '') + '</div>' : '') +
+              (d.depart ? '<div class="transport-card-detail">Departs: ' + d.depart + (d.arrive ? ' → Arrives: ' + d.arrive : '') + '</div>' : '') +
               (t.notes ? '<div class="transport-card-detail" style="margin-top:4px;font-style:italic;">' + t.notes + '</div>' : '') +
               '<button onclick="deleteTransport(' + i + ')" style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;border:1px solid var(--sand-dark);background:none;cursor:pointer;font-size:10px;color:var(--ink-muted);">x</button>' +
             '</div>';
@@ -10723,6 +10733,28 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }
     }
 
+    // Phase 4 Step 6.4a — getFlightDisplay returns display-ready strings from a transport
+    // entry, reading the unified multi-leg shape. Multi-leg flights show first-leg's from
+    // and last-leg's to. Single-leg flights work too. Safe on entries that pre-date the
+    // migration thanks to default-empty fallbacks.
+    function getFlightDisplay(t) {
+      if (!t) return { from:'', to:'', carrier:'', flightNum:'', depart:'', arrive:'', confirmationCode:'', isMultiLeg:false, legs:[] };
+      var legs = Array.isArray(t.legs) ? t.legs : [];
+      var first = legs[0] || {};
+      var last = legs[legs.length - 1] || first;
+      return {
+        from: (first.from && first.from.city) || '',
+        to: (last.to && last.to.city) || '',
+        carrier: first.carrier || '',
+        flightNum: first.flightNum || '',
+        depart: first.depart || '',
+        arrive: last.arrive || '',
+        confirmationCode: first.confirmationCode || '',
+        isMultiLeg: legs.length > 1,
+        legs: legs
+      };
+    }
+
     // Phase 4 Step 6.4a — normalise every transport entry to the unified
     // multi-leg shape so isTransitDay and cascade helpers can trust the data.
     // Idempotent. Guarded against accidental live-trip runs.
@@ -10746,7 +10778,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             if (typeof leg.from === 'string' || (leg.from && typeof leg.from.city !== 'string')) { needsWork = true; }
             if (typeof leg.to === 'string' || (leg.to && typeof leg.to.city !== 'string')) { needsWork = true; }
           });
-          if (t.from !== undefined || t.to !== undefined || t.carrier !== undefined || t.flightNum !== undefined || t.depart !== undefined || t.arrive !== undefined || t.confirmationCode !== undefined) {
+          // Any legacy top-level field (including zombies left at "") counts as work to do.
+          if (t.from !== undefined || t.to !== undefined || t.carrier !== undefined || t.flightNum !== undefined || t.depart !== undefined || t.arrive !== undefined || t.confirmationCode !== undefined || t.terminal !== undefined || t.multiLeg !== undefined) {
             needsWork = true;
           }
         });
