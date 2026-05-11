@@ -8341,6 +8341,34 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       }
     }
 
+    // Phase 4 Step 6.4b — canonical flight mutation API.
+    // _addFlightToDay: pushes a unified-shape flight onto a day's transport[]
+    // and refreshes transit state. Call save separately if not batching.
+    function _addFlightToDay(dayIdx, flightObj) {
+      if (!currentTrip.days || !currentTrip.days[dayIdx]) return;
+      var day = currentTrip.days[dayIdx];
+      if (!Array.isArray(day.transport)) day.transport = [];
+      if (!flightObj.uid) flightObj.uid = Math.random().toString(36).slice(2, 8);
+      day.transport.push(flightObj);
+      _refreshDayTransitState(dayIdx);
+    }
+
+    // _removeFlightFromDay: finds flight by uid, removes it, refreshes transit.
+    // Returns the removed flight (or null if not found).
+    function _removeFlightFromDay(dayIdx, flightUid) {
+      if (!currentTrip.days || !currentTrip.days[dayIdx]) return null;
+      var day = currentTrip.days[dayIdx];
+      if (!Array.isArray(day.transport)) return null;
+      var idx = -1;
+      for (var i = 0; i < day.transport.length; i++) {
+        if (day.transport[i].uid === flightUid) { idx = i; break; }
+      }
+      if (idx === -1) return null;
+      var removed = day.transport.splice(idx, 1)[0];
+      _refreshDayTransitState(dayIdx);
+      return removed;
+    }
+
     // Phase 4 Step 6.3 — canonical mutation API.
     // Use these EVERYWHERE you want to insert or delete a day. They wrap
     // splice + cascade + renumber so callers can't accidentally skip the
