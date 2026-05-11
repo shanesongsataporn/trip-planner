@@ -10723,6 +10723,95 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }
     }
 
+    // Phase 4 Step 6.4a — normalise every transport entry to the unified
+    // multi-leg shape so isTransitDay and cascade helpers can trust the data.
+    // Idempotent. Guarded against accidental live-trip runs.
+    // Target shape per entry:
+    //   { uid, type, legs: [{uid, from: {city}, to: {city}, carrier, flightNum, depart, arrive, confirmationCode}], notes }
+    // Top-level from/to/carrier/flightNum/depart/arrive/confirmationCode get deleted.
+    function migrateTransportShape() {
+      if (!currentTrip || !currentTrip.days) return;
+      if (currentTrip !== trips[currentTripKey]) {
+        console.error('[migrateTransportShape] currentTrip reference drift detected — aborting');
+        return;
+      }
+      // Detect whether ANY entry needs work — used for both idempotency and the live-trip guard.
+      var needsWork = false;
+      currentTrip.days.forEach(function(day) {
+        (day.transport || []).forEach(function(t) {
+          if (!t.uid) { needsWork = true; return; }
+          if (!Array.isArray(t.legs) || !t.legs.length) { needsWork = true; return; }
+          t.legs.forEach(function(leg) {
+            if (!leg.uid) { needsWork = true; return; }
+            if (typeof leg.from === 'string' || (leg.from && typeof leg.from.city !== 'string')) { needsWork = true; }
+            if (typeof leg.to === 'string' || (leg.to && typeof leg.to.city !== 'string')) { needsWork = true; }
+          });
+          if (t.from !== undefined || t.to !== undefined || t.carrier !== undefined || t.flightNum !== undefined || t.depart !== undefined || t.arrive !== undefined || t.confirmationCode !== undefined) {
+            needsWork = true;
+          }
+        });
+      });
+      if (!needsWork) return; // already migrated — idempotent no-op
+      // Live-trip guard — sandbox runs unguarded; live requires explicit opt-in.
+      if (currentTripKey !== 'thailand_2026_test' && localStorage.getItem('__ALLOW_LIVE_MIGRATION') !== 'true') {
+        console.warn('[migrateTransportShape] live trip detected, would normalise transport shape but __ALLOW_LIVE_MIGRATION is not set');
+        console.warn('[migrateTransportShape] to run: localStorage.setItem("__ALLOW_LIVE_MIGRATION", "true"); location.reload();');
+        return;
+      }
+      var converted = 0;
+      var newLegs = 0;
+      currentTrip.days.forEach(function(day, di) {
+        if (!Array.isArray(day.transport)) return;
+        day.transport.forEach(function(t) {
+          if (!t.uid) { t.uid = Math.random().toString(36).slice(2, 8); }
+          // If no legs, build one from top-level fields.
+          if (!Array.isArray(t.legs) || !t.legs.length) {
+            t.legs = [{
+              from: { city: t.from || '' },
+              to: { city: t.to || '' },
+              carrier: t.carrier || '',
+              flightNum: t.flightNum || '',
+              depart: t.depart || '',
+              arrive: t.arrive || '',
+              confirmationCode: t.confirmationCode || ''
+            }];
+            converted++;
+          }
+          // Normalise each leg: ensure from/to are {city} objects, ensure uid.
+          t.legs.forEach(function(leg) {
+            if (!leg.uid) { leg.uid = Math.random().toString(36).slice(2, 8); newLegs++; }
+            if (typeof leg.from === 'string') { leg.from = { city: leg.from }; }
+            else if (!leg.from || typeof leg.from !== 'object') { leg.from = { city: '' }; }
+            else if (typeof leg.from.city !== 'string') { leg.from.city = leg.from.city || ''; }
+            if (typeof leg.to === 'string') { leg.to = { city: leg.to }; }
+            else if (!leg.to || typeof leg.to !== 'object') { leg.to = { city: '' }; }
+            else if (typeof leg.to.city !== 'string') { leg.to.city = leg.to.city || ''; }
+            if (typeof leg.carrier !== 'string') { leg.carrier = leg.carrier || ''; }
+            if (typeof leg.flightNum !== 'string') { leg.flightNum = leg.flightNum || ''; }
+            if (typeof leg.depart !== 'string') { leg.depart = leg.depart || ''; }
+            if (typeof leg.arrive !== 'string') { leg.arrive = leg.arrive || ''; }
+            if (typeof leg.confirmationCode !== 'string') { leg.confirmationCode = leg.confirmationCode || ''; }
+          });
+          // Delete legacy top-level fields now that legs[] is canonical.
+          delete t.from;
+          delete t.to;
+          delete t.carrier;
+          delete t.flightNum;
+          delete t.depart;
+          delete t.arrive;
+          delete t.confirmationCode;
+          // multiLeg is no longer needed — every flight has legs[]. Remove it.
+          delete t.multiLeg;
+        });
+      });
+      console.log('[migrateTransportShape] normalised ' + converted + ' single-leg entries, assigned ' + newLegs + ' new leg uids');
+      saveToStorage();
+      if (localStorage.getItem('__ALLOW_LIVE_MIGRATION') === 'true') {
+        localStorage.removeItem('__ALLOW_LIVE_MIGRATION');
+        console.log('[migrateTransportShape] cleared __ALLOW_LIVE_MIGRATION flag');
+      }
+    }
+
     // Phase 4 Step 6.1 — set trip.startDate from days[0].date.
     // Once set, getDayDate(day, trip) starts deriving dates from startDate + index
     // instead of falling back to the legacy day.date string. This is the bridge
@@ -11062,6 +11151,48 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     };
 
+    // ===== TEST 10 — Transport shape is normalised (Step 6.4a) =====
+    // Verifies every transport entry uses the unified multi-leg shape:
+    //   { uid, type, legs: [{uid, from: {city}, to: {city}, ...}], notes }
+    // Will be RED until migrateTransportShape runs against the live trip.
+    window.__test.test_transport_shape = function() {
+      console.log('%c--- TEST 10: test_transport_shape ---', 'color:#3498DB;font-weight:bold');
+      var assert = window.__test.assert;
+      var issues = { missingTransportUid: [], missingLegs: [], legShapeBad: [], missingLegUid: [], legacyTopLevel: [] };
+      var totalTransports = 0;
+      currentTrip.days.forEach(function(day, di) {
+        (day.transport || []).forEach(function(t, ti) {
+          totalTransports++;
+          if (!t.uid) { issues.missingTransportUid.push('day ' + di + ' transport ' + ti); }
+          if (!Array.isArray(t.legs) || !t.legs.length) {
+            issues.missingLegs.push('day ' + di + ' transport ' + ti + ' (' + (t.type || '?') + ')');
+          } else {
+            t.legs.forEach(function(leg, li) {
+              if (!leg.uid) { issues.missingLegUid.push('day ' + di + ' transport ' + ti + ' leg ' + li); }
+              if (!leg.from || typeof leg.from !== 'object' || typeof leg.from.city !== 'string') {
+                issues.legShapeBad.push('day ' + di + ' transport ' + ti + ' leg ' + li + ' from: ' + JSON.stringify(leg.from));
+              }
+              if (!leg.to || typeof leg.to !== 'object' || typeof leg.to.city !== 'string') {
+                issues.legShapeBad.push('day ' + di + ' transport ' + ti + ' leg ' + li + ' to: ' + JSON.stringify(leg.to));
+              }
+            });
+          }
+          // Legacy top-level fields should be gone
+          ['from','to','carrier','flightNum','depart','arrive','confirmationCode','multiLeg'].forEach(function(field) {
+            if (t[field] !== undefined) {
+              issues.legacyTopLevel.push('day ' + di + ' transport ' + ti + ' still has top-level .' + field + ' = ' + JSON.stringify(t[field]));
+            }
+          });
+        });
+      });
+      assert(totalTransports > 0, 'trip has at least one transport entry (found ' + totalTransports + ')');
+      assert(issues.missingTransportUid.length === 0, 'every transport entry has a uid' + (issues.missingTransportUid.length ? ': ' + JSON.stringify(issues.missingTransportUid) : ''));
+      assert(issues.missingLegs.length === 0, 'every transport entry has legs[]' + (issues.missingLegs.length ? ': ' + JSON.stringify(issues.missingLegs) : ''));
+      assert(issues.missingLegUid.length === 0, 'every leg has a uid' + (issues.missingLegUid.length ? ': ' + JSON.stringify(issues.missingLegUid) : ''));
+      assert(issues.legShapeBad.length === 0, 'every leg has from/to as {city} objects' + (issues.legShapeBad.length ? ': ' + JSON.stringify(issues.legShapeBad) : ''));
+      assert(issues.legacyTopLevel.length === 0, 'no transport entry has legacy top-level from/to/carrier/etc' + (issues.legacyTopLevel.length ? ': ' + JSON.stringify(issues.legacyTopLevel) : ''));
+    };
+
     // ===== TEST 8 — Backward extension assigns IDs and preserves stay refs =====
     window.__test.test_extend_backward = function() {
       console.log('%c--- TEST 8: test_extend_backward ---', 'color:#3498DB;font-weight:bold');
@@ -11132,7 +11263,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       console.log('Days: ' + currentTrip.days.length + ' | Stays: ' + ((currentTrip.stays || []).length));
       console.log('Timestamp: ' + new Date().toISOString());
       console.log('');
-      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block', 'test_extend_backward', 'test_extend_forward'];
+      var tests = ['test_schema_integrity', 'auditDayConsistency', 'test_migration', 'test_add_day', 'test_delete_day_with_stay', 'test_change_flight_date', 'test_reorder_city_block', 'test_extend_backward', 'test_extend_forward', 'test_transport_shape'];
       var results = [];
       tests.forEach(function(name) {
         window.__test._currentRun = [];
@@ -11215,6 +11346,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           migrateDayIds();
           migrateStayDayIds();
           migrateTripStartDate();
+          migrateTransportShape();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
