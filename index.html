@@ -1348,11 +1348,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!currentTrip || !currentTrip.days) { return 0; }
       var today = new Date();
       today.setHours(0, 0, 0, 0);
+      var tripYear = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
       var months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
       var tripDates = currentTrip.days.map(function(day) {
-        var parts = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var parts = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
         var month = months[parts[0]]; var date = parseInt(parts[1]);
-        var d = new Date(2026, month, date); d.setHours(0,0,0,0); return d;
+        var d = new Date(tripYear, month, date); d.setHours(0,0,0,0); return d;
       });
       var lastDate = tripDates[tripDates.length - 1];
       var twoDaysAfter = new Date(lastDate); twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
@@ -1452,7 +1453,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         col.className = 'kanban-col';
         var colHeader = document.createElement('div');
         colHeader.className = 'kanban-col-header';
-        colHeader.innerHTML = '<span style="font-size:18px;">' + getCityEmoji(item.city) + '</span><div><div style="font-size:10px;color:var(--ink-muted);letter-spacing:0.07em;text-transform:uppercase;">Day ' + item.day + ' | ' + item.date + '</div><div style="font-size:13px;font-weight:700;">' + item.city + '</div></div>';
+        colHeader.innerHTML = '<span style="font-size:18px;">' + getCityEmoji(item.city) + '</span><div><div style="font-size:10px;color:var(--ink-muted);letter-spacing:0.07em;text-transform:uppercase;">Day ' + item.day + ' | ' + getDayDate(item, currentTrip) + '</div><div style="font-size:13px;font-weight:700;">' + item.city + '</div></div>';
         col.appendChild(colHeader);
         var colBody = document.createElement('div');
         colBody.className = 'kanban-col-body';
@@ -1821,7 +1822,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var day = mobCardsSortedDays.length ? mobCardsSortedDays[index] : currentTrip.days[index];
       if (!day) return;
       if (indicator) { indicator.textContent = 'Day ' + day.day + ' of ' + currentTrip.days.length; }
-      if (dateEl) { dateEl.textContent = day.date + ' · ' + day.city.split('>').pop().trim(); }
+      if (dateEl) { dateEl.textContent = getDayDate(day, currentTrip) + ' · ' + day.city.split('>').pop().trim(); }
       document.querySelectorAll('.mob-cards-dot').forEach(function(dot, i) {
         dot.classList.toggle('active', i === index);
       });
@@ -2565,11 +2566,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function getNextTripCity() {
       var today = new Date(); today.setHours(0,0,0,0);
+      var yr = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
       var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
       for (var i = 0; i < currentTrip.days.length; i++) {
         var day = currentTrip.days[i];
-        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var p = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
         var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0);
         if (d >= today) { return { day: day, index: i }; }
       }
@@ -2578,11 +2579,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function getNextFlight() {
       var today = new Date(); today.setHours(0,0,0,0);
+      var yr = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
       var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
       for (var i = 0; i < currentTrip.days.length; i++) {
         var day = currentTrip.days[i];
-        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var p = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
         var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0);
         if (d >= today && day.transport) {
           var flights = day.transport.filter(function(t) { return t.type === 'Flight'; });
@@ -2749,7 +2750,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var today = new Date(); today.setHours(0,0,0,0);
 
       function parseDate(day) {
-        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
+        var p = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
         var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0); return d;
       }
 
@@ -2792,7 +2793,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                   '<div class="home-tile-emoji">✈️</div>' +
                   '<div class="home-tile-label">Next flight</div>' +
                   '<div class="home-tile-value" style="font-size:14px;">' + nfDisp.from + ' → ' + nfDisp.to + '</div>' +
-                  '<div class="home-tile-sub">' + nextFlight.day.date + (nfDisp.depart ? ' · ' + nfDisp.depart : '') + '</div>' +
+                  '<div class="home-tile-sub">' + getDayDate(nextFlight.day, currentTrip) + (nfDisp.depart ? ' · ' + nfDisp.depart : '') + '</div>' +
                 '</div>'
               : '<div class="home-tile" data-tile-id="flight" onclick="">' +
                   '<div class="home-tile-emoji">✈️</div>' +
@@ -3102,7 +3103,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '<div class="home-day-num">Day ' + day.day + ' · TODAY</div>' +
               '<div class="home-day-city">' + day.city + '</div>' +
             '</div>' +
-            '<div class="home-day-date">' + day.date + '</div>' +
+            '<div class="home-day-date">' + getDayDate(day, currentTrip) + '</div>' +
             '<span class="home-day-badge">TODAY</span>' +
           '</div>' +
           '<div class="home-day-body open" id="home-day-body-' + di + '">' +
@@ -3400,7 +3401,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       showModal('✈️ Next Flight',
         '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:14px;">' +
           '<div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:8px;">' + disp.from + ' → ' + disp.to + '</div>' +
-          '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:4px;">' + nf.day.date + '</div>' +
+          '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:4px;">' + getDayDate(nf.day, currentTrip) + '</div>' +
           (disp.carrier ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">' + disp.carrier + (disp.flightNum?' · '+disp.flightNum:'') + '</div>' : '') +
           (disp.depart ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Departs: ' + disp.depart + '</div>' : '') +
           (disp.arrive ? '<div style="font-size:13px;color:var(--ink-light);margin-bottom:4px;">Arrives: ' + disp.arrive + '</div>' : '') +
@@ -3986,13 +3987,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       function _matchEditDates() {
         var ciIdx = -1, coIdx = -1, ciStr = '', coStr = '';
         currentTrip.days.forEach(function(day, di) {
-          var dd = parseTripDate(day.date);
+          var dd = parseTripDate(getDayDate(day, currentTrip));
           if (!dd) return;
           if (dd.getTime() === checkinDate.getTime() && ciIdx === -1) {
-            ciIdx = di; ciStr = day.date;
+            ciIdx = di; ciStr = getDayDate(day, currentTrip);
           }
           if (dd.getTime() === checkoutDate.getTime()) {
-            coIdx = di; coStr = day.date;
+            coIdx = di; coStr = getDayDate(day, currentTrip);
           }
         });
         return { ciIdx: ciIdx, coIdx: coIdx, ciStr: ciStr, coStr: coStr };
@@ -4231,13 +4232,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       function _matchStayDates() {
         var ciIdx = -1, coIdx = -1, ciStr = '', coStr = '';
         currentTrip.days.forEach(function(day, di) {
-          var dd = parseTripDate(day.date);
+          var dd = parseTripDate(getDayDate(day, currentTrip));
           if (!dd) return;
           if (dd.getTime() === checkinDate.getTime() && ciIdx === -1) {
-            ciIdx = di; ciStr = day.date;
+            ciIdx = di; ciStr = getDayDate(day, currentTrip);
           }
           if (dd.getTime() === checkoutDate.getTime()) {
-            coIdx = di; coStr = day.date;
+            coIdx = di; coStr = getDayDate(day, currentTrip);
           }
         });
         return { ciIdx: ciIdx, coIdx: coIdx, ciStr: ciStr, coStr: coStr };
@@ -4413,7 +4414,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var nextFlight = null;
       allEntries.forEach(function(e) {
         if ((e.t.type||'').toLowerCase() !== 'flight') return;
-        var d = parseTripDate(e.day.date);
+        var d = parseTripDate(getDayDate(e.day, currentTrip));
         if (d && d >= today && !nextFlight) nextFlight = e;
       });
 
@@ -4427,7 +4428,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           return '<div style="background:var(--accent-light);border-radius:var(--radius-sm);padding:8px 14px;text-align:center;">' +
             '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:2px;">Next Flight</div>' +
             '<div style="font-size:13px;font-weight:800;color:var(--ink);">' + (nfd.from||'?') + ' → ' + (nfd.to||'?') + '</div>' +
-            '<div style="font-size:11px;color:var(--ink-muted);">' + nextFlight.day.date + (nfd.depart ? ' · ' + nfd.depart : '') + '</div>' +
+            '<div style="font-size:11px;color:var(--ink-muted);">' + getDayDate(nextFlight.day, currentTrip) + (nfd.depart ? ' · ' + nfd.depart : '') + '</div>' +
           '</div>';
         })() : '') +
       '</div>';
@@ -4492,7 +4493,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<div class="transport-view-route">' + routeLabel + '</div>' +
             '<div style="font-size:11px;color:var(--ink-muted);text-align:right;flex-shrink:0;">' +
               '<div style="font-weight:700;">Day ' + day.day + '</div>' +
-              '<div>' + day.date + '</div>' +
+              '<div>' + getDayDate(day, currentTrip) + '</div>' +
             '</div>' +
           '</div>' +
           '<div class="transport-view-card-body">' +
@@ -4867,7 +4868,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var label = day.note || '';
           return '<div class="struct-day-row" data-di="' + di + '" onclick="structDayTap(' + di + ', event)">' +
             '<span class="struct-day-num">Day ' + day.day + '</span>' +
-            '<span class="struct-day-date">' + fmtDayDate(day.date) + '</span>' +
+            '<span class="struct-day-date">' + fmtDayDate(getDayDate(day, currentTrip)) + '</span>' +
             '<span class="struct-day-label">' + escHtml(label) + '</span>' +
             warnHtml +
             '<button class="struct-day-delete" onclick="structDeleteDay(' + di + ', event)" title="Remove day">✕</button>' +
@@ -5601,7 +5602,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           if (f.reservationRequired) {
             totalRes++;
             if (f.reservationBooked) { bookedRes++; }
-            else { needsBooking.push({ name: f.name, day: day.day, date: day.date, city: day.city }); }
+            else { needsBooking.push({ name: f.name, day: day.day, date: getDayDate(day, currentTrip), city: day.city }); }
           }
         });
       });
@@ -5712,7 +5713,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
             '<span style="font-size:18px;">' + getCityEmoji(day.city) + '</span>' +
             '<div style="flex:1;">' +
               '<div style="font-size:13px;font-weight:700;color:var(--ink);">Day ' + day.day + ' · ' + day.city + '</div>' +
-              '<div style="font-size:11px;color:var(--ink-muted);">' + day.date + ' · ' + day.food.length + ' place' + (day.food.length !== 1 ? 's' : '') + '</div>' +
+              '<div style="font-size:11px;color:var(--ink-muted);">' + getDayDate(day, currentTrip) + ' · ' + day.food.length + ' place' + (day.food.length !== 1 ? 's' : '') + '</div>' +
             '</div>' +
             dayBadge +
             '<span style="font-size:12px;color:var(--ink-muted);margin-left:6px;">▾</span>' +
@@ -5871,7 +5872,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         var dayEstBase = convertToBase(dayEst, dayCur);
         return '<div class="budget-day">' +
           '<div class="budget-day-header" onclick="toggleBudgetDay(' + di + ')">' +
-            '<div><div class="budget-day-title">Day ' + day.day + ' · ' + day.city + '</div><div class="budget-day-sub">' + day.date + ' · ' + dayCur + '</div></div>' +
+            '<div><div class="budget-day-title">Day ' + day.day + ' · ' + day.city + '</div><div class="budget-day-sub">' + getDayDate(day, currentTrip) + ' · ' + dayCur + '</div></div>' +
             '<div style="text-align:right;"><div class="budget-day-total">' + fmtLocal(dayEst, daySym) + '</div>' + (dayCur !== baseCurrency ? '<div style="font-size:10px;color:var(--ink-muted);">~' + fmtBase(dayEstBase) + ' ' + baseCurrency + '</div>' : '') + '</div>' +
           '</div>' +
           '<div class="budget-day-body" id="budget-day-' + di + '">' + rows + '</div>' +
@@ -5952,11 +5953,13 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var toggleBar = '<div style="display:flex;justify-content:flex-end;padding:0 0 12px 0;">' +
         '<button id="itin-toggle-all" onclick="toggleAllItinDays()" style="font-family:inherit;font-size:11px;font-weight:700;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink-muted);cursor:pointer;transition:all 0.15s;">Expand All</button>' +
         '</div>';
+      var kanbanYr = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
       var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
       var sortedDays = currentTrip.days.slice().sort(function(a, b) {
-        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
-        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
-        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
+        var pa = getDayDate(a, currentTrip).split(' ');
+        var pb = getDayDate(b, currentTrip).split(' ');
+        var da = pa.length >= 3 ? new Date(kanbanYr, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
+        var db = pb.length >= 3 ? new Date(kanbanYr, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
         return da - db;
       });
       var daysHtml = sortedDays.map(function(item) {
@@ -7601,7 +7604,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
         foodCards = '<div class="de-empty">No food added</div>';
       }
 
-      var dateStr = day.date || '';
+      var dateStr = getDayDate(day, currentTrip) || '';
       var listPane = document.getElementById('split-list');
       listPane.innerHTML =
         '<div class="de-header">' +
@@ -8881,7 +8884,7 @@ var pinDelay = Math.floor(Math.random() * 150);
     function updateMobPill() {
       var day = currentTrip.days[mobPillIndex];
       if (!day) return;
-      document.getElementById('mob-pill-day').textContent = 'Day ' + day.day + ' · ' + day.date;
+      document.getElementById('mob-pill-day').textContent = 'Day ' + day.day + ' · ' + getDayDate(day, currentTrip);
       document.getElementById('mob-pill-city').textContent = getCityEmoji(day.city) + ' ' + day.city.split('>').pop().trim();
     }
 
@@ -8914,7 +8917,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (!day) return;
       normaliseAccom(day); normaliseDayTransport(day);
       document.getElementById('mob-day-summary-emoji').textContent = getCityEmoji(day.city);
-      document.getElementById('mob-day-summary-daynum').textContent = 'Day ' + day.day + ' · ' + day.date;
+      document.getElementById('mob-day-summary-daynum').textContent = 'Day ' + day.day + ' · ' + getDayDate(day, currentTrip);
       document.getElementById('mob-day-summary-city').textContent = day.city;
       var chips = '';
       var divider = function(label) {
@@ -10270,7 +10273,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         var isClosest = closest && closest.day === day.day;
         return '<div class="disc-day-option" id="disc-day-opt-' + di + '" onclick="selectDiscDay(' + di + ')">' +
           '<span style="font-size:16px;">' + getCityEmoji(day.city) + '</span>' +
-          '<div style="flex:1;"><div style="font-size:13px;font-weight:600;">Day ' + day.day + ' · ' + day.city + '</div><div style="font-size:10px;color:var(--ink-muted);">' + day.date + '</div></div>' +
+          '<div style="flex:1;"><div style="font-size:13px;font-weight:600;">Day ' + day.day + ' · ' + day.city + '</div><div style="font-size:10px;color:var(--ink-muted);">' + getDayDate(day, currentTrip) + '</div></div>' +
           (isClosest ? '<span style="font-size:9px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:2px 6px;border-radius:10px;">nearest</span>' : '') +
         '</div>';
       }).join('');
