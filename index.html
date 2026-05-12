@@ -8286,16 +8286,20 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     }
 
     // Phase 4 Step 6.3 — cascade helpers for day insert/delete.
-    // _cascadeInsertDay(insertAt): bumps every stay whose index >= insertAt by +1.
-    // Call AFTER splice has inserted the new day.
+    // _cascadeInsertDay(insertAt): re-syncs every stay's stored checkinDayIndex
+    // to the new array position of its anchor day, after a splice insert.
+    // Because checkinDayId is the source of truth, indexOf(anchorDay) already
+    // returns the POST-insert position — no manual +1 is needed.
     function _cascadeInsertDay(insertAt) {
       if (!Array.isArray(currentTrip.stays)) return;
       currentTrip.stays.forEach(function(s) {
-        var ci = (typeof s.checkinDayIndex === 'number') ? s.checkinDayIndex : -1;
-        var co = (typeof s.checkoutDayIndex === 'number') ? s.checkoutDayIndex : -1;
-        var newCi = (ci >= insertAt) ? ci + 1 : ci;
-        var newCo = (co >= insertAt) ? co + 1 : co;
-        if (newCi !== ci || newCo !== co) _setStayDayRefs(s, newCi, newCo);
+        var ciDay = getDayByCheckinRef(s, currentTrip);
+        var coDay = getDayByCheckoutRef(s, currentTrip);
+        var newCi = ciDay ? currentTrip.days.indexOf(ciDay) : -1;
+        var newCo = coDay ? currentTrip.days.indexOf(coDay) : -1;
+        var oldCi = (typeof s.checkinDayIndex === 'number') ? s.checkinDayIndex : -1;
+        var oldCo = (typeof s.checkoutDayIndex === 'number') ? s.checkoutDayIndex : -1;
+        if (newCi !== oldCi || newCo !== oldCo) _setStayDayRefs(s, newCi, newCo);
       });
     }
 
