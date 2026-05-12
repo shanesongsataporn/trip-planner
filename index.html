@@ -2332,12 +2332,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentTrip.days = newDays.concat(currentTrip.days);
       // Renumber day.day from 1
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
-      // Shift all stay indices forward — use _setStayDayRefs so checkinDayId
-      // stays in sync with the (unchanged) day objects the stays anchor to.
+      // Shift all stay indices forward — resolve via id-based helper so the
+      // anchor day objects (now at +addedCount positions) drive the new indices.
       if (Array.isArray(currentTrip.stays)) {
         currentTrip.stays.forEach(function(s) {
-          var ciIdx = (typeof s.checkinDayIndex === 'number') ? s.checkinDayIndex + addedCount : s.checkinDayIndex;
-          var coIdx = (typeof s.checkoutDayIndex === 'number') ? s.checkoutDayIndex + addedCount : s.checkoutDayIndex;
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          var coDay = getDayByCheckoutRef(s, currentTrip);
+          var ciIdx = ciDay ? currentTrip.days.indexOf(ciDay) : -1;
+          var coIdx = coDay ? currentTrip.days.indexOf(coDay) : -1;
           _setStayDayRefs(s, ciIdx, coIdx);
         });
       }
@@ -2426,8 +2428,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         function() {
           var i = parseInt(document.getElementById('del-day-select').value);
           var coveringStays = (currentTrip.stays || []).filter(function(s) {
-            return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
-              && s.checkinDayIndex <= i && s.checkoutDayIndex >= i;
+            var ciDay = getDayByCheckinRef(s, currentTrip);
+            var coDay = getDayByCheckoutRef(s, currentTrip);
+            if (!ciDay || !coDay) return false;
+            var ciIdx = currentTrip.days.indexOf(ciDay);
+            var coIdx = currentTrip.days.indexOf(coDay);
+            return ciIdx <= i && coIdx >= i;
           });
           if (coveringStays.length) {
             var names = coveringStays.map(function(s) { return s.name; }).join(', ');
