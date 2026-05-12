@@ -11091,11 +11091,13 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       assert(allDaysHaveDateOrId, 'every day has either .date or .id');
       var stays = currentTrip.stays || [];
       var allStaysResolve = stays.every(function(s) {
-        var ci = typeof s.checkinDayIndex === 'number' && currentTrip.days[s.checkinDayIndex];
-        var co = typeof s.checkoutDayIndex === 'number' && currentTrip.days[s.checkoutDayIndex];
-        return (ci && co) || (s.checkinDayId && s.checkoutDayId);
+        return s.checkinDayId && s.checkoutDayId && getDayByCheckinRef(s, currentTrip) && getDayByCheckoutRef(s, currentTrip);
       });
-      assert(allStaysResolve, 'every stay resolves via checkinDayIndex/checkoutDayIndex OR checkinDayId/checkoutDayId');
+      assert(allStaysResolve, 'every stay resolves via checkinDayId/checkoutDayId (legacy indices no longer required)');
+      // Step 7b — assertion is staged: will go GREEN after migrateStripStayIndexFields runs.
+      // Until then, it correctly reports legacy fields still present.
+      var noLegacyIndices = stays.every(function(s) { return s.checkinDayIndex === undefined && s.checkoutDayIndex === undefined; });
+      assert(noLegacyIndices, 'no stay retains legacy checkinDayIndex/checkoutDayIndex field');
       var hasStartDateOrLegacyDate = !!currentTrip.startDate || !!(currentTrip.days[0] && currentTrip.days[0].date);
       assert(hasStartDateOrLegacyDate, 'trip has either .startDate (new model) or days[0].date (legacy model)');
     };
@@ -11105,13 +11107,13 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       console.log('%c--- TEST 7: auditDayConsistency ---', 'color:#3498DB;font-weight:bold');
       var assert = window.__test.assert;
       var issues = { stayRefs: [], orphanCardNotes: [], orphanCosts: [], orphanDone: [], routeOutOfBounds: [], dayDateMissing: [] };
-      // Stay refs resolve
+      // Stay refs resolve — id-based (Step 7b). Indices are no longer the source of truth.
       (currentTrip.stays || []).forEach(function(s) {
-        if (typeof s.checkinDayIndex !== 'number' || !currentTrip.days[s.checkinDayIndex]) {
-          issues.stayRefs.push(s.name + ' checkinDayIndex=' + s.checkinDayIndex + ' invalid');
+        if (!s.checkinDayId || !getDayByCheckinRef(s, currentTrip)) {
+          issues.stayRefs.push(s.name + ' checkinDayId=' + s.checkinDayId + ' does not resolve');
         }
-        if (typeof s.checkoutDayIndex !== 'number' || !currentTrip.days[s.checkoutDayIndex]) {
-          issues.stayRefs.push(s.name + ' checkoutDayIndex=' + s.checkoutDayIndex + ' invalid');
+        if (!s.checkoutDayId || !getDayByCheckoutRef(s, currentTrip)) {
+          issues.stayRefs.push(s.name + ' checkoutDayId=' + s.checkoutDayId + ' does not resolve');
         }
       });
       // Orphaned uid-based keys & out-of-bounds routes
@@ -11218,17 +11220,22 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         var lastIdxBefore = beforeLen - 1;
         var lastDateBefore = getDayDate(currentTrip.days[lastIdxBefore], currentTrip);
         var insertAt = 2;
-        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        // Capture pre-splice positions by resolving live stay ids against currentTrip.days.
+        var preInsertPositions = (currentTrip.stays || []).map(function(s) {
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          return { id: s.id, name: s.name, ciIdx: ciDay ? currentTrip.days.indexOf(ciDay) : -1 };
+        });
         _insertDayAt(insertAt, window.__test._makeTestDay('Bangkok'));
         assert(currentTrip.days.length === beforeLen + 1, 'day count incremented by 1');
         var newLastDate = getDayDate(currentTrip.days[currentTrip.days.length - 1], currentTrip);
         assert(newLastDate && newLastDate !== lastDateBefore, 'last day date shifted forward (cascade) — was "' + lastDateBefore + '", now "' + newLastDate + '"');
-        var staysShifted = (currentTrip.stays || []).every(function(s, i) {
-          var snap = staysSnap[i];
-          if (!snap) return true;
-          if (typeof snap.checkinDayIndex !== 'number') return true;
-          if (snap.checkinDayIndex >= insertAt) { return s.checkinDayIndex === snap.checkinDayIndex + 1; }
-          return s.checkinDayIndex === snap.checkinDayIndex;
+        var staysShifted = (currentTrip.stays || []).every(function(s) {
+          var pre = preInsertPositions.find(function(p) { return p.id === s.id || p.name === s.name; });
+          if (!pre || pre.ciIdx < 0) return true;
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          var newCi = ciDay ? currentTrip.days.indexOf(ciDay) : -1;
+          var expected = (pre.ciIdx >= insertAt) ? pre.ciIdx + 1 : pre.ciIdx;
+          return newCi === expected;
         });
         assert(staysShifted, 'all stays at or after insert point shifted checkinDayIndex +1');
       });
@@ -11239,22 +11246,31 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       console.log('%c--- TEST 3: test_delete_day_with_stay ---', 'color:#3498DB;font-weight:bold');
       var assert = window.__test.assert;
       window.__test.withTestMode(function() {
-        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
         var deleteAt = 2;
-        var coveringStay = staysSnap.find(function(s) {
-          return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
-            && s.checkinDayIndex <= deleteAt && s.checkoutDayIndex >= deleteAt;
+        // Resolve covering stay via id-based ref against currentTrip.days.
+        var coveringStay = (currentTrip.stays || []).find(function(s) {
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          var coDay = getDayByCheckoutRef(s, currentTrip);
+          if (!ciDay || !coDay) return false;
+          var ci = currentTrip.days.indexOf(ciDay);
+          var co = currentTrip.days.indexOf(coDay);
+          return ci <= deleteAt && co >= deleteAt;
         });
         assert(!!coveringStay, 'found a stay covering day index ' + deleteAt + ' (test setup)');
         if (!coveringStay) return;
-        var nightsBefore = coveringStay.checkoutDayIndex - coveringStay.checkinDayIndex;
+        var coveringSnap = { id: coveringStay.id, name: coveringStay.name };
+        var preCiDay = getDayByCheckinRef(coveringStay, currentTrip);
+        var preCoDay = getDayByCheckoutRef(coveringStay, currentTrip);
+        var nightsBefore = currentTrip.days.indexOf(preCoDay) - currentTrip.days.indexOf(preCiDay);
         var beforeLen = currentTrip.days.length;
         _deleteDayAt(deleteAt);
         assert(currentTrip.days.length === beforeLen - 1, 'day count decremented by 1');
-        var stayAfter = (currentTrip.stays || []).find(function(s) { return s.id === coveringStay.id || s.name === coveringStay.name; });
+        var stayAfter = (currentTrip.stays || []).find(function(s) { return s.id === coveringSnap.id || s.name === coveringSnap.name; });
         assert(!!stayAfter, 'stay still exists after delete');
         if (!stayAfter) return;
-        var nightsAfter = stayAfter.checkoutDayIndex - stayAfter.checkinDayIndex;
+        var postCiDay = getDayByCheckinRef(stayAfter, currentTrip);
+        var postCoDay = getDayByCheckoutRef(stayAfter, currentTrip);
+        var nightsAfter = (postCiDay && postCoDay) ? currentTrip.days.indexOf(postCoDay) - currentTrip.days.indexOf(postCiDay) : -1;
         assert(nightsAfter === nightsBefore - 1, 'stay nights count dropped by 1 — was ' + nightsBefore + ', now ' + nightsAfter);
       });
     };
@@ -11313,7 +11329,15 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         assert(blockStart >= 0 && blockEnd >= blockStart, 'found ' + blockCity + ' block at indices ' + blockStart + '–' + blockEnd);
         if (blockStart < 0) return;
         var blockLen = blockEnd - blockStart + 1;
-        var staysSnap = JSON.parse(JSON.stringify(currentTrip.stays || []));
+        // Capture block stays by id-resolving against pre-reorder currentTrip.days.
+        var blockStaysSnap = (currentTrip.stays || []).filter(function(s) {
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          var coDay = getDayByCheckoutRef(s, currentTrip);
+          if (!ciDay || !coDay) return false;
+          var ci = currentTrip.days.indexOf(ciDay);
+          var co = currentTrip.days.indexOf(coDay);
+          return co >= blockStart && ci <= blockEnd;
+        }).map(function(s) { return { id: s.id, name: s.name }; });
         var blockDays = currentTrip.days.splice(blockStart, blockLen);
         var insertAt = 1;
         currentTrip.days.splice.apply(currentTrip.days, [insertAt, 0].concat(blockDays));
@@ -11322,12 +11346,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           if ((currentTrip.days[j].city || '').indexOf(blockCity) === -1) { firstFiveAreBlock = false; break; }
         }
         assert(firstFiveAreBlock, blockCity + ' block now occupies indices ' + insertAt + '–' + (insertAt + blockLen - 1));
-        var blockStays = staysSnap.filter(function(s) {
-          return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
-            && s.checkoutDayIndex >= blockStart && s.checkinDayIndex <= blockEnd;
-        });
-        assert(blockStays.length > 0, 'found ' + blockStays.length + ' stays overlapping the moved ' + blockCity + ' block');
-        var blockStaysStillResolve = blockStays.every(function(snap) {
+        assert(blockStaysSnap.length > 0, 'found ' + blockStaysSnap.length + ' stays overlapping the moved ' + blockCity + ' block');
+        var blockStaysStillResolve = blockStaysSnap.every(function(snap) {
           var live = (currentTrip.stays || []).find(function(s) { return s.id === snap.id || s.name === snap.name; });
           if (!live) return false;
           var refDay = getDayByCheckinRef(live, currentTrip);
