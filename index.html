@@ -11001,6 +11001,44 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }
     }
 
+    // Phase 4 Step 7b — strip legacy checkinDayIndex/checkoutDayIndex fields
+    // from every stay. Runs after migrateStayDayIds has populated ids.
+    // Idempotent. Guarded against accidental live-trip runs.
+    function migrateStripStayIndexFields() {
+      if (!currentTrip || !Array.isArray(currentTrip.stays) || !currentTrip.stays.length) return;
+      if (currentTrip !== trips[currentTripKey]) {
+        console.error('[migrateStripStayIndexFields] currentTrip reference drift detected — aborting');
+        return;
+      }
+      var needsWork = currentTrip.stays.some(function(s) {
+        return s.checkinDayIndex !== undefined || s.checkoutDayIndex !== undefined;
+      });
+      if (!needsWork) return;
+      // Live-trip guard
+      if (currentTripKey !== 'thailand_2026_test' && localStorage.getItem('__ALLOW_LIVE_MIGRATION') !== 'true') {
+        console.warn('[migrateStripStayIndexFields] live trip detected, would strip legacy stay index fields but __ALLOW_LIVE_MIGRATION is not set');
+        console.warn('[migrateStripStayIndexFields] to run: localStorage.setItem("__ALLOW_LIVE_MIGRATION", "true"); location.reload();');
+        return;
+      }
+      // Pre-flight: every stay must have ids before we strip indices, or we lose the anchor.
+      var missingIds = currentTrip.stays.filter(function(s) { return !s.checkinDayId || !s.checkoutDayId; });
+      if (missingIds.length) {
+        console.error('[migrateStripStayIndexFields] cannot strip — ' + missingIds.length + ' stays missing ids:', missingIds.map(function(s) { return s.name; }));
+        return;
+      }
+      var stripped = 0;
+      currentTrip.stays.forEach(function(s) {
+        if (s.checkinDayIndex !== undefined) { delete s.checkinDayIndex; stripped++; }
+        if (s.checkoutDayIndex !== undefined) { delete s.checkoutDayIndex; stripped++; }
+      });
+      console.log('[migrateStripStayIndexFields] stripped ' + stripped + ' legacy fields from ' + currentTrip.stays.length + ' stays');
+      saveToStorage();
+      if (localStorage.getItem('__ALLOW_LIVE_MIGRATION') === 'true') {
+        localStorage.removeItem('__ALLOW_LIVE_MIGRATION');
+        console.log('[migrateStripStayIndexFields] cleared __ALLOW_LIVE_MIGRATION flag');
+      }
+    }
+
     // ===== PHASE 3 TEST HARNESS — HELPERS =====
     // All test infrastructure lives in window.__test for easy console access.
     // Destructive tests set window.__TEST_MODE = true to block Firestore/localStorage writes.
@@ -11568,6 +11606,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           migrateStayDayIds();
           migrateTripStartDate();
           migrateTransportShape();
+          migrateStripStayIndexFields();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
