@@ -8305,38 +8305,42 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
 
     // _cascadeDeleteDay(deletedAt): handles stay re-anchoring after a day delete.
     // Call AFTER splice has removed the day.
-    // Rules:
-    //  - Both anchors === deletedAt → stay had a single-day range on the deleted day. Delete stay.
-    //  - checkinDayIndex === deletedAt (only) → checkin moves to deletedAt (next day in city).
-    //  - checkoutDayIndex === deletedAt (only) → checkout moves to deletedAt - 1 (prev day, stay shortens).
-    //  - Both > deletedAt → shift both by -1.
-    //  - checkinDayIndex < deletedAt < checkoutDayIndex → covering stay, checkout shifts -1, stay shortens.
+    // Resolves anchor days via id-based helpers — if a stay's anchor day was
+    // the one deleted, getDayByCheckinRef returns null and we handle the edge:
+    //  - Both anchors deleted (single-day stay on the deleted day) → delete stay.
+    //  - Checkin anchor deleted only → checkin moves to whatever day is now at
+    //    deletedAt (next day in city), checkout shifts as needed.
+    //  - Checkout anchor deleted only → checkout shrinks to deletedAt - 1.
+    //  - Neither anchor deleted → both shift naturally via indexOf().
     function _cascadeDeleteDay(deletedAt) {
       if (!Array.isArray(currentTrip.stays)) return;
       var toDelete = [];
       currentTrip.stays.forEach(function(s, idx) {
-        var ci = (typeof s.checkinDayIndex === 'number') ? s.checkinDayIndex : -1;
-        var co = (typeof s.checkoutDayIndex === 'number') ? s.checkoutDayIndex : -1;
-        if (ci === -1 || co === -1) return;
-        if (ci === deletedAt && co === deletedAt) { toDelete.push(idx); return; }
-        var newCi = ci, newCo = co;
-        if (ci === deletedAt) {
-          // checkin day deleted, next day in array (still at index deletedAt) becomes new checkin
+        var ciDay = getDayByCheckinRef(s, currentTrip);
+        var coDay = getDayByCheckoutRef(s, currentTrip);
+        var oldCi = (typeof s.checkinDayIndex === 'number') ? s.checkinDayIndex : -1;
+        var oldCo = (typeof s.checkoutDayIndex === 'number') ? s.checkoutDayIndex : -1;
+        if (oldCi === -1 || oldCo === -1) return;
+        var ciGone = !ciDay;
+        var coGone = !coDay;
+        if (ciGone && coGone) { toDelete.push(idx); return; }
+        var newCi, newCo;
+        if (ciGone) {
+          // Checkin anchor day was deleted. Next day in city is now at deletedAt.
           newCi = deletedAt;
-          // checkout if > deletedAt also shifts -1
-          if (co > deletedAt) newCo = co - 1;
-        } else if (co === deletedAt) {
-          // checkout day deleted, stay shortens by 1
+          newCo = currentTrip.days.indexOf(coDay);
+        } else if (coGone) {
+          // Checkout anchor day was deleted. Stay shrinks by 1 night.
+          newCi = currentTrip.days.indexOf(ciDay);
           newCo = deletedAt - 1;
-          if (ci > deletedAt) newCi = ci - 1;
         } else {
-          // pure shift
-          if (ci > deletedAt) newCi = ci - 1;
-          if (co > deletedAt) newCo = co - 1;
+          // Both anchors survive — indexOf returns post-delete positions directly.
+          newCi = currentTrip.days.indexOf(ciDay);
+          newCo = currentTrip.days.indexOf(coDay);
         }
         // Defensive: if new range is invalid, queue for delete
         if (newCi < 0 || newCo < newCi) { toDelete.push(idx); return; }
-        if (newCi !== ci || newCo !== co) _setStayDayRefs(s, newCi, newCo);
+        if (newCi !== oldCi || newCo !== oldCo) _setStayDayRefs(s, newCi, newCo);
       });
       // Remove invalidated stays from highest index down to keep indices stable.
       toDelete.sort(function(a, b) { return b - a; }).forEach(function(i) {
