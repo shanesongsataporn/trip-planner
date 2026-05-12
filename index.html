@@ -4735,7 +4735,17 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       closeTransportSheet();
       renderTransport();
-      if (typeof selectSplitDay === 'function' && deCurrentIndex != null) { selectSplitDay(deCurrentIndex); }
+      // Re-render day editor only if it's actually visible
+      var splitView = document.getElementById('view-split');
+      if (splitView && splitView.style.display !== 'none' && typeof selectSplitDay === 'function' && deCurrentIndex != null) {
+        try { selectSplitDay(deCurrentIndex); } catch(e) { console.warn('[saveTransportSheet] selectSplitDay re-render failed:', e.message); }
+      }
+      // Re-render the day panel transport tab if the panel is open
+      var panelEl = document.getElementById('panel');
+      var transportTab = document.getElementById('tab-transport');
+      if (panelEl && panelEl.classList.contains('open') && transportTab && currentDayItem && typeof renderTransportTab === 'function') {
+        try { transportTab.innerHTML = renderTransportTab(currentDayItem); } catch(e) { console.warn('[saveTransportSheet] panel transport tab re-render failed:', e.message); }
+      }
     }
 
     function showAddTransportModal(prefillDi) { openTransportSheet('add', prefillDi, null); }
@@ -4783,55 +4793,33 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           }).join('')
         : '<div class="panel-note" style="color:var(--ink-muted);font-style:italic;">No transport added yet</div>';
 
+      var panelDi = currentDayItem ? currentTrip.days.indexOf(currentDayItem) : -1;
       return listHtml +
-        '<button class="add-btn" onclick="toggleTransportForm()">+ Add transport</button>' +
-        '<div class="transport-form" id="transport-form" style="display:none;">' +
-          '<label>Type</label>' +
-          '<select id="tf-type"><option>Flight</option><option>Train</option><option>Bus</option><option>Ferry</option><option>Car</option><option>Transfer</option></select>' +
-          '<div class="transport-row">' +
-            '<div><label>From</label><input type="text" id="tf-from" placeholder="e.g. Sydney"></div>' +
-            '<div><label>To</label><input type="text" id="tf-to" placeholder="e.g. Bangkok"></div>' +
-          '</div>' +
-          '<div class="transport-row">' +
-            '<div><label>Carrier</label><input type="text" id="tf-carrier" placeholder="e.g. Malaysia Airlines"></div>' +
-            '<div><label>Flight/Ref #</label><input type="text" id="tf-num" placeholder="e.g. MH250"></div>' +
-          '</div>' +
-          '<div class="transport-row">' +
-            '<div><label>Departs</label><input type="text" id="tf-depart" placeholder="e.g. 9:15am"></div>' +
-            '<div><label>Arrives</label><input type="text" id="tf-arrive" placeholder="e.g. 6:55pm"></div>' +
-          '</div>' +
-          '<label>Notes</label><input type="text" id="tf-notes" placeholder="e.g. 4hr layover in KL">' +
-          '<button class="save-marker-btn" style="margin-top:10px;" onclick="saveTransport()">Add transport</button>' +
-        '</div>';
+        '<button class="add-btn" onclick="openTransportSheet(\'add\', ' + panelDi + ', null)">+ Add transport</button>';
     }
 
-    function toggleTransportForm() {
-      var f = document.getElementById('transport-form');
-      if (f) { f.style.display = f.style.display === 'none' ? 'block' : 'none'; }
-    }
-
-    function saveTransport() {
-      if (!currentDayItem) return;
-      normaliseDayTransport(currentDayItem);
-      currentDayItem.transport.push({
-        type: document.getElementById('tf-type').value,
-        from: document.getElementById('tf-from').value.trim(),
-        to: document.getElementById('tf-to').value.trim(),
-        carrier: document.getElementById('tf-carrier').value.trim(),
-        flightNum: document.getElementById('tf-num').value.trim(),
-        depart: document.getElementById('tf-depart').value.trim(),
-        arrive: document.getElementById('tf-arrive').value.trim(),
-        notes: document.getElementById('tf-notes').value.trim()
-      });
-      saveToStorage();
-      document.getElementById('tab-transport').innerHTML = renderTransportTab(currentDayItem);
-    }
+    // toggleTransportForm + saveTransport killed in Phase 4 Step 6.4d.
+    // The panel "+ Add transport" button now routes through openTransportSheet,
+    // which writes unified shape via the canonical _addFlightToDay API.
 
     function deleteTransport(index) {
       if (!currentDayItem) return;
       normaliseDayTransport(currentDayItem);
-      currentDayItem.transport.splice(index, 1);
-      saveToStorage();
+      // Find the day index in currentTrip.days
+      var di = currentTrip.days.indexOf(currentDayItem);
+      if (di < 0) {
+        // Fallback: raw splice if day not found
+        currentDayItem.transport.splice(index, 1);
+        saveToStorage();
+      } else {
+        var t = currentDayItem.transport[index];
+        if (t && t.uid) {
+          _removeFlightFromDay(di, t.uid);
+        } else {
+          currentDayItem.transport.splice(index, 1);
+          saveToStorage();
+        }
+      }
       document.getElementById('tab-transport').innerHTML = renderTransportTab(currentDayItem);
     }
 
@@ -11448,7 +11436,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         document.getElementById = origGetEl;
         closeTransportSheet = origClose;
         selectSplitDay = origSelectSplitDay;
-        
+
 
         // Inspect result
         var transport = currentTrip.days[targetDi].transport || [];
