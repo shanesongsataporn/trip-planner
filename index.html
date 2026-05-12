@@ -2461,8 +2461,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         function() {
           var i = parseInt(document.getElementById('del-day-select').value);
           var coveringStays = (currentTrip.stays || []).filter(function(s) {
-            return typeof s.checkinDayIndex === 'number' && typeof s.checkoutDayIndex === 'number'
-              && s.checkinDayIndex <= i && s.checkoutDayIndex >= i;
+            var ciDay = getDayByCheckinRef(s, currentTrip);
+            var coDay = getDayByCheckoutRef(s, currentTrip);
+            if (!ciDay || !coDay) return false;
+            var ciIdx = currentTrip.days.indexOf(ciDay);
+            var coIdx = currentTrip.days.indexOf(coDay);
+            return ciIdx <= i && coIdx >= i;
           });
           if (coveringStays.length) {
             var names = coveringStays.map(function(s) { return s.name; }).join(', ');
