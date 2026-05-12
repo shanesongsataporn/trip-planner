@@ -11271,7 +11271,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         var blockStaysStillResolve = blockStays.every(function(snap) {
           var live = (currentTrip.stays || []).find(function(s) { return s.id === snap.id || s.name === snap.name; });
           if (!live) return false;
-          var refDay = currentTrip.days[live.checkinDayIndex];
+          var refDay = getDayByCheckinRef(live, currentTrip);
           if (!refDay) return false;
           return (refDay.city || '').indexOf(blockCity) !== -1;
         });
