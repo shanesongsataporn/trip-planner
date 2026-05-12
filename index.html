@@ -8245,44 +8245,36 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     // Phase 4 Step 4 — resolve a stay's checkin/checkout day. Prefers id, falls back to index.
     // Used by readers during the strangle period — once every reader uses these helpers,
     // legacy checkinDayIndex/checkoutDayIndex can be deleted.
+    // Phase 4 Step 7b — id-only helpers. Index fallback removed; fields no
+    // longer exist in data after migrateStripStayIndexFields ran.
     function getDayByCheckinRef(stay, trip) {
-      if (!stay || !trip || !trip.days) return null;
-      if (stay.checkinDayId) {
-        for (var i = 0; i < trip.days.length; i++) {
-          if (trip.days[i].id === stay.checkinDayId) return trip.days[i];
-        }
-      }
-      if (typeof stay.checkinDayIndex === 'number') {
-        return trip.days[stay.checkinDayIndex] || null;
+      if (!stay || !trip || !trip.days || !stay.checkinDayId) return null;
+      for (var i = 0; i < trip.days.length; i++) {
+        if (trip.days[i].id === stay.checkinDayId) return trip.days[i];
       }
       return null;
     }
 
     function getDayByCheckoutRef(stay, trip) {
-      if (!stay || !trip || !trip.days) return null;
-      if (stay.checkoutDayId) {
-        for (var i = 0; i < trip.days.length; i++) {
-          if (trip.days[i].id === stay.checkoutDayId) return trip.days[i];
-        }
-      }
-      if (typeof stay.checkoutDayIndex === 'number') {
-        return trip.days[stay.checkoutDayIndex] || null;
+      if (!stay || !trip || !trip.days || !stay.checkoutDayId) return null;
+      for (var i = 0; i < trip.days.length; i++) {
+        if (trip.days[i].id === stay.checkoutDayId) return trip.days[i];
       }
       return null;
     }
 
-    // Phase 4 Step 6.2 — write stay day refs ID-first, index-secondary.
-    // Indices are kept in sync during the strangle so any code still reading
-    // them (including the test harness) keeps working. Step 7 deletes the
-    // indices and this helper drops to a single-line ID write.
+    // Phase 4 Step 7b — id-only writer. Legacy checkinDayIndex/checkoutDayIndex
+    // fields are deleted from each stay (migrateStripStayIndexFields handles
+    // existing data; this defensive delete zaps any that sneak back in).
     function _setStayDayRefs(stay, ciIdx, coIdx) {
       if (!stay) return;
       var ciDay = currentTrip.days[ciIdx];
       var coDay = currentTrip.days[coIdx];
       stay.checkinDayId = ciDay && ciDay.id ? ciDay.id : '';
       stay.checkoutDayId = coDay && coDay.id ? coDay.id : '';
-      stay.checkinDayIndex = ciIdx;
-      stay.checkoutDayIndex = coIdx;
+      // Defensive: zap any legacy index that may have been written by older code.
+      delete stay.checkinDayIndex;
+      delete stay.checkoutDayIndex;
     }
 
     // Phase 4 Step 6.3 — cascade helpers for day insert/delete.
