@@ -3991,7 +3991,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var monthNamesEdit = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
       var firstDayEdit = currentTrip.days[0];
-      var firstDayDateEdit = firstDayEdit ? parseTripDate(firstDayEdit.date) : null;
+      var firstDayIsoEdit = firstDayEdit ? getDayDateISO(firstDayEdit, currentTrip) : '';
+      var firstDayDateEdit = firstDayIsoEdit ? new Date(firstDayIsoEdit + 'T00:00:00') : null;
       if (matchedEdit.ciIdx === -1 && firstDayDateEdit && checkinDate.getTime() < firstDayDateEdit.getTime()) {
         var backDiffEdit = Math.round((firstDayDateEdit.getTime() - checkinDate.getTime()) / 86400000);
         var ciLabelEdit = monthNamesEdit[checkinDate.getMonth()] + ' ' + checkinDate.getDate();
@@ -4003,7 +4004,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       var lastDayEdit = currentTrip.days[currentTrip.days.length - 1];
-      var lastDayDateEdit = lastDayEdit ? parseTripDate(lastDayEdit.date) : null;
+      var lastDayIsoEdit = lastDayEdit ? getDayDateISO(lastDayEdit, currentTrip) : '';
+      var lastDayDateEdit = lastDayIsoEdit ? new Date(lastDayIsoEdit + 'T00:00:00') : null;
       if (matchedEdit.coIdx === -1 && lastDayDateEdit && checkoutDate.getTime() > lastDayDateEdit.getTime()) {
         var fwdDiffEdit = Math.round((checkoutDate.getTime() - lastDayDateEdit.getTime()) / 86400000);
         var coLabelEdit = monthNamesEdit[checkoutDate.getMonth()] + ' ' + checkoutDate.getDate();
@@ -4561,14 +4563,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var isMulti = _transportSheet.multiLeg;
       var isFlight = _transportSheet.type === 'Flight';
       var dayOptions = currentTrip.days.map(function(d, i) {
-        return '<option value="' + i + '">' + 'Day ' + d.day + ' · ' + d.city + ' · ' + d.date + '</option>';
+        return '<option value="' + i + '">' + 'Day ' + d.day + ' · ' + d.city + ' · ' + getDayDate(d, currentTrip) + '</option>';
       }).join('');
       if (isFlight) {
         var lastDay = currentTrip.days[currentTrip.days.length - 1];
         var arrivalDate = '';
-        if (lastDay && lastDay.date) {
-          var ad = parseTripDate(lastDay.date);
-          if (ad) { ad.setDate(ad.getDate() + 1); arrivalDate = formatTripDate(ad); }
+        var lastIso = lastDay ? getDayDateISO(lastDay, currentTrip) : '';
+        if (lastIso) {
+          var ad = new Date(lastIso + 'T00:00:00');
+          ad.setDate(ad.getDate() + 1);
+          arrivalDate = formatTripDate(ad);
         }
         dayOptions += '<option value="' + currentTrip.days.length + '">✈️ Arrival day · ' + arrivalDate + '</option>';
       }
@@ -5085,16 +5089,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         days.forEach(function(d, i) { if (d.city === city) lastIdx = i; });
       }
 
-      // Build new blank day using shared date helpers
-      var prevDay = lastIdx >= 0 ? days[lastIdx] : days[days.length - 1];
-      var newDate = '';
-      if (prevDay && prevDay.date) {
-        var d = parseTripDate(prevDay.date);
-        if (d) { d.setDate(d.getDate() + 1); newDate = formatTripDate(d); }
-      }
+      // Step 8 — no date field on new days. Date is derived from trip.startDate + index.
       var newDay = {
         id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-        day: 0, date: newDate, city: city,
+        day: 0, city: city,
         lat: cs ? cs.lat : 0, lng: cs ? cs.lng : 0,
         note: '', accommodation: [], activities: [], activityCategories: [],
         activityLinks: [], food: [], transport: [], cardNotes: {}, costs: {}, done: {}
@@ -9758,10 +9756,10 @@ var pinDelay = Math.floor(Math.random() * 150);
       var prevDay = currentTrip.days[dayIdx - 1];
       var nextDay = currentTrip.days[dayIdx + 1];
       var prevDayText = (prevDay && prevDay.city === item.city)
-        ? 'Day ' + prevDay.day + ' (' + prevDay.date + '): ' + (prevDay.activities || []).map(function(a) { return typeof a === 'object' ? a.name : a; }).join(', ')
+        ? 'Day ' + prevDay.day + ' (' + getDayDate(prevDay, currentTrip) + '): ' + (prevDay.activities || []).map(function(a) { return typeof a === 'object' ? a.name : a; }).join(', ')
         : 'Different city or no previous day';
       var nextDayText = (nextDay && nextDay.city === item.city)
-        ? 'Day ' + nextDay.day + ' (' + nextDay.date + '): ' + (nextDay.activities || []).map(function(a) { return typeof a === 'object' ? a.name : a; }).join(', ')
+        ? 'Day ' + nextDay.day + ' (' + getDayDate(nextDay, currentTrip) + '): ' + (nextDay.activities || []).map(function(a) { return typeof a === 'object' ? a.name : a; }).join(', ')
         : 'Different city or no next day';
 
       // today's food reservations
@@ -11119,7 +11117,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       assert(issues.orphanCosts.length === 0, 'no orphaned costs keys' + (issues.orphanCosts.length ? ': ' + JSON.stringify(issues.orphanCosts) : ''));
       assert(issues.orphanDone.length === 0, 'no orphaned done keys' + (issues.orphanDone.length ? ': ' + JSON.stringify(issues.orphanDone) : ''));
       assert(issues.routeOutOfBounds.length === 0, 'no routeOrder indices out of bounds' + (issues.routeOutOfBounds.length ? ': ' + JSON.stringify(issues.routeOutOfBounds) : ''));
-      assert(issues.dayDateMissing.length === 0, 'every day has a .date string' + (issues.dayDateMissing.length ? ': ' + JSON.stringify(issues.dayDateMissing) : ''));
+      assert(issues.dayDateMissing.length === 0, 'no day has legacy .date field' + (issues.dayDateMissing.length ? ': ' + JSON.stringify(issues.dayDateMissing) : ''));
       window.__test._lastAudit = issues;
       return issues;
     };
@@ -11500,6 +11498,105 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         a(leg && typeof leg.to === 'object' && leg.to.city === 'TestDest', 'leg.to is {city} object');
         a(entry.notes === 'test notes', 'notes saved correctly');
       });
+    };
+
+    // ===== LINT — Walks currentTrip and reports legacy/drift patterns =====
+    // Run after any new feature, at session start, or whenever something feels off.
+    // Output: "✅ clean" or numbered list of issues.
+    window.__test.lintTrip = function() {
+      console.log('%c=== LINT: currentTrip ===', 'color:#3498DB;font-size:13px;font-weight:bold');
+      if (!currentTrip) { console.error('No currentTrip'); return; }
+      var issues = [];
+
+      // 1. Trip-level
+      if (!currentTrip.startDate) issues.push('trip.startDate missing');
+      else if (!/^\d{4}-\d{2}-\d{2}$/.test(currentTrip.startDate)) issues.push('trip.startDate not ISO: ' + currentTrip.startDate);
+
+      // 2. Days
+      (currentTrip.days || []).forEach(function(day, di) {
+        if (!day.id) issues.push('day ' + di + ' missing .id');
+        if (day.date !== undefined) issues.push('day ' + di + ' has legacy .date field');
+      });
+
+      // 3. Stays
+      (currentTrip.stays || []).forEach(function(s, si) {
+        var label = s.name || ('stay#' + si);
+        if (!s.checkinDayId) issues.push('stay "' + label + '" missing checkinDayId');
+        if (!s.checkoutDayId) issues.push('stay "' + label + '" missing checkoutDayId');
+        if (s.checkinDayIndex !== undefined) issues.push('stay "' + label + '" has legacy checkinDayIndex');
+        if (s.checkoutDayIndex !== undefined) issues.push('stay "' + label + '" has legacy checkoutDayIndex');
+        if (s.checkinDayId && typeof getDayByCheckinRef === 'function' && !getDayByCheckinRef(s, currentTrip)) {
+          issues.push('stay "' + label + '" checkinDayId does not resolve');
+        }
+        if (s.checkoutDayId && typeof getDayByCheckoutRef === 'function' && !getDayByCheckoutRef(s, currentTrip)) {
+          issues.push('stay "' + label + '" checkoutDayId does not resolve');
+        }
+      });
+
+      // 4. Activities — every activity must have a uid
+      (currentTrip.days || []).forEach(function(day, di) {
+        (day.activities || []).forEach(function(a, ai) {
+          if (typeof a !== 'object') issues.push('day ' + di + ' activity ' + ai + ' is a bare string, not object');
+          else if (!a.uid) issues.push('day ' + di + ' activity ' + ai + ' "' + (a.name||'') + '" missing uid');
+        });
+      });
+
+      // 5. Food — every food item must have a uid
+      (currentTrip.days || []).forEach(function(day, di) {
+        (day.food || []).forEach(function(f, fi) {
+          if (typeof f !== 'object') issues.push('day ' + di + ' food ' + fi + ' is a bare string, not object');
+          else if (!f.uid) issues.push('day ' + di + ' food ' + fi + ' "' + (f.name||'') + '" missing uid');
+        });
+      });
+
+      // 6. Transport — unified shape: uid + legs[]; no legacy top-level fields
+      (currentTrip.days || []).forEach(function(day, di) {
+        (day.transport || []).forEach(function(t, ti) {
+          if (!t.uid) issues.push('day ' + di + ' transport ' + ti + ' missing uid');
+          if (!Array.isArray(t.legs)) issues.push('day ' + di + ' transport ' + ti + ' missing legs[]');
+          else {
+            t.legs.forEach(function(leg, li) {
+              if (!leg.uid) issues.push('day ' + di + ' transport ' + ti + ' leg ' + li + ' missing uid');
+              if (leg.from && typeof leg.from !== 'object') issues.push('day ' + di + ' transport ' + ti + ' leg ' + li + ' from is not {city} object');
+              if (leg.to && typeof leg.to !== 'object') issues.push('day ' + di + ' transport ' + ti + ' leg ' + li + ' to is not {city} object');
+            });
+          }
+          ['from','to','carrier','flightNum','depart','arrive','confirmationCode'].forEach(function(f) {
+            if (t[f] !== undefined) issues.push('day ' + di + ' transport ' + ti + ' has legacy top-level .' + f);
+          });
+        });
+      });
+
+      // 7. cardNotes / costs / done — keys must be uid-based
+      function isPositionalKey(k) { return /^\d+$/.test(k); }
+      (currentTrip.days || []).forEach(function(day, di) {
+        ['cardNotes','costs','done'].forEach(function(field) {
+          var obj = day[field];
+          if (!obj || typeof obj !== 'object') return;
+          Object.keys(obj).forEach(function(k) {
+            if (isPositionalKey(k)) issues.push('day ' + di + ' ' + field + ' has positional key "' + k + '"');
+          });
+        });
+      });
+
+      // 8. routeOrder — indices in bounds of getRouteStops(day)
+      if (typeof getRouteStops === 'function') {
+        (currentTrip.days || []).forEach(function(day, di) {
+          if (!Array.isArray(day.routeOrder) || !day.routeOrder.length) return;
+          var stops = getRouteStops(day) || [];
+          day.routeOrder.forEach(function(idx, oi) {
+            if (idx < 0 || idx >= stops.length) issues.push('day ' + di + ' routeOrder[' + oi + ']=' + idx + ' out of bounds (stops=' + stops.length + ')');
+          });
+        });
+      }
+
+      if (!issues.length) {
+        console.log('%c✅ clean — ' + (currentTrip.days||[]).length + ' days, ' + ((currentTrip.stays||[]).length) + ' stays', 'color:#2ECC71;font-weight:bold');
+      } else {
+        console.log('%c❌ ' + issues.length + ' issue' + (issues.length===1?'':'s') + ':', 'color:#E74C3C;font-weight:bold');
+        issues.forEach(function(m, i) { console.log('  ' + (i+1) + '. ' + m); });
+      }
+      return issues;
     };
 
     // ===== RUNNER — Run all tests, collect results, print summary =====
