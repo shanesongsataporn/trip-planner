@@ -5228,6 +5228,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (toast) toast.classList.remove('visible');
     }
 
+    function undoSplitAction() {
+      if (!structHistory.length) return;
+      var entry = structHistory.shift();
+      currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
+      saveToStorage();
+      var toast = document.getElementById('struct-toast');
+      if (toast) toast.classList.remove('visible');
+      if (deCurrentIndex >= 0) {
+        selectSplitDay(deCurrentIndex);
+        var listPane = document.getElementById('split-list');
+        if (listPane) listPane.scrollTop = 0;
+      }
+    }
+
     function showStructHistory() {
       var list = document.getElementById('struct-history-list');
       if (!list) return;
@@ -7542,7 +7556,10 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var listPane = document.getElementById('split-list');
       listPane.innerHTML =
         '<div class="de-header">' +
-          '<div class="de-header-label">Day ' + day.day + ' · ' + day.city + '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+            '<div class="de-header-label">Day ' + day.day + ' · ' + day.city + '</div>' +
+            '<button onclick="undoSplitAction()" style="background:none;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;padding:3px 8px;cursor:pointer;font-family:inherit;">↩ Undo</button>' +
+          '</div>' +
           '<div class="de-header-title">' + dateStr + '</div>' +
           '<div class="de-header-note" id="split-header-note-display" onclick="splitNoteInlineEdit()" style="cursor:pointer;min-height:18px;">' + (day.note || '<span style="opacity:0.4;font-style:italic;">Add a note...</span>') + '</div>' +
         '</div>' +
@@ -7566,6 +7583,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           handle: '.de-card-handle',
           onEnd: function(evt) {
             if (evt.oldIndex === evt.newIndex) return;
+            pushStructHistory('Reorder ' + section + ' · Day ' + deCurrentDay.day);
             if (section === 'accom') {
               normaliseAccom(deCurrentDay);
               var m = deCurrentDay.accommodation.splice(evt.oldIndex, 1)[0];
