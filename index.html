@@ -1440,13 +1440,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var board = document.getElementById('kanban-board');
       board.innerHTML = '';
 
-      var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
-        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
-        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
-        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
-        return da - db;
-      });
+      // Step 8 — array order IS chronological order (dates derived from index).
+      var sortedDays = currentTrip.days.slice();
 
       sortedDays.forEach(function(item, dayIndex) {
         var col = document.createElement('div');
@@ -1553,21 +1548,17 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       kanban.classList.add('active');
       var cityColors = {};
       if (window.citySettings) { Object.keys(citySettings).forEach(function(c) { cityColors[c] = citySettings[c].color || '#ccc'; }); }
-      var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
-        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
-        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
-        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
-        return da - db;
-      });
+      // Step 8 — array order IS chronological order.
+      var sortedDays = currentTrip.days.slice();
       sortedDays.forEach(function(item, idx) {
         var cityColor = cityColors[item.city.split('>').pop().trim()] || '#ccc';
         var isCurrent = idx === mobCardsCurrentIndex;
         var col = document.createElement('div');
         col.className = 'mob-kb-col' + (isCurrent ? ' is-current' : '');
         col.dataset.idx = idx;
-        var dateParts = (item.date || '').split(' ');
-        var shortDate = dateParts.length >= 3 ? dateParts[1] + ' ' + dateParts[2] : item.date || '';
+        var dateStr = getDayDate(item, currentTrip);
+        var dateParts = dateStr.split(' ');
+        var shortDate = dateParts.length >= 3 ? dateParts[1] + ' ' + dateParts[2] : dateStr;
         col.style.width = '180px';
 
         // Header
@@ -1752,20 +1743,15 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       track.innerHTML = '';
       dotsEl.innerHTML = '';
 
-      var monthMap = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-      var sortedDays = currentTrip.days.slice().sort(function(a, b) {
-        var pa = (a.date||'').split(' '), pb = (b.date||'').split(' ');
-        var da = pa.length >= 3 ? new Date(2026, monthMap[pa[1]]-1, parseInt(pa[2])) : new Date(0);
-        var db = pb.length >= 3 ? new Date(2026, monthMap[pb[1]]-1, parseInt(pb[2])) : new Date(0);
-        return da - db;
-      });
+      // Step 8 — array order IS chronological order (dates derived from index).
+      var sortedDays = currentTrip.days.slice();
       var today = new Date(); today.setHours(0,0,0,0);
       var savedMobIndex = mobCardsCurrentIndex;
       mobCardsCurrentIndex = 0;
       for (var si = 0; si < sortedDays.length; si++) {
-        var sp = (sortedDays[si].date||'').split(' ');
-        if (sp.length >= 3) {
-          var sd = new Date(2026, monthMap[sp[1]]-1, parseInt(sp[2]));
+        var iso = getDayDateISO(sortedDays[si], currentTrip);
+        if (iso) {
+          var sd = new Date(iso + 'T00:00:00');
           sd.setHours(0,0,0,0);
           if (sd.getTime() === today.getTime()) { mobCardsCurrentIndex = si; break; }
         }
@@ -2050,10 +2036,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (yearInput) { currentTrip.year = parseInt(yearInput.value) || new Date().getFullYear(); }
           var shiftInput = document.getElementById('trip-shift-start');
           if (shiftInput && shiftInput.value) {
-            var months3 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-            var firstDay = currentTrip.days[0];
-            var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-            var currentStart = new Date(currentTrip.year || new Date().getFullYear(), months3[p[0]], parseInt(p[1]));
+            var currentStart = new Date((currentTrip.startDate || '') + 'T00:00:00');
             var newStart = new Date(shiftInput.value + 'T00:00:00');
             var diffDays = Math.round((newStart - currentStart) / (1000 * 60 * 60 * 24));
             if (diffDays !== 0) { shiftTripDates(diffDays); }
@@ -2138,12 +2121,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     // ===== TIMELINE (desktop) =====
     function isTodayItem(item) {
       var today = new Date(); today.setHours(0,0,0,0);
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var parts = item.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-      var m = months[parts[0]]; var d = parseInt(parts[1]);
-      if (isNaN(m) || isNaN(d)) return false;
-      var yr = currentTrip.year || new Date().getFullYear();
-      var itemDate = new Date(yr, m, d); itemDate.setHours(0,0,0,0);
+      var iso = getDayDateISO(item, currentTrip);
+      if (!iso) return false;
+      var itemDate = new Date(iso + 'T00:00:00'); itemDate.setHours(0,0,0,0);
       return itemDate.getTime() === today.getTime();
     }
 
@@ -2153,7 +2133,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentTrip.days.forEach(function(item) {
         var d = document.createElement('div');
         d.className = 'day-card' + (isTodayItem(item) ? ' is-today' : '');
-        d.innerHTML = '<div class="dc-num">Day ' + item.day + ' | ' + item.date + '</div>' +
+        d.innerHTML = '<div class="dc-num">Day ' + item.day + ' | ' + getDayDate(item, currentTrip) + '</div>' +
           '<div class="dc-city">' + item.city + '</div><div class="dc-note">' + item.note + '</div>';
         inner.appendChild(d);
       });
@@ -2292,7 +2272,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function extendTripToStartDate(targetDate) {
       if (!currentTrip || !Array.isArray(currentTrip.days) || currentTrip.days.length === 0) return 0;
       var firstDay = currentTrip.days[0];
-      var firstDate = parseTripDate(firstDay.date);
+      var firstIso = getDayDateISO(firstDay, currentTrip);
+      var firstDate = firstIso ? new Date(firstIso + 'T00:00:00') : null;
       if (!firstDate) return 0;
       if (targetDate.getTime() >= firstDate.getTime()) return 0;
       var base = currentTrip.baseCurrency || 'AUD';
@@ -2304,17 +2285,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (c && c.indexOf('>') === -1) { inheritCity = c; break; }
       }
       if (!inheritCity) inheritCity = (firstDay.city || '').split('>')[0].trim();
-      var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var newDays = [];
       var cursor = new Date(firstDate.getTime());
       while (cursor.getTime() > targetDate.getTime()) {
         cursor.setDate(cursor.getDate() - 1);
-        var dateStr = dayNames[cursor.getDay()] + ' ' + monthNames[cursor.getMonth()] + ' ' + cursor.getDate();
         newDays.unshift({
           id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           day: 0,
-          date: dateStr,
           city: inheritCity,
           lat: firstDay.lat,
           lng: firstDay.lng,
@@ -2330,6 +2307,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
       var addedCount = newDays.length;
       currentTrip.days = newDays.concat(currentTrip.days);
+      // Step 8 — shift trip.startDate backward so getDayDate stays accurate.
+      if (addedCount > 0 && currentTrip.startDate) {
+        var sd = new Date(currentTrip.startDate + 'T00:00:00');
+        sd.setDate(sd.getDate() - addedCount);
+        currentTrip.startDate = sd.toISOString().slice(0, 10);
+      }
       // Renumber day.day from 1
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
       // Shift all stay indices forward — resolve via id-based helper so the
@@ -2352,7 +2335,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function extendTripToDate(targetDate) {
       if (!currentTrip || !Array.isArray(currentTrip.days) || currentTrip.days.length === 0) return -1;
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
-      var lastDate = parseTripDate(lastDay.date);
+      var lastIso = getDayDateISO(lastDay, currentTrip);
+      var lastDate = lastIso ? new Date(lastIso + 'T00:00:00') : null;
       if (!lastDate) return -1;
       var base = currentTrip.baseCurrency || 'AUD';
       var baseSym = currentTrip.baseCurrencySymbol || '$';
@@ -2363,17 +2347,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (c && c.indexOf('>') === -1) { inheritCity = c; break; }
       }
       if (!inheritCity) inheritCity = (lastDay.city || '').split('>').pop().trim();
-      var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var cursor = new Date(lastDate.getTime());
       while (cursor.getTime() < targetDate.getTime()) {
         cursor.setDate(cursor.getDate() + 1);
-        var dateStr = dayNames[cursor.getDay()] + ' ' + monthNames[cursor.getMonth()] + ' ' + cursor.getDate();
         var prev = currentTrip.days[currentTrip.days.length - 1];
         currentTrip.days.push({
           id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           day: prev.day + 1,
-          date: dateStr,
           city: inheritCity,
           lat: prev.lat,
           lng: prev.lng,
@@ -2669,11 +2649,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var dot = visaStatusDot(t.visaStatus);
           var monthsToTrip = (function() {
             if (!t.passportExpiry) return null;
-            var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-            var yr = currentTrip.year || new Date().getFullYear();
-            var firstDay = currentTrip.days[0];
-            var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-            var tripStart = new Date(yr, months[p[0]], parseInt(p[1]));
+            var iso = currentTrip.startDate || getDayDateISO(currentTrip.days[0], currentTrip);
+            if (!iso) return null;
+            var tripStart = new Date(iso + 'T00:00:00');
             var exp = new Date(t.passportExpiry);
             var diff = (exp - tripStart) / (1000 * 60 * 60 * 24 * 30);
             return diff;
@@ -2786,8 +2764,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             return '<div class="home-tile" data-tile-id="dates" onclick="editDatesTile()">' +
               '<div class="home-tile-emoji">📅</div>' +
               '<div class="home-tile-label">Dates</div>' +
-              '<div class="home-tile-value" style="font-size:13px;font-weight:800;">' + firstDay.date + '</div>' +
-              '<div class="home-tile-sub">to ' + lastDay.date + ' · ' + currentTrip.days.length + ' days</div>' +
+              '<div class="home-tile-value" style="font-size:13px;font-weight:800;">' + getDayDate(firstDay, currentTrip) + '</div>' +
+              '<div class="home-tile-sub">to ' + getDayDate(lastDay, currentTrip) + ' · ' + currentTrip.days.length + ' days</div>' +
             '</div>';
           case 'weather':
             return '<div class="home-tile" data-tile-id="weather" onclick="">' +
@@ -3423,31 +3401,32 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function getTripStatus() {
       var today = new Date(); today.setHours(0,0,0,0);
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
       var firstDay = currentTrip.days[0];
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
       function parseDate(d) {
-        var p = d.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-        var dt = new Date(yr, months[p[0]], parseInt(p[1])); dt.setHours(0,0,0,0); return dt;
+        var iso = getDayDateISO(d, currentTrip);
+        if (!iso) return null;
+        var dt = new Date(iso + 'T00:00:00'); dt.setHours(0,0,0,0); return dt;
       }
       var start = parseDate(firstDay);
       var end = parseDate(lastDay);
+      var firstDateStr = getDayDate(firstDay, currentTrip);
+      var lastDateStr = getDayDate(lastDay, currentTrip);
       var totalDays = currentTrip.days.length;
-      if (today < start) {
+      if (start && today < start) {
         var diff = Math.round((start - today) / (1000 * 60 * 60 * 24));
-        return { mode: 'pre', text: diff + ' days until ' + getTripDestination() + ' 🛫', sub: firstDay.date + ' – ' + lastDay.date + ' · ' + totalDays + ' days' };
+        return { mode: 'pre', text: diff + ' days until ' + getTripDestination() + ' 🛫', sub: firstDateStr + ' – ' + lastDateStr + ' · ' + totalDays + ' days' };
       }
-      if (today > end) {
+      if (end && today > end) {
         return { mode: 'post', text: 'Trip complete 🎉', sub: 'Hope it was amazing!' };
       }
       for (var i = 0; i < currentTrip.days.length; i++) {
         var d = parseDate(currentTrip.days[i]);
-        if (d.getTime() === today.getTime()) {
-          return { mode: 'during', dayIndex: i, text: 'DAY ' + currentTrip.days[i].day + ' of ' + totalDays, sub: currentTrip.days[i].city + ' · ' + currentTrip.days[i].date };
+        if (d && d.getTime() === today.getTime()) {
+          return { mode: 'during', dayIndex: i, text: 'DAY ' + currentTrip.days[i].day + ' of ' + totalDays, sub: currentTrip.days[i].city + ' · ' + getDayDate(currentTrip.days[i], currentTrip) };
         }
       }
-      return { mode: 'pre', text: 'Trip coming up 🛫', sub: firstDay.date + ' – ' + lastDay.date };
+      return { mode: 'pre', text: 'Trip coming up 🛫', sub: firstDateStr + ' – ' + lastDateStr };
     }
 
     function getPlanningGaps() {
@@ -4259,7 +4238,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       // If checkin is before the trip's first day, offer to extend backward
       var firstDay = currentTrip.days[0];
-      var firstDayDate = firstDay ? parseTripDate(firstDay.date) : null;
+      var firstDayIso = firstDay ? getDayDateISO(firstDay, currentTrip) : '';
+      var firstDayDate = firstDayIso ? new Date(firstDayIso + 'T00:00:00') : null;
       if (matched.ciIdx === -1 && firstDayDate && checkinDate.getTime() < firstDayDate.getTime()) {
         var backDiff = Math.round((firstDayDate.getTime() - checkinDate.getTime()) / 86400000);
         var ciLabel = monthNames[checkinDate.getMonth()] + ' ' + checkinDate.getDate();
@@ -4273,7 +4253,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       // If checkout is past the trip's last day, offer to extend forward
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
-      var lastDayDate = lastDay ? parseTripDate(lastDay.date) : null;
+      var lastDayIso = lastDay ? getDayDateISO(lastDay, currentTrip) : '';
+      var lastDayDate = lastDayIso ? new Date(lastDayIso + 'T00:00:00') : null;
       if (matched.coIdx === -1 && lastDayDate && checkoutDate.getTime() > lastDayDate.getTime()) {
         var diffDays = Math.round((checkoutDate.getTime() - lastDayDate.getTime()) / 86400000);
         var coLabel = monthNames[checkoutDate.getMonth()] + ' ' + checkoutDate.getDate();
@@ -5301,19 +5282,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function showManualShiftSheet() {
-      // Calculate current trip start date for the picker default
-      var firstDay = currentTrip.days[0];
-      var months3 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
-      var defaultDate = '';
-      if (firstDay && firstDay.date) {
-        var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-        var mo = months3[p[0]]; var dy = parseInt(p[1]);
-        if (!isNaN(mo) && !isNaN(dy)) {
-          var d = new Date(yr, mo, dy);
-          defaultDate = d.toISOString().slice(0, 10);
-        }
-      }
+      // Default the picker to the current trip start (ISO).
+      var defaultDate = currentTrip.startDate || getDayDateISO(currentTrip.days[0], currentTrip) || '';
       var content = document.getElementById('struct-shift-content');
       content.innerHTML =
         '<h3>📅 Shift trip dates</h3>' +
@@ -5341,13 +5311,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function applyManualShift() {
       var input = document.getElementById('shift-new-start');
       if (!input || !input.value) { closeShiftSheet(); return; }
-      var months3 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
-      var firstDay = currentTrip.days[0];
-      if (!firstDay || !firstDay.date) { closeShiftSheet(); return; }
-      var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-      var mo = months3[p[0]]; var dy = parseInt(p[1]);
-      var currentStart = new Date(yr, mo, dy);
+      if (!currentTrip.startDate) { closeShiftSheet(); return; }
+      var currentStart = new Date(currentTrip.startDate + 'T00:00:00');
       var newStart = new Date(input.value + 'T00:00:00');
       var diffDays = Math.round((newStart - currentStart) / (1000 * 60 * 60 * 24));
       if (diffDays !== 0) { shiftTripDates(diffDays); saveToStorage(); }
@@ -6033,7 +5998,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
           '<div class="itin-day-header" onclick="toggleItinDay(' + item.day + ')">' +
             '<span style="font-size:20px;">' + cityEmoji + '</span>' +
             '<div style="flex:1;"><div class="itin-day-num">Day ' + item.day + itinTodayBadge + '</div><div class="itin-day-city">' + item.city + '</div></div>' +
-            '<div class="itin-day-date">' + item.date + '</div>' +
+            '<div class="itin-day-date">' + getDayDate(item, currentTrip) + '</div>' +
             '<button onclick="event.stopPropagation();toggleItinEdit(' + di + ')" style="margin-left:10px;font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:5px;border:1px solid var(--sand-dark);background:var(--white);color:var(--ink-muted);cursor:pointer;" id="itin-edit-btn-' + di + '">Edit</button>' +
           '</div>' +
           '<div class="itin-day-body" id="itin-day-' + item.day + '">' +
@@ -6168,12 +6133,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     function editDatesTile() {
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
-      var firstDay = currentTrip.days[0];
-      var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-      var startDate = new Date(yr, months[p[0]], parseInt(p[1]));
-      var iso = startDate.getFullYear() + '-' + String(startDate.getMonth()+1).padStart(2,'0') + '-' + String(startDate.getDate()).padStart(2,'0');
+      var iso = currentTrip.startDate || getDayDateISO(currentTrip.days[0], currentTrip);
+      if (!iso) return;
 
       var existing = document.getElementById('dates-edit-overlay');
       if (existing) { existing.remove(); return; }
@@ -6203,11 +6164,8 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       if (!input || !input.value) return;
       var overlay = document.getElementById('dates-edit-overlay');
       if (overlay) overlay.remove();
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var yr = currentTrip.year || new Date().getFullYear();
-      var firstDay = currentTrip.days[0];
-      var p = firstDay.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-      var currentStart = new Date(yr, months[p[0]], parseInt(p[1]));
+      if (!currentTrip.startDate) { renderHome(); return; }
+      var currentStart = new Date(currentTrip.startDate + 'T00:00:00');
       var newStart = new Date(input.value + 'T00:00:00');
       var diffDays = Math.round((newStart - currentStart) / (1000 * 60 * 60 * 24));
       if (diffDays === 0) { renderHome(); return; }
@@ -6219,50 +6177,18 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     function shiftTripDates(days) {
-      var months2 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      var yr = currentTrip.year || new Date().getFullYear();
-      currentTrip.days.forEach(function(day) {
-        var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-        var mo = months2[p[0]]; var dy = parseInt(p[1]);
-        if (isNaN(mo) || isNaN(dy)) return;
-        var d = new Date(yr, mo, dy);
-        d.setDate(d.getDate() + days);
-        day.date = dowNames2[d.getDay()] + ' ' + monthNames2[d.getMonth()] + ' ' + d.getDate();
-      });
+      // Phase 4 Step 8 — day.date deleted. Shifting dates now means updating
+      // trip.startDate only. getDayDate(day, trip) re-derives all dates from index.
+      if (!currentTrip.startDate) { console.error('[shiftTripDates] trip.startDate missing'); return; }
+      var d = new Date(currentTrip.startDate + 'T00:00:00');
+      d.setDate(d.getDate() + days);
+      currentTrip.startDate = d.toISOString().slice(0, 10);
     }
 
     function calMoveDay(dayIndex) {
-      var item = currentTrip.days[dayIndex];
-      if (!item) return;
-      var months2 = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-      var monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      showModal('Move Day ' + item.day + ' to new date',
-        '<div class="modal-field"><label>New date</label><input type="date" id="cal-move-date" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>',
-        function() {
-          var val = document.getElementById('cal-move-date').value;
-          if (!val) return;
-          var d = new Date(val + 'T00:00:00');
-          var dateStr = dowNames2[d.getDay()] + ' ' + monthNames2[d.getMonth()] + ' ' + d.getDate();
-          item.date = dateStr;
-          // re-sort and renumber
-          currentTrip.days.sort(function(a, b) {
-            var parse = function(day) {
-              var p = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-              var mo = months2[p[0]]; var dy = parseInt(p[1]);
-              return new Date(currentTrip.year || new Date().getFullYear(), mo, dy);
-            };
-            return parse(a) - parse(b);
-          });
-          currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
-          saveToStorage();
-          rebuildTimeline();
-          rebuildMobStrip();
-          renderCalendar();
-        }
-      );
+      // Phase 4 Step 8 — gutted. Calendar view removed from nav (dead code).
+      // day.date no longer exists; date ordering is derived from trip.startDate + index.
+      console.warn('[calMoveDay] called but calendar view is dead code — no-op');
     }
 
     function toggleCalEdit(dayIndex) {
@@ -8203,13 +8129,14 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     }
 
     // ===== CASCADE HELPERS (Phase 4) =====
-    // Pure-read helpers. New model uses trip.startDate + index. Legacy fallback to day.date string.
+    // Pure-read helpers. New model uses trip.startDate + index.
+    // getDayDate returns DISPLAY format ("Tue Jun 9") for renderers.
+    // getDayDateISO returns "YYYY-MM-DD" for parsing/arithmetic.
     function getDayDate(day, trip) {
       if (!day) return '';
       if (trip && trip.startDate) {
         var idx = (trip.days || []).indexOf(day);
         if (idx >= 0) {
-          var year = trip.year || 2026;
           var parts = trip.startDate.split('-');
           if (parts.length === 3) {
             var d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
@@ -8221,6 +8148,21 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         }
       }
       return day.date || '';
+    }
+
+    // Step 8 — ISO variant for date arithmetic. Returns "YYYY-MM-DD" or ''.
+    function getDayDateISO(day, trip) {
+      if (!day || !trip || !trip.startDate) return '';
+      var idx = (trip.days || []).indexOf(day);
+      if (idx < 0) return '';
+      var parts = trip.startDate.split('-');
+      if (parts.length !== 3) return '';
+      var d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+      d.setDate(d.getDate() + idx);
+      var y = d.getFullYear();
+      var m = String(d.getMonth() + 1).padStart(2, '0');
+      var dd = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + dd;
     }
 
     function isTransitDay(day) {
@@ -11031,6 +10973,38 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }
     }
 
+    // Phase 4 Step 8 — delete legacy day.date field from every day.
+    // MUST run after migrateTripStartDate (which bootstraps trip.startDate FROM day.date).
+    // Idempotent. Guarded against accidental live-trip runs.
+    function migrateDeleteDayDate() {
+      if (!currentTrip || !Array.isArray(currentTrip.days) || !currentTrip.days.length) return;
+      if (currentTrip !== trips[currentTripKey]) {
+        console.error('[migrateDeleteDayDate] currentTrip reference drift detected — aborting');
+        return;
+      }
+      if (!currentTrip.startDate) {
+        console.error('[migrateDeleteDayDate] trip.startDate missing — run migrateTripStartDate first, aborting');
+        return;
+      }
+      var needsWork = currentTrip.days.some(function(d) { return d.date !== undefined; });
+      if (!needsWork) return;
+      if (currentTripKey !== 'thailand_2026_test' && localStorage.getItem('__ALLOW_LIVE_MIGRATION') !== 'true') {
+        console.warn('[migrateDeleteDayDate] live trip detected, would delete day.date fields but __ALLOW_LIVE_MIGRATION is not set');
+        console.warn('[migrateDeleteDayDate] to run: localStorage.setItem("__ALLOW_LIVE_MIGRATION", "true"); location.reload();');
+        return;
+      }
+      var deleted = 0;
+      currentTrip.days.forEach(function(d) {
+        if (d.date !== undefined) { delete d.date; deleted++; }
+      });
+      console.log('[migrateDeleteDayDate] deleted day.date from ' + deleted + ' days');
+      saveToStorage();
+      if (localStorage.getItem('__ALLOW_LIVE_MIGRATION') === 'true') {
+        localStorage.removeItem('__ALLOW_LIVE_MIGRATION');
+        console.log('[migrateDeleteDayDate] cleared __ALLOW_LIVE_MIGRATION flag');
+      }
+    }
+
     // ===== PHASE 3 TEST HARNESS — HELPERS =====
     // All test infrastructure lives in window.__test for easy console access.
     // Destructive tests set window.__TEST_MODE = true to block Firestore/localStorage writes.
@@ -11110,7 +11084,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
       // Orphaned uid-based keys & out-of-bounds routes
       currentTrip.days.forEach(function(day, di) {
-        if (!day.date) { issues.dayDateMissing.push('day index ' + di + ' has no .date'); }
+        if (day.date !== undefined) { issues.dayDateMissing.push('day index ' + di + ' has legacy .date field (should be deleted)'); }
         var actUids = (day.activities || []).filter(function(a) { return a && typeof a === 'object' && a.uid; }).map(function(a) { return a.uid; });
         var foodUids = (day.food || []).filter(function(f) { return f && typeof f === 'object' && f.uid; }).map(function(f) { return f.uid; });
         // cardNotes
@@ -11403,7 +11377,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       window.__test.withTestMode(function() {
         var beforeLen = currentTrip.days.length;
         var firstDay = currentTrip.days[0];
-        var firstDate = parseTripDate(firstDay.date);
+        var firstIso = getDayDateISO(firstDay, currentTrip);
+        var firstDate = firstIso ? new Date(firstIso + 'T00:00:00') : null;
         if (!firstDate) { assert(false, 'could not parse first day date — bailing'); return; }
         var target = new Date(firstDate.getTime());
         target.setDate(target.getDate() - 3);
@@ -11436,7 +11411,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       window.__test.withTestMode(function() {
         var beforeLen = currentTrip.days.length;
         var lastDay = currentTrip.days[beforeLen - 1];
-        var lastDate = parseTripDate(lastDay.date);
+        var lastIso = getDayDateISO(lastDay, currentTrip);
+        var lastDate = lastIso ? new Date(lastIso + 'T00:00:00') : null;
         if (!lastDate) { assert(false, 'could not parse last day date — bailing'); return; }
         var target = new Date(lastDate.getTime());
         target.setDate(target.getDate() + 3);
@@ -11619,6 +11595,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           migrateTripStartDate();
           migrateTransportShape();
           migrateStripStayIndexFields();
+          migrateDeleteDayDate();
         }
         if (callback) { callback(); }
       }).catch(function(e) {
