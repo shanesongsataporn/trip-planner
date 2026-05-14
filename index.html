@@ -1147,6 +1147,17 @@
   <div id="view-food"></div>
   <div id="view-transport"></div>
   <div id="view-calendar"></div>
+  <div id="view-route">
+    <div id="route-inner">
+      <div id="route-top-bar">
+        <button id="route-back-btn" onclick="history.back()">‹ Back</button>
+        <div id="route-day-title"></div>
+      </div>
+      <div id="route-body">
+        <div id="route-placeholder" style="padding:20px;color:var(--ink-light);">Route page shell — rendering coming next sandwich.</div>
+      </div>
+    </div>
+  </div>
 
   <div id="view-structure">
     <div id="struct-inner">
@@ -3481,7 +3492,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('view-lists').style.display = view === 'lists' ? 'block' : 'none';
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
       document.getElementById('view-structure').style.display = view === 'structure' ? 'block' : 'none';
+      var rEl = document.getElementById('view-route');
+      if (rEl) { rEl.style.display = view === 'route' ? 'block' : 'none'; }
       if (view === 'structure') renderStructure();
+      if (view === 'route') renderRoutePage();
       var discEl = document.getElementById('view-discovery');
       if (discEl) { discEl.style.display = view === 'discovery' ? 'flex' : 'none'; }
       var mobCards = document.getElementById('mob-cards-view');
@@ -3521,6 +3535,62 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (view === 'map') { google.maps.event.trigger(map, 'resize'); }
       if (view !== 'split') { clearSplitActivityMarkers(); }
       lastView = view;
+    }
+
+    // ===== ROUTE PAGE + HISTORY-AWARE NAVIGATION =====
+    var routeCurrentIndex = null;
+    var __routeNavInited = false;
+
+    function initRouteNav() {
+      if (__routeNavInited) return;
+      __routeNavInited = true;
+      window.addEventListener('popstate', function(ev) {
+        var st = ev.state;
+        if (st && st.view) {
+          // Navigate to the view stored in history without re-pushing
+          if (st.view === 'route' && typeof st.routeIndex === 'number') {
+            routeCurrentIndex = st.routeIndex;
+            setView('route');
+          } else {
+            setView(st.view);
+          }
+        } else {
+          // Reached the root entry — default to home
+          setView('home');
+        }
+      });
+    }
+
+    function pushHistoryState(view, ctx) {
+      initRouteNav();
+      var st = { view: view };
+      if (ctx) { for (var k in ctx) { if (ctx.hasOwnProperty(k)) st[k] = ctx[k]; } }
+      try { history.pushState(st, '', ''); } catch (e) { console.warn('[pushHistoryState] failed', e); }
+    }
+
+    function openRoutePage(dayIndex) {
+      if (typeof dayIndex !== 'number' || !currentTrip || !currentTrip.days || !currentTrip.days[dayIndex]) {
+        console.warn('[openRoutePage] invalid dayIndex', dayIndex);
+        return;
+      }
+      routeCurrentIndex = dayIndex;
+      pushHistoryState('route', { routeIndex: dayIndex, prevView: currentView });
+      setView('route');
+    }
+
+    function renderRoutePage() {
+      var titleEl = document.getElementById('route-day-title');
+      var bodyEl = document.getElementById('route-body');
+      if (!titleEl || !bodyEl) return;
+      if (routeCurrentIndex === null || !currentTrip || !currentTrip.days[routeCurrentIndex]) {
+        titleEl.textContent = 'Route';
+        bodyEl.innerHTML = '<div style="padding:20px;color:var(--ink-light);">No day selected.</div>';
+        return;
+      }
+      var day = currentTrip.days[routeCurrentIndex];
+      var dateStr = getDayDate(day, currentTrip);
+      titleEl.textContent = 'Day ' + (routeCurrentIndex + 1) + ' — ' + dateStr + ' · ' + (day.city || '');
+      bodyEl.innerHTML = '<div style="padding:20px;color:var(--ink-light);">Route page shell ready. Full route UI lands next sandwich.</div>';
     }
 
     function setTheme(theme) {
