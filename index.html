@@ -9440,7 +9440,13 @@ var pinDelay = Math.floor(Math.random() * 150);
     }
 
     function suggestRoute(item) {
+      if (isMobile()) { return; }
       if (!item) { return; }
+      if (isTransitDay(item)) {
+        var resultsEl = document.getElementById('route-results');
+        if (resultsEl) { resultsEl.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:var(--ink-muted);">Route optimisation is not available for transit days.</div>'; }
+        return;
+      }
       var startInput = document.getElementById('route-start-input');
       var startTimeInput = document.getElementById('route-start-time');
       var returnStart = document.getElementById('route-return-start');
@@ -10493,6 +10499,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       }, 100);
 
       currentDayItem = day;
+      if (isTransitDay(day)) {
+        body.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px 0;">Route optimisation is not available for transit days.</div>';
+        return;
+      }
       var stops = getRouteStops(day);
       if (!stops.length) {
         body.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:8px 0;">No stops added yet.</div>';
@@ -10592,6 +10602,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           var summary = document.getElementById('mob-day-summary');
           if (summary) { summary.scrollTop = summary.scrollHeight; }
         }, 50);
+
+        callClaudeRouteReview(day, finalOrder, finalLegs);
       });
     }
 
