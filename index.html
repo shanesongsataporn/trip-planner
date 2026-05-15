@@ -492,6 +492,15 @@
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
 
+    /* ===== ROUTE VIEW ===== */
+    #view-route { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 50; scrollbar-width: thin; }
+    #route-inner { max-width: 680px; margin: 0 auto; padding: 0 0 120px; }
+    #route-top-bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--white); border-bottom: 1px solid var(--sand-dark); position: sticky; top: 0; z-index: 2; }
+    #route-back-btn { font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--accent); color: var(--accent); background: none; cursor: pointer; white-space: nowrap; }
+    #route-back-btn:active { background: var(--accent-light); }
+    #route-day-title { font-size: 15px; font-weight: 700; color: var(--ink); flex: 1; }
+    #route-body { padding: 16px 16px 40px; }
+
     /* ===== STRUCTURE VIEW ===== */
     #view-structure { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; scrollbar-width: thin; }
     #struct-inner { max-width: 680px; margin: 0 auto; padding: 16px 16px 40px; }
@@ -798,6 +807,7 @@
       #view-food { top: 54px; bottom: 0; }
       #view-calendar { top: 54px; bottom: 0; }
       #view-structure { top: 54px; bottom: 0; }
+      #view-route { top: 54px; bottom: 0; }
       #split-map { width: 100%; height: 45%; bottom: auto; top: 0; position: absolute; }
       #split-list { left: 0; top: 45%; height: 55%; position: absolute; }
       #split-float-card { left: 10px; top: auto; bottom: calc(55% + 10px); width: 170px; }
@@ -3157,7 +3167,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '<div style="text-align:center;padding:16px 0;">' +
             '<div style="font-size:24px;margin-bottom:8px;">🗺️</div>' +
             '<div style="font-size:13px;color:var(--ink-muted);margin-bottom:14px;">No optimised route yet for today.</div>' +
-            '<button onclick="openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:10px 20px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">✨ Optimise today\'s route</button>' +
+            '<button onclick="openRoutePage(' + di + ')" style="padding:10px 20px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">✨ Optimise today\'s route</button>' +
           '</div>';
         floatEl.style.display = 'block';
         return;
@@ -3184,7 +3194,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       bodyEl.innerHTML = stopsHtml +
         '<div style="display:flex;gap:6px;margin-top:14px;">' +
           '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:9px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:11px;font-weight:700;text-decoration:none;">📍 Maps</a>' +
-          '<button onclick="openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="flex:1;padding:9px;background:var(--sand);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;">✨ Optimise</button>' +
+          '<button onclick="openRoutePage(' + di + ')" style="flex:1;padding:9px;background:var(--sand);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;font-family:inherit;">✨ Optimise</button>' +
         '</div>';
 
       floatEl.style.display = 'block';
@@ -3573,10 +3583,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         console.warn('[openRoutePage] invalid dayIndex', dayIndex);
         return;
       }
+      var panel = document.getElementById('panel');
+      if (panel) { panel.classList.remove('open'); }
       routeCurrentIndex = dayIndex;
-      pushHistoryState('route', { routeIndex: dayIndex, prevView: currentView });
+      pushHistoryState(currentView, {});
+      pushHistoryState('route', { routeIndex: dayIndex });
       setView('route');
-    }
+    } 
 
     function renderRoutePage() {
       var titleEl = document.getElementById('route-day-title');
@@ -3588,9 +3601,34 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         return;
       }
       var day = currentTrip.days[routeCurrentIndex];
+      currentDayItem = day;
       var dateStr = getDayDate(day, currentTrip);
       titleEl.textContent = 'Day ' + (routeCurrentIndex + 1) + ' — ' + dateStr + ' · ' + (day.city || '');
-      bodyEl.innerHTML = '<div style="padding:20px;color:var(--ink-light);">Route page shell ready. Full route UI lands next sandwich.</div>';
+      if (isTransitDay(day)) {
+        bodyEl.innerHTML = '<div style="padding:30px 20px;text-align:center;">' +
+          '<div style="font-size:32px;margin-bottom:12px;">✈️</div>' +
+          '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;">Transit day</div>' +
+          '<div style="font-size:12px;color:var(--ink-muted);">Route optimisation isn\'t available for travel days.</div>' +
+        '</div>';
+        return;
+      }
+      bodyEl.innerHTML = buildRouteTabHtml(day);
+    }
+
+    function refreshRouteUI(item) {
+      if (!item) return;
+      var routeView = document.getElementById('view-route');
+      var pageVisible = routeView && routeView.style.display !== 'none' && routeView.style.display !== '';
+      if (pageVisible) {
+        var bodyEl = document.getElementById('route-body');
+        if (bodyEl) { bodyEl.innerHTML = buildRouteTabHtml(item); }
+        return;
+      }
+      var panel = document.getElementById('panel');
+      if (panel && panel.classList.contains('open')) {
+        var tabEl = document.getElementById('tab-route');
+        if (tabEl) { tabEl.innerHTML = buildRouteTabHtml(item); }
+      }
     }
 
     function setTheme(theme) {
@@ -7159,7 +7197,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
 
       // Re-wire route + add buttons
       var routeBtn = document.querySelector('.de-route-btn');
-      if (routeBtn) { routeBtn.onclick = function() { openDayPanelOnTab(deCurrentDay, 'route'); }; }
+      if (routeBtn) { routeBtn.onclick = function() { openRoutePage(deCurrentIndex); }; }
       var addBtns = document.querySelectorAll('.de-add-btn');
       addBtns.forEach(function(btn) {
         var txt = btn.textContent;
@@ -7679,7 +7717,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
 
       // Wire route button
       var routeBtn = document.querySelector('.de-route-btn');
-      if (routeBtn) { routeBtn.onclick = function() { openDayPanelOnTab(deCurrentDay, 'route'); }; }
+      if (routeBtn) { routeBtn.onclick = function() { openRoutePage(deCurrentIndex); }; }
 
       // Wire add buttons
       var addBtns = document.querySelectorAll('.de-add-btn');
@@ -9263,25 +9301,19 @@ var pinDelay = Math.floor(Math.random() * 150);
       return 'driving';
     }
 
-    function renderRouteTab(item) {
+    function buildRouteTabHtml(item) {
       normaliseAccom(item); normaliseFood(item);
-      var pill = document.getElementById('mob-day-pill');
-      if (pill && isMobile() && document.getElementById('panel').classList.contains('open')) {
-        pill.classList.remove('active');
-      }
       var stops = getRouteStops(item);
       var startLoc = getRouteStartLocation(item);
       var startTime = item.routeStartTime || '09:00';
       var defaultMode = item.routeDefaultMode || 'driving';
 
       if (!stops.length) {
-        document.getElementById('tab-route').innerHTML =
-          '<div style="padding:20px 0;text-align:center;">' +
+        return '<div style="padding:20px 0;text-align:center;">' +
             '<div style="font-size:32px;margin-bottom:12px;">🗺️</div>' +
             '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;">No stops yet</div>' +
             '<div style="font-size:12px;color:var(--ink-muted);">Add activities or food to this day to use the route optimiser.</div>' +
           '</div>';
-        return;
       }
 
       var modeHtml = routeModes.map(function(m) {
@@ -9312,12 +9344,22 @@ var pinDelay = Math.floor(Math.random() * 150);
             '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">Default transport mode</div>' +
             '<div style="display:flex;gap:6px;">' + modeHtml + '</div>' +
           '</div>' +
-          '<button onclick="suggestRoute(currentDayItem)" style="width:100%;font-family:inherit;font-size:13px;font-weight:700;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✨ Suggest Route</button>' +
+          '<button onclick="isMobile() ? suggestRouteMobile(routeCurrentIndex) : suggestRoute(currentDayItem)" style="width:100%;font-family:inherit;font-size:13px;font-weight:700;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✨ Suggest Route</button>' +
         '</div>' +
         '<div style="font-size:11px;color:var(--ink-muted);text-align:center;line-height:1.5;">We\'ll organise your day to minimise travel time between stops using Google Maps.</div>';
 
-      document.getElementById('tab-route').innerHTML = setupHtml +
+      return setupHtml +
         (hasResult ? '<div id="route-results">' + buildRouteResultsHtml(item) + '</div>' : '<div id="route-results"></div>');
+    }
+
+    function renderRouteTab(item) {
+      var pill = document.getElementById('mob-day-pill');
+      if (pill && isMobile() && document.getElementById('panel').classList.contains('open')) {
+        pill.classList.remove('active');
+      }
+      var el = document.getElementById('tab-route');
+      if (!el) return;
+      el.innerHTML = buildRouteTabHtml(item);
     }
 
     function buildRouteResultsHtml(item) {
@@ -9446,7 +9488,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (!currentDayItem) { return; }
       currentDayItem.routeDefaultMode = mode;
       saveToStorage();
-      renderRouteTab(currentDayItem);
+      refreshRouteUI(currentDayItem);
     }
 
     function updateLegMode(legPos, mode) {
@@ -9457,6 +9499,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       saveToStorage();
       var resultsEl = document.getElementById('route-results');
       if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
+      else { refreshRouteUI(currentDayItem); }
     }
 
     function runSegmentRoute(segments, segIndex, results, item, stops, travelMode, onComplete) {
@@ -9497,6 +9540,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       saveToStorage();
       var resultsEl = document.getElementById('route-results');
       if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
+      else { refreshRouteUI(currentDayItem); }
     }
 
     function updateStopLockedTime(pos, time) {
@@ -9507,6 +9551,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       saveToStorage();
       var resultsEl = document.getElementById('route-results');
       if (resultsEl) { resultsEl.innerHTML = buildRouteResultsHtml(currentDayItem); }
+      else { refreshRouteUI(currentDayItem); }
     }
 
     function suggestRoute(item) {
@@ -10072,7 +10117,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       item.routeReturnToStart = true;
       currentRouteResult = null;
       saveToStorage();
-      renderRouteTab(item);
+      refreshRouteUI(item);
     }
 
     // ===== DISCOVERY =====
@@ -10636,6 +10681,15 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         currentRouteResult = { applied: true };
         saveToStorage();
 
+        // if Route page is active, render results there instead of summary card
+        var routeView = document.getElementById('view-route');
+        var routePageActive = routeView && routeView.style.display !== 'none' && routeView.style.display !== '';
+        if (routePageActive) {
+          refreshRouteUI(day);
+          callClaudeRouteReview(day, finalOrder, finalLegs);
+          return;
+        }
+
         // re-show summary and route card after saveToStorage triggers onSnapshot
         setTimeout(function() {
           var summary = document.getElementById('mob-day-summary');
@@ -10665,7 +10719,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         body.innerHTML = stopsHtml +
           '<div style="display:flex;gap:6px;margin-top:12px;">' +
           '<a href="' + mapsUrl + '" target="_blank" style="flex:1;display:block;text-align:center;padding:10px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:12px;font-weight:700;text-decoration:none;">📍 Open in Google Maps</a>' +
-            '<button onclick="closeMobDaySummary();openDayPanelOnTab(currentTrip.days[' + di + '],\'route\')" style="padding:9px 12px;background:none;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink-muted);cursor:pointer;font-family:inherit;">Edit</button>' +
+            '<button onclick="closeMobDaySummary();openRoutePage(' + di + ')" style="padding:9px 12px;background:none;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);font-size:11px;font-weight:700;color:var(--ink-muted);cursor:pointer;font-family:inherit;">Edit</button>' +
           '</div>';
 
         setTimeout(function() {
