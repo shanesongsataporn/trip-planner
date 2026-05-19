@@ -4810,13 +4810,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         legs: legs.map(function(l) {
           return {
             uid: l.uid || Math.random().toString(36).slice(2, 8),
-            from: { city: l.from || '' },
-            to: { city: l.to || '' },
-            carrier: l.carrier || '',
-            flightNum: l.flightNum || '',
-            depart: l.depart || '',
-            arrive: l.arrive || '',
-            confirmationCode: l.confirmationCode || ''
+            from: { city: (l.from || '').trim() },
+            to: { city: (l.to || '').trim() },
+            carrier: (l.carrier || '').trim(),
+            flightNum: (l.flightNum || '').trim(),
+            depart: (l.depart || '').trim(),
+            arrive: (l.arrive || '').trim(),
+            confirmationCode: (l.confirmationCode || '').trim()
           };
         })
       };
@@ -6299,10 +6299,15 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     function shiftTripDates(days) {
       // Phase 4 Step 8 — day.date deleted. Shifting dates now means updating
       // trip.startDate only. getDayDate(day, trip) re-derives all dates from index.
+      // Pure string math — Date object arithmetic drifts by one day in non-UTC zones (Sydney undershoot).
       if (!currentTrip.startDate) { console.error('[shiftTripDates] trip.startDate missing'); return; }
-      var d = new Date(currentTrip.startDate + 'T00:00:00');
-      d.setDate(d.getDate() + days);
-      currentTrip.startDate = d.toISOString().slice(0, 10);
+      var parts = currentTrip.startDate.split('-');
+      var d = new Date(Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
+      d.setUTCDate(d.getUTCDate() + days);
+      var yyyy = d.getUTCFullYear();
+      var mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+      var dd = String(d.getUTCDate()).padStart(2, '0');
+      currentTrip.startDate = yyyy + '-' + mm + '-' + dd;
     }
 
     function calMoveDay(dayIndex) {
@@ -8293,16 +8298,20 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     function isTransitDay(day) {
       if (!day) return false;
       var transport = day.transport || [];
+      if (window.__A2_DIAG && day.id) console.log('[A2-diag] isTransitDay check day.id:', day.id, 'transport count:', transport.length);
       for (var i = 0; i < transport.length; i++) {
         var t = transport[i];
         if (!t) continue;
         var typeStr = (t.type || '').toLowerCase();
+        if (window.__A2_DIAG) console.log('[A2-diag]   entry', i, 'type:', t.type, 'typeStr:', typeStr, 'legs:', t.legs ? t.legs.length : 'NONE');
         if (typeStr === 'flight' && t.legs && t.legs.length) {
           var firstFrom = t.legs[0] && t.legs[0].from && t.legs[0].from.city;
           var lastTo = t.legs[t.legs.length - 1] && t.legs[t.legs.length - 1].to && t.legs[t.legs.length - 1].to.city;
-          if (firstFrom && lastTo && firstFrom !== lastTo) return true;
+          if (window.__A2_DIAG) console.log('[A2-diag]   firstFrom:', JSON.stringify(firstFrom), 'lastTo:', JSON.stringify(lastTo), 'match:', firstFrom === lastTo);
+          if (firstFrom && lastTo && firstFrom !== lastTo) { if (window.__A2_DIAG) console.log('[A2-diag]   → TRANSIT (cross-city flight)'); return true; }
         }
       }
+      if (window.__A2_DIAG && day.id) console.log('[A2-diag] → NOT TRANSIT');
       // Phase 4 Step 6.4b — legacy fallback removed. Now transport shape is
       // enforced and self-healing, stale day.city ">" strings should never
       // mask transit state. isTransitDay is now purely flight-derived.
@@ -8414,7 +8423,6 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     // is tolerated for now — Step 6.5/6.6/7 will derive city properly).
     // Skips day 0 and the final day (structural transits we don't touch).
     function _refreshDayTransitState(dayIdx) {
-      if (dayIdx === 0 || dayIdx === currentTrip.days.length - 1) return;
       var day = currentTrip.days[dayIdx];
       if (!day) return;
       if (isTransitDay(day)) {
