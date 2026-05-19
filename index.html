@@ -4718,8 +4718,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<div class="ts-field"><label>Flight #</label><input type="text" id="ts-num-' + i + '" value="' + leg.flightNum + '" placeholder="e.g. SQ412"></div>' +
           '</div>' +
           '<div class="ts-row">' +
-            '<div class="ts-field"><label>Departs</label><input type="text" id="ts-depart-' + i + '" value="' + leg.depart + '" placeholder="e.g. 9:15am"></div>' +
-            '<div class="ts-field"><label>Arrives</label><input type="text" id="ts-arrive-' + i + '" value="' + leg.arrive + '" placeholder="e.g. 6:55pm"></div>' +
+            '<div class="ts-field"><label>Departs</label><input type="time" id="ts-depart-' + i + '" value="' + tsTo24hr(leg.depart) + '"></div>' +
+            '<div class="ts-field"><label>Arrives</label><input type="time" id="ts-arrive-' + i + '" value="' + tsTo24hr(leg.arrive) + '"></div>' +
           '</div>' +
           '<div class="ts-row">' +
             '<div class="ts-field"><label>Confirmation Code</label><input type="text" id="ts-code-' + i + '" value="' + leg.confirmationCode + '" placeholder="e.g. ABC123"></div>' +
@@ -4781,6 +4781,27 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       setTimeout(function() { document.getElementById('ts-leg-' + (_transportSheet.legs.length-1)).scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50);
     }
 
+    function tsTo24hr(str) {
+      if (!str) return '';
+      var m = str.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (!m) return '';
+      var h = parseInt(m[1], 10), min = m[2], ampm = (m[3] || '').toUpperCase();
+      if (ampm === 'PM' && h !== 12) h += 12;
+      if (ampm === 'AM' && h === 12) h = 0;
+      return (h < 10 ? '0' : '') + h + ':' + min;
+    }
+
+    function tsFrom24hr(str) {
+      if (!str) return '';
+      var parts = str.split(':');
+      if (parts.length < 2) return str;
+      var h = parseInt(parts[0], 10), min = parts[1];
+      var ampm = h >= 12 ? 'PM' : 'AM';
+      if (h === 0) h = 12;
+      else if (h > 12) h -= 12;
+      return h + ':' + min + ' ' + ampm;
+    }
+
     function tsRemoveLeg(i) {
       tsSaveCurrentLegInputs();
       _transportSheet.legs.splice(i, 1);
@@ -4794,8 +4815,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         leg.to = (document.getElementById('ts-to-' + i) || {}).value || leg.to;
         leg.carrier = (document.getElementById('ts-carrier-' + i) || {}).value || leg.carrier;
         leg.flightNum = (document.getElementById('ts-num-' + i) || {}).value || leg.flightNum;
-        leg.depart = (document.getElementById('ts-depart-' + i) || {}).value || leg.depart;
-        leg.arrive = (document.getElementById('ts-arrive-' + i) || {}).value || leg.arrive;
+        leg.depart = tsFrom24hr((document.getElementById('ts-depart-' + i) || {}).value) || leg.depart;
+        leg.arrive = tsFrom24hr((document.getElementById('ts-arrive-' + i) || {}).value) || leg.arrive;
         leg.confirmationCode = (document.getElementById('ts-code-' + i) || {}).value || leg.confirmationCode;
         leg.seat = (document.getElementById('ts-seat-' + i) || {}).value || leg.seat || '';
         var dayEl = document.getElementById('ts-day-' + i);
