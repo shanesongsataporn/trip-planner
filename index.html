@@ -4581,6 +4581,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             (tDisp.carrier || tDisp.flightNum ? '<div class="transport-view-detail"><strong>' + tDisp.carrier + (tDisp.flightNum ? ' · ' + tDisp.flightNum : '') + '</strong></div>' : '') +
             (tDisp.depart || tDisp.arrive ? '<div class="transport-view-detail">🕐 ' + (tDisp.depart||'?') + ' → ' + (tDisp.arrive||'?') + '</div>' : '') +
             (tDisp.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + tDisp.confirmationCode + '</strong></div>' : '') +
+            (tDisp.seat ? '<div class="transport-view-detail">💺 Seat: <strong>' + tDisp.seat + '</strong></div>' : '') +
             (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:4px;">' + t.notes + '</div>' : '') +
             (missingFields.length ? '<div style="margin-top:8px;font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingFields.join(', ') + '</div>' : '');
         }
@@ -4646,6 +4647,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               depart: l.depart || '',
               arrive: l.arrive || '',
               confirmationCode: l.confirmationCode || '',
+              seat: l.seat || '',
               dayIndex: di
             };
           });
@@ -4721,7 +4723,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '</div>' +
           '<div class="ts-row">' +
             '<div class="ts-field"><label>Confirmation Code</label><input type="text" id="ts-code-' + i + '" value="' + leg.confirmationCode + '" placeholder="e.g. ABC123"></div>' +
+            '<div class="ts-field"><label>Seat</label><input type="text" id="ts-seat-' + i + '" value="' + (leg.seat || '') + '" placeholder="e.g. 23A"></div>' +
+          '</div>' +
+          '<div class="ts-row">' +
             '<div class="ts-field"><label>Day</label><select id="ts-day-' + i + '">' + dayOptions + '</select></div>' +
+            '<div class="ts-field"></div>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -4791,6 +4797,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         leg.depart = (document.getElementById('ts-depart-' + i) || {}).value || leg.depart;
         leg.arrive = (document.getElementById('ts-arrive-' + i) || {}).value || leg.arrive;
         leg.confirmationCode = (document.getElementById('ts-code-' + i) || {}).value || leg.confirmationCode;
+        leg.seat = (document.getElementById('ts-seat-' + i) || {}).value || leg.seat || '';
         var dayEl = document.getElementById('ts-day-' + i);
         if (dayEl) leg.dayIndex = parseInt(dayEl.value, 10);
       });
@@ -4816,7 +4823,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             flightNum: (l.flightNum || '').trim(),
             depart: (l.depart || '').trim(),
             arrive: (l.arrive || '').trim(),
-            confirmationCode: (l.confirmationCode || '').trim()
+            confirmationCode: (l.confirmationCode || '').trim(),
+            seat: (l.seat || '').trim()
           };
         })
       };
@@ -4836,6 +4844,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // Add to target day via canonical API — always use first leg's dayIndex
       var targetDi = legs[0].dayIndex;
       _addFlightToDay(targetDi, newEntry);
+
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
 
       closeTransportSheet();
       renderTransport();
@@ -4891,6 +4903,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '</div>' +
               (d.carrier ? '<div class="transport-card-detail">' + d.carrier + (d.flightNum ? ' · ' + d.flightNum : '') + '</div>' : '') +
               (d.depart ? '<div class="transport-card-detail">Departs: ' + d.depart + (d.arrive ? ' → Arrives: ' + d.arrive : '') + '</div>' : '') +
+              (t.legs && t.legs[0] && t.legs[0].seat ? '<div class="transport-card-detail">💺 Seat: ' + t.legs[0].seat + '</div>' : '') +
               (t.notes ? '<div class="transport-card-detail" style="margin-top:4px;font-style:italic;">' + t.notes + '</div>' : '') +
               '<a href="javascript:void(0)" onclick="showEditTransportModal(deCurrentIndex,' + i + ');return false;" style="position:absolute;top:8px;right:36px;width:20px;height:20px;border-radius:50%;border:1px solid var(--sand-dark);background:none;cursor:pointer;font-size:10px;color:var(--ink-muted);display:flex;align-items:center;justify-content:center;text-decoration:none;">✏️</a>' +
               '<button onclick="deleteTransport(' + i + ')" style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;border:1px solid var(--sand-dark);background:none;cursor:pointer;font-size:10px;color:var(--ink-muted);">x</button>' +
@@ -10961,6 +10974,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         depart: first.depart || '',
         arrive: last.arrive || '',
         confirmationCode: first.confirmationCode || '',
+        seat: first.seat || '',
         isMultiLeg: legs.length > 1,
         legs: legs
       };
@@ -11962,6 +11976,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (doc.exists) {
           var data = doc.data();
           if (data && data.data) {
+            if (deSuppressSync) return;
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
             currentTrip = trips[currentTripKey];
