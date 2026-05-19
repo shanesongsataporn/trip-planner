@@ -4892,6 +4892,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               (d.carrier ? '<div class="transport-card-detail">' + d.carrier + (d.flightNum ? ' · ' + d.flightNum : '') + '</div>' : '') +
               (d.depart ? '<div class="transport-card-detail">Departs: ' + d.depart + (d.arrive ? ' → Arrives: ' + d.arrive : '') + '</div>' : '') +
               (t.notes ? '<div class="transport-card-detail" style="margin-top:4px;font-style:italic;">' + t.notes + '</div>' : '') +
+              '<a href="javascript:void(0)" onclick="showEditTransportModal(deCurrentIndex,' + i + ');return false;" style="position:absolute;top:8px;right:36px;width:20px;height:20px;border-radius:50%;border:1px solid var(--sand-dark);background:none;cursor:pointer;font-size:10px;color:var(--ink-muted);display:flex;align-items:center;justify-content:center;text-decoration:none;">✏️</a>' +
               '<button onclick="deleteTransport(' + i + ')" style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;border:1px solid var(--sand-dark);background:none;cursor:pointer;font-size:10px;color:var(--ink-muted);">x</button>' +
             '</div>';
           }).join('')
