@@ -8600,6 +8600,8 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
           setTheme(savedTheme);
         }
         document.getElementById('app-loader').style.display = 'none';
+        initRouteNav();
+        history.replaceState({ view: 'home' }, '', '');
         setView('home');
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
