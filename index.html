@@ -618,6 +618,8 @@
     .plan-act-name { font-size: 12px; color: var(--ink); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .plan-act-done { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--sand-dark); background: transparent; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
     .plan-act-done.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .plan-act-del { font-size: 11px; color: var(--ink-muted); flex-shrink: 0; padding: 4px 6px; cursor: pointer; opacity: 0.5; }
+    .plan-act-del:active { opacity: 1; color: var(--danger, #e53e3e); }
 
     /* Plan view — expanded day content hidden by default */
     .plan-day-content { display: none; margin-bottom: 8px; }
@@ -5116,26 +5118,28 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (day.activities && day.activities.length) {
             day.activities.forEach(function(act) {
               var isDone = !!(day.done && day.done['act_' + act.uid]);
-              actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-di="' + di + '" data-type="activity" onclick="selectSplitDay(' + di + ');setView(\'split\');event.stopPropagation();">' +
+              actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-day-id="' + day.id + '" data-di="' + di + '" data-type="activity" onclick="if(!event.target.classList.contains(\'plan-act-del\')){selectSplitDay(' + di + ');setView(\'split\');}">' +
                 '<span class="plan-act-handle">⠿</span>' +
                 '<span class="plan-act-emoji">' + (act.emoji || '📍') + '</span>' +
                 '<span class="plan-act-name">' + escHtml(act.name || '') + '</span>' +
+                '<span class="plan-act-del" onclick="planDeleteActivity(event,\'' + day.id + '\',' + di + ',\'' + act.uid + '\',\'activity\')">✕</span>' +
                 '</div>';
             });
           }
           if (day.food && day.food.length) {
             day.food.forEach(function(f) {
-              actRows += '<div class="plan-activity-row" data-uid="' + f.uid + '" data-di="' + di + '" data-type="food" onclick="selectSplitDay(' + di + ');setView(\'split\');event.stopPropagation();">' +
+              actRows += '<div class="plan-activity-row" data-uid="' + f.uid + '" data-day-id="' + day.id + '" data-di="' + di + '" data-type="food" onclick="if(!event.target.classList.contains(\'plan-act-del\')){selectSplitDay(' + di + ');setView(\'split\');}">' +
                 '<span class="plan-act-handle">⠿</span>' +
                 '<span class="plan-act-emoji">🍴</span>' +
                 '<span class="plan-act-name">' + escHtml(f.name || '') + '</span>' +
+                '<span class="plan-act-del" onclick="planDeleteActivity(event,\'' + day.id + '\',' + di + ',\'' + f.uid + '\',\'food\')">✕</span>' +
                 '</div>';
             });
           }
           if (!actRows) {
             actRows = '<div class="plan-empty-drop">No activities yet</div>';
           }
-          var actHtml = '<div class="plan-activity-section plan-act-list" data-di="' + di + '">' + actRows + '</div>';
+          var actHtml = '<div class="plan-activity-section plan-act-list" data-di="' + di + '" data-day-id="' + day.id + '">' + actRows + '</div>';
 
           return '<div class="struct-day-row' + (isOpen ? ' expanded' : '') + '" data-di="' + di + '" data-day-id="' + day.id + '" onclick="planDayRowTap(\'' + day.id + '\', ' + di + ', event)">' +
             '<span class="struct-day-num">Day ' + (di + 1) + '</span>' +
@@ -5168,6 +5172,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }).join('');
 
       initStructSortables();
+      initPlanActivitySortables();
     }
 
     function planDayRowTap(dayId, di, e) {
@@ -5186,6 +5191,100 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (row) row.classList.toggle('expanded', !!planExpandedDays[dayId]);
       if (content) content.classList.toggle('open', !!planExpandedDays[dayId]);
       if (planExpandedDays[dayId]) initPlanActivitySortables();
+    }
+
+    function planDeleteActivity(e, dayId, di, uid, type) {
+      e.stopPropagation();
+      var day = currentTrip.days.find(function(d) { return d.id === dayId; });
+      if (!day) return;
+      pushStructHistory('Delete ' + (type === 'food' ? 'food' : 'activity'));
+      if (type === 'activity') {
+        day.activities = (day.activities || []).filter(function(a) { return a.uid !== uid; });
+      } else if (type === 'food') {
+        day.food = (day.food || []).filter(function(f) { return f.uid !== uid; });
+      }
+      var key = (type === 'food' ? 'food_' : 'act_') + uid;
+      if (day.cardNotes) delete day.cardNotes[key];
+      if (day.costs) delete day.costs[key];
+      if (day.done) delete day.done[key];
+      day.routeOrder = [];
+      day.routeLegs = [];
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      // Re-render just this day's activity section in-place
+      var realDi = currentTrip.days.findIndex(function(d) { return d.id === dayId; });
+      var section = document.querySelector('.plan-act-list[data-day-id="' + dayId + '"]');
+      if (section) section.outerHTML = buildPlanActSectionHtml(day, realDi);
+      initPlanActivitySortables();
+    }
+
+    function buildPlanActSectionHtml(day, di) {
+      var actRows = '';
+      if (day.activities && day.activities.length) {
+        day.activities.forEach(function(act) {
+          actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-day-id="' + day.id + '" data-di="' + di + '" data-type="activity" onclick="if(!event.target.classList.contains(\'plan-act-del\')){selectSplitDay(' + di + ');setView(\'split\');}">' +
+            '<span class="plan-act-handle">⠿</span>' +
+            '<span class="plan-act-emoji">' + (act.emoji || '📍') + '</span>' +
+            '<span class="plan-act-name">' + escHtml(act.name || '') + '</span>' +
+            '<span class="plan-act-del" onclick="planDeleteActivity(event,\'' + day.id + '\',' + di + ',\'' + act.uid + '\',\'activity\')">✕</span>' +
+            '</div>';
+        });
+      }
+      if (day.food && day.food.length) {
+        day.food.forEach(function(f) {
+          actRows += '<div class="plan-activity-row" data-uid="' + f.uid + '" data-day-id="' + day.id + '" data-di="' + di + '" data-type="food" onclick="if(!event.target.classList.contains(\'plan-act-del\')){selectSplitDay(' + di + ');setView(\'split\');}">' +
+            '<span class="plan-act-handle">⠿</span>' +
+            '<span class="plan-act-emoji">🍴</span>' +
+            '<span class="plan-act-name">' + escHtml(f.name || '') + '</span>' +
+            '<span class="plan-act-del" onclick="planDeleteActivity(event,\'' + day.id + '\',' + di + ',\'' + f.uid + '\',\'food\')">✕</span>' +
+            '</div>';
+        });
+      }
+      if (!actRows) actRows = '<div class="plan-empty-drop">No activities yet — drop one here</div>';
+      return '<div class="plan-activity-section plan-act-list" data-di="' + di + '" data-day-id="' + day.id + '">' + actRows + '</div>';
+    }
+
+    function initPlanActivitySortables() {
+      var sections = document.querySelectorAll('.plan-act-list');
+      sections.forEach(function(el) {
+        if (el._planSortable) { el._planSortable.destroy(); el._planSortable = null; }
+        el._planSortable = Sortable.create(el, {
+          group: 'plan-activities',
+          animation: 150,
+          handle: '.plan-act-handle',
+          ghostClass: 'sortable-ghost',
+          chosenClass: 'sortable-chosen',
+          onEnd: function(evt) {
+            var fromDayId = evt.from.dataset.dayId;
+            var toDayId = evt.to.dataset.dayId;
+            var uid = evt.item.dataset.uid;
+            var type = evt.item.dataset.type;
+            var fromDay = currentTrip.days.find(function(d) { return d.id === fromDayId; });
+            var toDay = currentTrip.days.find(function(d) { return d.id === toDayId; });
+            if (!fromDay || !toDay) return;
+            var arr = type === 'food' ? 'food' : 'activities';
+            var itemIdx = (fromDay[arr] || []).findIndex(function(a) { return a.uid === uid; });
+            if (itemIdx === -1) return;
+            var item = fromDay[arr].splice(itemIdx, 1)[0];
+            if (!toDay[arr]) toDay[arr] = [];
+            toDay[arr].splice(evt.newIndex, 0, item);
+            fromDay.routeOrder = []; fromDay.routeLegs = [];
+            if (toDayId !== fromDayId) { toDay.routeOrder = []; toDay.routeLegs = []; }
+            deSuppressSync = true;
+            setTimeout(function() { deSuppressSync = false; }, 2000);
+            saveToStorage();
+            // Re-render affected sections in-place
+            var fromDi = currentTrip.days.findIndex(function(d) { return d.id === fromDayId; });
+            var toDi = currentTrip.days.findIndex(function(d) { return d.id === toDayId; });
+            var fromSection = document.querySelector('.plan-act-list[data-day-id="' + fromDayId + '"]');
+            var toSection = document.querySelector('.plan-act-list[data-day-id="' + toDayId + '"]');
+            if (fromSection) fromSection.outerHTML = buildPlanActSectionHtml(fromDay, fromDi);
+            if (toDayId !== fromDayId && toSection) toSection.outerHTML = buildPlanActSectionHtml(toDay, toDi);
+            initPlanActivitySortables();
+          }
+        });
+      });
     }
 
     function expandAllPlanDays() {
