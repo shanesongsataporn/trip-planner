@@ -371,9 +371,43 @@
     #split-map { position: absolute; top: 0; left: 0; right: 0; height: 40%; overflow: hidden; }
     #split-divider { position: absolute; left: 0; right: 0; height: 10px; background: var(--sand-dark); cursor: row-resize; touch-action: none; display: flex; align-items: center; justify-content: center; z-index: 10; }
     #split-divider::after { content: ''; width: 36px; height: 3px; border-radius: 999px; background: var(--ink-muted); opacity: 0.4; }
-    #split-list { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; background: #1a1a1a; border-top: 1px solid rgba(255,255,255,0.08); scrollbar-width: thin; }
+    #split-list { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--white); border-top: 1px solid var(--sand-dark); scrollbar-width: thin; }
     .split-day-item { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: background 0.15s; }
     .split-day-item:hover { background: rgba(255,255,255,0.04); }
+
+    /* ===== DAY EDITOR ROWS ===== */
+    .de-city-block { background: var(--white); }
+    .de-city-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; border-left: 4px solid var(--city-color, var(--accent)); background: color-mix(in srgb, var(--city-color, var(--accent)) 6%, var(--white)); }
+    .de-city-emoji { font-size: 20px; flex-shrink: 0; }
+    .de-city-name { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); }
+    .de-city-date { font-size: 11px; color: var(--ink-muted); margin-top: 1px; }
+    .de-section { margin-bottom: 8px; }
+    .de-section-header { display: flex; align-items: center; gap: 8px; padding: 10px 16px 6px; background: var(--sand); margin: 0 0 4px; }
+    .de-section-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); flex: 1; }
+    .de-section-count { font-size: 11px; color: var(--ink-muted); opacity: 0.6; }
+    .de-row { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--sand-dark); cursor: pointer; transition: background 0.12s; background: transparent; }
+    .de-row:active { background: var(--sand); }
+    .de-row-emoji { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+    .de-row-body { flex: 1; min-width: 0; }
+    .de-row-name { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .de-row-meta { font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
+    .de-row-chevron { font-size: 12px; color: var(--ink-muted); opacity: 0.5; transition: transform 0.2s; flex-shrink: 0; }
+    .de-row-handle { font-size: 16px; color: var(--ink-muted); opacity: 0.3; cursor: grab; flex-shrink: 0; padding: 0 2px; }
+    .de-row--anchored { cursor: default; }
+    .de-row--anchored .de-row-chevron { display: none; }
+    .de-row--expanded { background: var(--sand); }
+    .de-row--expanded .de-row-chevron { transform: rotate(90deg); opacity: 0.7; }
+    .de-row-expand-body { background: var(--sand); padding: 0 14px 12px; border-top: none; display: none; border-bottom: 1px solid var(--sand-dark); }
+    .de-row-expand-body.open { display: block; }
+    .de-row-expand-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .de-row-expand-btn { flex: 1; min-width: 80px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--sand-dark); background: var(--white); color: var(--ink); font-size: 13px; cursor: pointer; text-align: center; font-family: inherit; text-decoration: none; display: inline-block; }
+    .de-row-expand-btn:active { background: var(--sand-dark); }
+    .de-row-expand-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .de-row-expand-note { width: 100%; box-sizing: border-box; background: var(--white); border: 1px solid var(--sand-dark); border-radius: 6px; color: var(--ink); font-size: 13px; padding: 7px 10px; margin-top: 10px; resize: none; font-family: inherit; }
+    .de-row-expand-note::placeholder { color: var(--ink-muted); }
+    .de-add-row { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px dashed var(--sand-dark); color: var(--ink-muted); font-size: 13px; cursor: pointer; transition: background 0.12s; }
+    .de-add-row:active { background: var(--sand); }
+    .de-add-row-icon { font-size: 16px; opacity: 0.5; }
     .split-day-item.active { background: rgba(255,255,255,0.06); border-left: 3px solid var(--accent); }
     .split-day-item.active .split-day-city { font-weight: 800; color: #fff; }
     .split-day-item.active .split-day-num { color: var(--accent); }
@@ -7207,135 +7241,224 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!deCurrentDay || deCurrentIndex < 0) return;
       deExpandedCard = null;
 
-      var accomCards = '';
-      normaliseAccom(deCurrentDay);
-      if (deCurrentDay.accommodation && deCurrentDay.accommodation.length) {
-        deCurrentDay.accommodation.forEach(function(a, i) {
-          accomCards += '<div class="de-card" id="de-card-accommodation-' + i + '" onclick="deToggleCard(\'accom\',' + i + ')">' +
-            '<div class="de-card-icon" style="background:rgba(52,152,219,0.15);">🏨</div>' +
-            '<div style="flex:1;"><div class="de-card-name">' + (a.name||'Unnamed') + '</div>' +
-            (a.notes ? '<div class="de-card-meta">' + a.notes + '</div>' : '') + '</div>' +
-            '<span class="de-card-handle">⠿</span>' +
-          '</div>';
-        });
-      } else { accomCards = '<div class="de-empty">No accommodation added</div>'; }
+      var day = deCurrentDay;
+      var cs = (citySettings && citySettings[day.city]) || {};
+      var cityColour = cs.color || '#aaa';
 
-      var actCards = '';
-      if (deCurrentDay.activities && deCurrentDay.activities.length) {
-        deCurrentDay.activities.forEach(function(a, i) {
-          var name = (typeof a === 'object') ? a.name : a;
-          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + deCurrentDay.day + '_act' + i);
-          var cat = (deCurrentDay.activityCategories && deCurrentDay.activityCategories[i]) || 'default';
-          var catObj = activityCategories[cat] || activityCategories['default'];
-          var dwell = {temple:45,food:60,beach:180,shopping:120,nature:90,nightlife:120,transport:0,default:60};
-          var dur = dwell[cat] || 60;
-          var durLabel = dur >= 60 ? (dur/60) + 'h' : dur + 'm';
-          var photoKey = 'act_' + uid;
-          var photo = cardPhotos[photoKey];
-          var iconHtml = photo
-            ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
-            : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
-          var splitNoteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
-          var splitNote = (deCurrentDay.cardNotes && deCurrentDay.cardNotes[splitNoteKey]) || '';
-          actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
-            iconHtml +
-            '<div style="flex:1;"><div class="de-card-name">' + name + '</div>' +
-            '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div>' +
-            (splitNote ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;">' + splitNote + '</div>' : '') +
+      // --- TRANSPORT rows (anchored) ---
+      var transportRows = '';
+      if (day.transport && day.transport.length) {
+        day.transport.forEach(function(t, i) {
+          var fd = getFlightDisplay(t);
+          var label = fd.isMultiLeg
+            ? (fd.from + ' → ' + fd.to)
+            : ((fd.carrier || '') + ' ' + (fd.flightNum || '') + ' · ' + (fd.from || '') + ' → ' + (fd.to || ''));
+          var meta = [fd.depart, fd.arrive].filter(Boolean).join(' – ');
+          transportRows += '<div class="de-row de-row--anchored" id="de-card-transport-' + i + '">' +
+            '<span class="de-row-emoji">✈️</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(label.trim()) + '</div>' +
+              (meta ? '<div class="de-row-meta">' + escHtml(meta) + '</div>' : '') +
             '</div>' +
-            '<span class="de-card-handle">⠿</span>' +
           '</div>';
         });
-      } else { actCards = '<div class="de-empty">No activities added</div>'; }
+      }
 
-      var foodCards = '';
-      if (deCurrentDay.food && deCurrentDay.food.length) {
-        deCurrentDay.food.forEach(function(f, i) {
-          var fname = typeof f === 'string' ? f : f.name;
+      // --- STAY rows (anchored) ---
+      normaliseAccom(day);
+      var accomRows = '';
+      if (day.accommodation && day.accommodation.length) {
+        day.accommodation.forEach(function(a, i) {
+          accomRows += '<div class="de-row de-row--anchored" id="de-card-accommodation-' + i + '">' +
+            '<span class="de-row-emoji">🏨</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(a.name || 'Unnamed') + '</div>' +
+              (a.notes ? '<div class="de-row-meta">' + escHtml(a.notes) + '</div>' : '') +
+            '</div>' +
+          '</div>';
+        });
+      }
+
+      // --- ACTIVITY rows (draggable) ---
+      var actRows = '';
+      if (day.activities && day.activities.length) {
+        day.activities.forEach(function(a, i) {
+          var name = (typeof a === 'object') ? a.name : a;
+          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('act' + i);
+          var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
+          var catObj = activityCategories[cat] || activityCategories['default'];
+          var noteKey = 'act_' + uid;
+          var note = (day.cardNotes && day.cardNotes[noteKey]) || '';
+          actRows += '<div class="de-row" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
+            '<span class="de-row-handle">⠿</span>' +
+            '<span class="de-row-emoji">' + catObj.emoji + '</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(name) + '</div>' +
+              (note ? '<div class="de-row-meta" style="color:var(--accent);font-style:italic;">' + escHtml(note) + '</div>' : '<div class="de-row-meta">' + cat + '</div>') +
+            '</div>' +
+            '<span class="de-row-chevron">›</span>' +
+          '</div>' +
+          '<div class="de-row-expand-body" id="de-expand-act-' + i + '"></div>';
+        });
+      } else { actRows = '<div class="de-empty">No activities added</div>'; }
+
+      // --- FOOD rows (draggable) ---
+      var foodRows = '';
+      if (day.food && day.food.length) {
+        day.food.forEach(function(f, i) {
+          var fname = typeof f === 'string' ? f : (f.name || 'Unnamed');
           var booked = f.reservationBooked ? '✅ Booked' : (f.reservationRequired ? '⚠️ Needs booking' : '');
-          foodCards += '<div class="de-card" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
-            '<div class="de-card-icon" style="background:rgba(230,126,34,0.15);">🍽️</div>' +
-            '<div style="flex:1;"><div class="de-card-name">' + fname + '</div>' +
-            (booked ? '<div class="de-card-meta">' + booked + '</div>' : '') + '</div>' +
-            '<span class="de-card-handle">⠿</span>' +
-          '</div>';
+          var note = (f.notes) || '';
+          foodRows += '<div class="de-row" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
+            '<span class="de-row-handle">⠿</span>' +
+            '<span class="de-row-emoji">🍽️</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(fname) + '</div>' +
+              '<div class="de-row-meta">' + (booked || (note ? escHtml(note) : 'Food & drink')) + '</div>' +
+            '</div>' +
+            '<span class="de-row-chevron">›</span>' +
+          '</div>' +
+          '<div class="de-row-expand-body" id="de-expand-food-' + i + '"></div>';
         });
-      } else { foodCards = '<div class="de-empty">No food added</div>'; }
+      } else { foodRows = '<div class="de-empty">No food added</div>'; }
 
-      var accomEl = document.getElementById('de-sort-accom');
+      // --- Render anchored section (transport + stay) ---
+      var anchoredEl = document.getElementById('de-sort-accom');
+      if (anchoredEl) {
+        var anchoredHtml = '';
+        if (transportRows || accomRows) {
+          if (transportRows) anchoredHtml += '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Transport</span></div>' + transportRows;
+          if (accomRows) anchoredHtml += '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Stay</span></div>' + accomRows;
+        }
+        anchoredEl.innerHTML = anchoredHtml;
+      }
+
+      // --- Render activities ---
       var actsEl = document.getElementById('de-sort-acts');
-      var foodEl = document.getElementById('de-sort-food');
-      if (accomEl) accomEl.innerHTML = accomCards;
-      if (actsEl) actsEl.innerHTML = actCards;
-      if (foodEl) foodEl.innerHTML = foodCards;
+      if (actsEl) {
+        var actCount = (day.activities && day.activities.length) || 0;
+        actsEl.innerHTML =
+          '<div class="de-section-header" style="--de-section-color:' + cityColour + '">' +
+            '<span class="de-section-title">Activities</span>' +
+            (actCount ? '<span class="de-section-count">' + actCount + '</span>' : '') +
+          '</div>' +
+          actRows +
+          '<div class="de-add-row" onclick="showDeAddSheet(\'acts\')">' +
+            '<span class="de-add-row-icon">+</span> Add activity' +
+          '</div>';
+      }
 
-      // Re-wire route + add buttons
+      // --- Render food ---
+      var foodEl = document.getElementById('de-sort-food');
+      if (foodEl) {
+        var foodCount = (day.food && day.food.length) || 0;
+        foodEl.innerHTML =
+          '<div class="de-section-header" style="--de-section-color:' + cityColour + '">' +
+            '<span class="de-section-title">Food & Drink</span>' +
+            (foodCount ? '<span class="de-section-count">' + foodCount + '</span>' : '') +
+          '</div>' +
+          foodRows +
+          '<div class="de-add-row" onclick="showDeAddSheet(\'food\')">' +
+            '<span class="de-add-row-icon">+</span> Add food' +
+          '</div>';
+      }
+
+      // Re-wire route button
       var routeBtn = document.querySelector('.de-route-btn');
       if (routeBtn) { routeBtn.onclick = function() { openRoutePage(deCurrentIndex); }; }
-      var addBtns = document.querySelectorAll('.de-add-btn');
-      addBtns.forEach(function(btn) {
-        var txt = btn.textContent;
-        if (txt.indexOf('activity') !== -1) { btn.onclick = function() { showDeAddSheet('acts'); }; }
-        else if (txt.indexOf('accommodation') !== -1) { btn.onclick = function() { showDeAddSheet('accom'); }; }
-        else if (txt.indexOf('food') !== -1) { btn.onclick = function() { showDeAddSheet('food'); }; }
-      });
     }
 
     function deToggleCard(section, i) {
       var cardId = 'de-card-' + (section === 'acts' ? 'act' : section === 'accom' ? 'accommodation' : 'food') + '-' + i;
+      var expandId = 'de-expand-' + (section === 'acts' ? 'act' : section === 'accom' ? 'accommodation' : 'food') + '-' + i;
       var card = document.getElementById(cardId);
+      var expandEl = document.getElementById(expandId);
       if (!card) return;
 
-      // If this card is already expanded, collapse it
+      // Collapse if already open
       if (deExpandedCard === cardId) {
         deExpandedCard = null;
-        renderDeCards();
+        card.classList.remove('de-row--expanded');
+        if (expandEl) { expandEl.classList.remove('open'); expandEl.innerHTML = ''; }
         return;
       }
 
-      // Collapse any open card first
+      // Collapse any previously open card
+      if (deExpandedCard) {
+        var prevCard = document.getElementById(deExpandedCard);
+        var prevExpandId = deExpandedCard.replace('de-card-', 'de-expand-');
+        var prevExpand = document.getElementById(prevExpandId);
+        if (prevCard) prevCard.classList.remove('de-row--expanded');
+        if (prevExpand) { prevExpand.classList.remove('open'); prevExpand.innerHTML = ''; }
+      }
       deExpandedCard = cardId;
+      card.classList.add('de-row--expanded');
 
       var day = deCurrentDay;
-      var cats = Object.keys(activityCategories);
-      var currentCat = (day.activityCategories && day.activityCategories[i]) || 'default';
-      var currentName = section === 'acts' ? (typeof day.activities[i] === 'object' ? day.activities[i].name : (day.activities[i] || '')) :
-                        section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].name : '') :
-                        (day.food[i] ? (typeof day.food[i] === 'string' ? day.food[i] : day.food[i].name) : '');
-      var actForNote = (section === 'acts') ? day.activities[i] : null;
-      var actNoteKey = (actForNote && typeof actForNote === 'object' && actForNote.uid) ? ('act_' + actForNote.uid) : String(i);
-      var currentNote = section === 'acts' ? ((day.cardNotes && day.cardNotes[actNoteKey]) || '') :
-                        section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].notes || '' : '') :
-                        (day.food[i] ? day.food[i].notes || '' : '');
-      var currentLink = section === 'accom' ? (day.accommodation[i] ? day.accommodation[i].link || '' : '') :
-                        section === 'food' ? (day.food[i] ? day.food[i].link || '' : '') : '';
 
-      var dayOptions = currentTrip.days.map(function(d, di) {
-        return '<option value="' + di + '"' + (di === deCurrentIndex ? ' selected' : '') + '>Day ' + d.day + ' · ' + d.city + '</option>';
-      }).join('');
+      // Resolve item data
+      var itemName = '', mapsQuery = '', noteKey = '', currentNote = '';
+      if (section === 'acts') {
+        var act = day.activities[i];
+        itemName = (typeof act === 'object') ? (act.name || '') : (act || '');
+        noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(i);
+        currentNote = (day.cardNotes && day.cardNotes[noteKey]) || '';
+        mapsQuery = encodeURIComponent(itemName + (day.city ? ' ' + day.city : ''));
+      } else if (section === 'food') {
+        var food = day.food[i];
+        itemName = typeof food === 'string' ? food : (food.name || '');
+        noteKey = (food && food.uid) ? ('food_' + food.uid) : String(i);
+        currentNote = (food && food.notes) || '';
+        mapsQuery = encodeURIComponent(itemName + (day.city ? ' ' + day.city : ''));
+      } else if (section === 'accom') {
+        var accom = day.accommodation[i];
+        itemName = accom ? (accom.name || '') : '';
+        currentNote = (accom && accom.notes) || '';
+        mapsQuery = encodeURIComponent(itemName + (day.city ? ' ' + day.city : ''));
+      }
 
-      var catPicker = section === 'acts' ? '<div class="de-expand-label">Category</div><div class="de-cat-picker">' +
-        cats.map(function(c) {
-          var co = activityCategories[c];
-          return '<div class="de-cat-chip' + (c === currentCat ? ' active' : '') + '" onclick="dePickCat(\'' + section + '\',' + i + ',\'' + c + '\')">' + co.emoji + ' ' + c + '</div>';
-        }).join('') + '</div>' : '';
+      var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
+      var directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + mapsQuery;
 
-      card.innerHTML =
-        '<div class="de-expand-inner" onclick="event.stopPropagation();">' +
-          '<div class="de-expand-label">Name</div>' +
-          '<input class="de-expand-input" id="de-exp-name" type="text" value="' + currentName.replace(/"/g, '&quot;') + '">' +
-          catPicker +
-          '<div class="de-expand-label">Note</div>' +
-          '<textarea class="de-expand-textarea" id="de-exp-note" rows="2">' + currentNote + '</textarea>' +
-          (section !== 'acts' ? '<div class="de-expand-label">Link</div><input class="de-expand-input" id="de-exp-link" type="text" placeholder="https://..." value="' + currentLink + '">' : '') +
-          '<div class="de-expand-label">Move to day</div>' +
-          '<select class="de-expand-select" id="de-exp-day">' + dayOptions + '</select>' +
-          '<div class="de-expand-actions">' +
-            '<button class="de-expand-save" onclick="deSaveCard(\'' + section + '\',' + i + ')">Done</button>' +
-            '<button class="de-expand-delete" onclick="deDeleteCard(\'' + section + '\',' + i + ')">Delete</button>' +
+      if (expandEl) {
+        expandEl.innerHTML =
+          '<div class="de-row-expand-actions">' +
+            '<a class="de-row-expand-btn" href="' + mapsUrl + '" target="_blank">🗺 Open in Maps</a>' +
+            '<a class="de-row-expand-btn" href="' + directionsUrl + '" target="_blank">🧭 Directions</a>' +
+            '<button class="de-row-expand-btn de-row-expand-btn--primary" onclick="showDeEditSheet(\'' + section + '\',' + i + ')">Edit</button>' +
           '</div>' +
-        '</div>';
-      card.classList.add('de-card--expanded');
+          '<textarea class="de-row-expand-note" id="de-exp-note-' + section + '-' + i + '" rows="2" placeholder="Add a note...">' + escHtml(currentNote) + '</textarea>' +
+          '<button class="de-row-expand-btn" style="margin-top:8px;width:100%;" onclick="deQuickSaveNote(\'' + section + '\',' + i + ')">Save note</button>';
+        expandEl.classList.add('open');
+      }
+    }
+
+    function deQuickSaveNote(section, i) {
+      var ta = document.getElementById('de-exp-note-' + section + '-' + i);
+      if (!ta) return;
+      var val = ta.value;
+      var day = deCurrentDay;
+      if (section === 'acts') {
+        var act = day.activities[i];
+        var noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(i);
+        if (!day.cardNotes) day.cardNotes = {};
+        day.cardNotes[noteKey] = val;
+      } else if (section === 'food') {
+        var food = day.food[i];
+        if (typeof food === 'object') food.notes = val;
+      } else if (section === 'accom') {
+        if (day.accommodation[i]) day.accommodation[i].notes = val;
+      }
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      // Update meta line on the row without full re-render
+      var card = document.getElementById('de-card-' + (section === 'acts' ? 'act' : section === 'accom' ? 'accommodation' : 'food') + '-' + i);
+      if (card && section === 'acts') {
+        var metaEl = card.querySelector('.de-row-meta');
+        if (metaEl && val) { metaEl.textContent = val; metaEl.style.color = 'var(--accent)'; metaEl.style.fontStyle = 'italic'; }
+      }
+      showToast('Note saved');
     }
 
     function dePickCat(section, i, cat) {
@@ -7483,6 +7606,52 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       });
     }
 
+    function showDeEditSheet(section, i) {
+      var sheet = document.getElementById('de-add-sheet');
+      if (!sheet || !deCurrentDay) return;
+      sheet.dataset.section = section;
+      sheet.dataset.editIndex = i;
+      sheet.dataset.editMode = '1';
+
+      var day = deCurrentDay;
+      var itemName = '', currentNote = '', currentCat = 'default';
+      if (section === 'acts') {
+        var act = day.activities[i];
+        itemName = (typeof act === 'object') ? (act.name || '') : (act || '');
+        var noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(i);
+        currentNote = (day.cardNotes && day.cardNotes[noteKey]) || '';
+        currentCat = (day.activityCategories && day.activityCategories[i]) || 'default';
+      } else if (section === 'food') {
+        var food = day.food[i];
+        itemName = typeof food === 'string' ? food : (food.name || '');
+        currentNote = (food && food.notes) || '';
+      } else if (section === 'accom') {
+        var accom = day.accommodation[i];
+        itemName = accom ? (accom.name || '') : '';
+        currentNote = (accom && accom.notes) || '';
+      }
+
+      var title = section === 'acts' ? 'Edit Activity' : section === 'accom' ? 'Edit Stay' : 'Edit Food & Drink';
+      document.getElementById('de-add-sheet-title').textContent = title;
+
+      deAddManualMode = true;
+      document.getElementById('de-add-input').style.display = 'none';
+      var manualInput = document.getElementById('de-add-manual-input');
+      manualInput.value = itemName;
+      manualInput.style.display = 'block';
+      document.getElementById('de-add-manual-toggle').textContent = '';
+      document.getElementById('de-add-note').value = currentNote;
+      document.getElementById('de-add-cat-row').style.display = section === 'acts' ? 'block' : 'none';
+
+      sheet.dataset.selectedCat = currentCat;
+      document.querySelectorAll('.de-add-cat-chip').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.cat === currentCat);
+      });
+
+      sheet.classList.add('open');
+      sheet.dataset.open = '1';
+    }
+
     function confirmDeAdd() {
       var sheet = document.getElementById('de-add-sheet');
       if (!sheet || !deCurrentDay) return;
@@ -7493,6 +7662,36 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var note = document.getElementById('de-add-note').value.trim();
       var cat = sheet.dataset.selectedCat || 'default';
       if (!name) return;
+
+      // Edit mode — update existing item
+      if (sheet.dataset.editMode === '1') {
+        var idx = parseInt(sheet.dataset.editIndex);
+        if (section === 'acts') {
+          var act = deCurrentDay.activities[idx];
+          if (typeof act === 'object') { act.name = name; } else { deCurrentDay.activities[idx] = { name: name, uid: generateUid() }; }
+          if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
+          deCurrentDay.activityCategories[idx] = cat;
+          var savedAct = deCurrentDay.activities[idx];
+          var savedNoteKey = (savedAct && typeof savedAct === 'object' && savedAct.uid) ? ('act_' + savedAct.uid) : String(idx);
+          if (!deCurrentDay.cardNotes) deCurrentDay.cardNotes = {};
+          if (note) { deCurrentDay.cardNotes[savedNoteKey] = note; } else { delete deCurrentDay.cardNotes[savedNoteKey]; }
+        } else if (section === 'accom') {
+          normaliseAccom(deCurrentDay);
+          if (deCurrentDay.accommodation[idx]) { deCurrentDay.accommodation[idx].name = name; deCurrentDay.accommodation[idx].notes = note; }
+        } else if (section === 'food') {
+          normaliseFood(deCurrentDay);
+          if (deCurrentDay.food[idx]) { deCurrentDay.food[idx].name = name; deCurrentDay.food[idx].notes = note; }
+        }
+        sheet.dataset.editMode = '0';
+        deSuppressSync = true;
+        saveToStorage();
+        setTimeout(function() { deSuppressSync = false; }, 2000);
+        closeDeAddSheet();
+        renderDeCards();
+        return;
+      }
+
+      // Add mode — create new item
       if (section === 'acts') {
         deCurrentDay.activities.push(name);
         if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
@@ -7678,82 +7877,134 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (map && day.lat && day.lng) { map.panTo({ lat: day.lat, lng: day.lng }); map.setZoom(12); }
 
       // Build Day Editor content pane
-      var accomCards = '';
+      var cs = (citySettings && citySettings[day.city]) || {};
+      var cityColour = cs.color || '#aaa';
       normaliseAccom(day);
-      if (day.accommodation && day.accommodation.length) {
-        day.accommodation.forEach(function(a, i) {
-          accomCards += '<div class="de-card" id="de-card-accommodation-' + i + '" onclick="deToggleCard(\'accom\',' + i + ')">' +
-            '<div class="de-card-icon" style="background:rgba(52,152,219,0.15);">🏨</div>' +
-            '<div style="flex:1;"><div class="de-card-name">' + (a.name||'Unnamed') + '</div>' +
-            (a.notes ? '<div class="de-card-meta">' + a.notes + '</div>' : '') + '</div>' +
-            '<span class="de-card-handle">⠿</span>' +
+
+      // Transport rows (anchored)
+      var transportRows = '';
+      if (day.transport && day.transport.length) {
+        day.transport.forEach(function(t, i) {
+          var fd = getFlightDisplay(t);
+          var label = fd.isMultiLeg
+            ? (fd.from + ' → ' + fd.to)
+            : ((fd.carrier || '') + ' ' + (fd.flightNum || '') + ' · ' + (fd.from || '') + ' → ' + (fd.to || ''));
+          var meta = [fd.depart, fd.arrive].filter(Boolean).join(' – ');
+          transportRows += '<div class="de-row de-row--anchored">' +
+            '<span class="de-row-emoji">✈️</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(label.trim()) + '</div>' +
+              (meta ? '<div class="de-row-meta">' + escHtml(meta) + '</div>' : '') +
+            '</div>' +
           '</div>';
         });
-      } else {
-        accomCards = '<div class="de-empty">No accommodation added</div>';
       }
 
-      var actCards = '';
+      // Stay rows (anchored)
+      var accomRows = '';
+      if (day.accommodation && day.accommodation.length) {
+        day.accommodation.forEach(function(a, i) {
+          accomRows += '<div class="de-row de-row--anchored">' +
+            '<span class="de-row-emoji">🏨</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(a.name || 'Unnamed') + '</div>' +
+              (a.notes ? '<div class="de-row-meta">' + escHtml(a.notes) + '</div>' : '') +
+            '</div>' +
+          '</div>';
+        });
+      }
+
+      // Activity rows (draggable)
+      var actRows = '';
       if (day.activities && day.activities.length) {
         day.activities.forEach(function(a, i) {
           var name = (typeof a === 'object') ? a.name : a;
-          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + day.day + '_act' + i);
+          var uid = (typeof a === 'object' && a.uid) ? a.uid : ('act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
           var catObj = activityCategories[cat] || activityCategories['default'];
-          var dwell = {temple:45,food:60,beach:180,shopping:120,nature:90,nightlife:120,transport:0,default:60};
-          var dur = dwell[cat] || 60;
-          var durLabel = dur >= 60 ? (dur/60) + 'h' : dur + 'm';
-          var photoKey = 'act_' + uid;
-          var photo = cardPhotos[photoKey];
-          var iconHtml = photo
-            ? '<img src="' + photo + '" style="width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;">'
-            : '<div class="de-card-icon" style="background:' + catObj.color + '22;">' + catObj.emoji + '</div>';
-          actCards += '<div class="de-card" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
-            iconHtml +
-            '<div style="flex:1;"><div class="de-card-name">' + name + '</div>' +
-            '<div class="de-card-meta">' + catObj.emoji + ' ' + cat + ' · ' + durLabel + '</div></div>' +
-            '<span class="de-card-handle">⠿</span>' +
-          '</div>';
+          var noteKey = 'act_' + uid;
+          var note = (day.cardNotes && day.cardNotes[noteKey]) || '';
+          actRows += '<div class="de-row" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
+            '<span class="de-row-handle">⠿</span>' +
+            '<span class="de-row-emoji">' + catObj.emoji + '</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(name) + '</div>' +
+              (note ? '<div class="de-row-meta" style="color:var(--accent);font-style:italic;">' + escHtml(note) + '</div>' : '<div class="de-row-meta">' + escHtml(cat) + '</div>') +
+            '</div>' +
+            '<span class="de-row-chevron">›</span>' +
+          '</div>' +
+          '<div class="de-row-expand-body" id="de-expand-act-' + i + '"></div>';
         });
       } else {
-        actCards = '<div class="de-empty">No activities added</div>';
+        actRows = '<div class="de-empty">No activities added</div>';
       }
 
-      var foodCards = '';
+      // Food rows (draggable)
+      var foodRows = '';
       if (day.food && day.food.length) {
         day.food.forEach(function(f, i) {
-          var fname = typeof f === 'string' ? f : f.name;
+          var fname = typeof f === 'string' ? f : (f.name || 'Unnamed');
           var booked = f.reservationBooked ? '✅ Booked' : (f.reservationRequired ? '⚠️ Needs booking' : '');
-          foodCards += '<div class="de-card" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
-            '<div class="de-card-icon" style="background:rgba(230,126,34,0.15);">🍽️</div>' +
-            '<div style="flex:1;"><div class="de-card-name">' + fname + '</div>' +
-            (booked ? '<div class="de-card-meta">' + booked + '</div>' : '') + '</div>' +
-            '<span class="de-card-handle">⠿</span>' +
-          '</div>';
+          var fnote = (f.notes) || '';
+          foodRows += '<div class="de-row" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
+            '<span class="de-row-handle">⠿</span>' +
+            '<span class="de-row-emoji">🍽️</span>' +
+            '<div class="de-row-body">' +
+              '<div class="de-row-name">' + escHtml(fname) + '</div>' +
+              '<div class="de-row-meta">' + escHtml(booked || fnote || 'Food & drink') + '</div>' +
+            '</div>' +
+            '<span class="de-row-chevron">›</span>' +
+          '</div>' +
+          '<div class="de-row-expand-body" id="de-expand-food-' + i + '"></div>';
         });
       } else {
-        foodCards = '<div class="de-empty">No food added</div>';
+        foodRows = '<div class="de-empty">No food added</div>';
       }
 
+      // Anchored section HTML (transport + stay)
+      var anchoredHtml = '';
+      if (transportRows) anchoredHtml +=
+        '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Transport</span></div>' +
+        transportRows;
+      if (accomRows) anchoredHtml +=
+        '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Stay</span></div>' +
+        accomRows;
+
+      var actCount = (day.activities && day.activities.length) || 0;
+      var foodCount = (day.food && day.food.length) || 0;
       var dateStr = getDayDate(day, currentTrip) || '';
       var listPane = document.getElementById('split-list');
       listPane.innerHTML =
-        '<div class="de-header">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;">' +
-            '<div class="de-header-label">Day ' + day.day + ' · ' + day.city + '</div>' +
-            '<button onclick="undoSplitAction()" style="background:none;border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;padding:3px 8px;cursor:pointer;font-family:inherit;">↩ Undo</button>' +
+        '<div class="de-city-block" style="--city-color:' + cityColour + '">' +
+          '<div class="de-city-header" style="border-left-color:' + cityColour + '">' +
+            '<span class="de-city-emoji">' + (cs.emoji || '📍') + '</span>' +
+            '<div style="flex:1;min-width:0;">' +
+              '<div class="de-city-name">' + escHtml(day.city) + '</div>' +
+              '<div class="de-city-date">Day ' + (index + 1) + ' · ' + escHtml(dateStr) + '</div>' +
+            '</div>' +
+            '<button onclick="undoSplitAction()" style="background:none;border:1px solid var(--sand-dark);border-radius:6px;color:var(--ink-muted);font-size:11px;padding:3px 8px;cursor:pointer;font-family:inherit;">↩ Undo</button>' +
           '</div>' +
-          '<div class="de-header-title">' + dateStr + '</div>' +
-          '<div class="de-header-note" id="split-header-note-display" onclick="splitNoteInlineEdit()" style="cursor:pointer;min-height:18px;">' + (day.note || '<span style="opacity:0.4;font-style:italic;">Add a note...</span>') + '</div>' +
-        '</div>' +
-        '<div class="de-section"><div class="de-section-label">Transport</div>' + renderTransportTab(day) + '</div>' +
-        '<div class="de-section"><div class="de-section-label">Stay</div><div id="de-sort-accom">' + accomCards + '</div><button class="de-add-btn">+ Add accommodation</button></div>' +
-        '<div class="de-section"><div class="de-section-label">Activities</div><div id="de-sort-acts">' + actCards + '</div><button class="de-add-btn">+ Add activity</button></div>' +
-        '<div class="de-section"><div class="de-section-label">Food & Drink</div><div id="de-sort-food">' + foodCards + '</div><button class="de-add-btn">+ Add food</button></div>' +
-        '<div class="de-section"><div class="de-section-label">Note</div>' +
-          '<textarea class="de-note-field" id="split-note-field" rows="3" placeholder="Day notes..." onblur="updateDayField(\'note\', this.value)">' + (day.note||'') + '</textarea>' +
-'<button class="kbtn" style="margin-top:8px;font-weight:700;border-color:var(--accent);color:var(--accent);" onclick="saveSplitNote(' + index + ')">Save note</button>' +        '</div>' +
-        '<button class="de-route-btn">🗺 Plan route →</button>';
+          '<div class="de-day-note-row" id="split-header-note-display" onclick="splitNoteInlineEdit()" style="cursor:pointer;padding:6px 16px 10px;font-size:13px;color:var(--ink-muted);font-style:italic;">' +
+            (day.note || '<span style="opacity:0.5;">Add a note...</span>') +
+          '</div>' +
+          '<div id="de-sort-accom">' + anchoredHtml + '</div>' +
+          '<div id="de-sort-acts">' +
+            '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Activities</span>' + (actCount ? '<span class="de-section-count">' + actCount + '</span>' : '') + '</div>' +
+            actRows +
+            '<div class="de-add-row" onclick="showDeAddSheet(\'acts\')"><span class="de-add-row-icon">+</span> Add activity</div>' +
+          '</div>' +
+          '<div id="de-sort-food">' +
+            '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Food & Drink</span>' + (foodCount ? '<span class="de-section-count">' + foodCount + '</span>' : '') + '</div>' +
+            foodRows +
+            '<div class="de-add-row" onclick="showDeAddSheet(\'food\')"><span class="de-add-row-icon">+</span> Add food</div>' +
+          '</div>' +
+          '<div style="padding:0 0 12px;">' +
+            '<div class="de-section-header" style="--de-section-color:' + cityColour + '"><span class="de-section-title">Note</span></div>' +
+            '<textarea class="de-note-field" id="split-note-field" rows="3" placeholder="Day notes..." style="margin:0 14px;width:calc(100% - 28px);box-sizing:border-box;" onblur="updateDayField(\'note\', this.value)">' + (day.note||'') + '</textarea>' +
+            '<button class="kbtn" style="margin:8px 14px 0;font-weight:700;border-color:var(--accent);color:var(--accent);" onclick="saveSplitNote(' + index + ')">Save note</button>' +
+          '</div>' +
+          '<button class="de-route-btn">🗺 Plan route →</button>' +
+        '</div>';
 
       // Init Sortable on each section
       deCurrentDay = day;
