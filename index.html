@@ -1352,28 +1352,6 @@
     <div id="photo-picker-handle"></div>
     <div id="photo-picker-body"></div>
   </div>
-  <div id="panel">
-    <div id="panel-head">
-      <button id="panel-close">x</button>
-      <div id="panel-head-content"></div>
-    </div>
-    <div class="panel-tabs">
-      <div class="panel-tab active" data-tab="overview">Overview</div>
-      <div class="panel-tab" data-tab="accommodation">Stay</div>
-      <div class="panel-tab" data-tab="activities">Activities</div>
-      <div class="panel-tab" data-tab="food">Food</div>
-      <div class="panel-tab" data-tab="transport">Transport</div>
-      <div class="panel-tab" data-tab="route">Route</div>
-    </div>
-    <div id="panel-body">
-      <div class="panel-content active" id="tab-overview"></div>
-      <div class="panel-content" id="tab-accommodation"></div>
-      <div class="panel-content" id="tab-activities"></div>
-      <div class="panel-content" id="tab-food"></div>
-      <div class="panel-content" id="tab-transport"></div>
-      <div class="panel-content" id="tab-route"></div>
-    </div>
-  </div>
   <div id="tl"><div id="tl-inner"></div></div>
   <div id="mob-day-strip"></div>
 
@@ -2206,7 +2184,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function switchTrip(key) {
       if (!trips[key]) return;
       currentTripKey = key; currentTrip = trips[key]; currentDayItem = null;
-      document.getElementById('panel').classList.remove('open');
       closeMobDaySummary();
       clearActivityMarkers();
       cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
@@ -2296,40 +2273,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         });
         strip.appendChild(card);
       });
-    }
-
-    function openDayPanel(item) {
-      currentDayItem = item;
-      renderPanelHead(item);
-      refreshPanelTabs(item);
-      document.querySelectorAll('.panel-tab').forEach(function(t) { t.classList.remove('active'); });
-      document.querySelectorAll('.panel-content').forEach(function(c) { c.classList.remove('active'); });
-      document.querySelector('.panel-tab[data-tab="overview"]').classList.add('active');
-      document.getElementById('tab-overview').classList.add('active');
-      var pill = document.getElementById('mob-day-pill');
-      if (pill && isMobile()) { pill.classList.remove('active'); }
-      var deleteBtn = document.getElementById('panel-delete-day');
-      if (deleteBtn) {
-        deleteBtn.onclick = function() {
-          var idx = currentTrip.days.indexOf(item);
-          if (idx === -1) return;
-          showModal('Delete Day ' + item.day,
-            '<p style="font-size:13px;color:var(--ink-light);">Delete Day ' + item.day + ' · ' + item.city + '? This cannot be undone.</p>',
-            function() {
-              currentTrip.days.splice(idx, 1);
-              currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
-              saveToStorage();
-              rebuildTimeline();
-              rebuildMobStrip();
-              document.getElementById('panel').classList.remove('open');
-              if (currentView === 'itinerary') { renderItinerary(); }
-              if (currentView === 'cards') { renderKanban(); }
-              if (currentView === 'budget') { renderBudget(); }
-            }
-          );
-        };
-      }
-      document.getElementById('panel').classList.add('open');
     }
 
     // ===== DAY MANAGEMENT =====
@@ -3585,7 +3528,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (view === 'cards' && isMobile()) { mobCards.classList.add('active'); renderMobCards(); }
         else { mobCards.classList.remove('active'); }
       }
-      document.getElementById('panel').classList.remove('open');
       closeMobDaySummary();
       closeMapFloatCard();
       closeSplitFloatCard();
@@ -3655,8 +3597,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         console.warn('[openRoutePage] invalid dayIndex', dayIndex);
         return;
       }
-      var panel = document.getElementById('panel');
-      if (panel) { panel.classList.remove('open'); }
       routeCurrentIndex = dayIndex;
       pushHistoryState(currentView, {});
       pushHistoryState('route', { routeIndex: dayIndex });
@@ -3696,11 +3636,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (bodyEl) { bodyEl.innerHTML = buildRouteTabHtml(item); }
         return;
       }
-      var panel = document.getElementById('panel');
-      if (panel && panel.classList.contains('open')) {
-        var tabEl = document.getElementById('tab-route');
-        if (tabEl) { tabEl.innerHTML = buildRouteTabHtml(item); }
-      }
     }
 
     function setTheme(theme) {
@@ -3718,7 +3653,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.querySelectorAll('.day-card').forEach(function(c) { c.classList.remove('active'); });
       document.querySelectorAll('.mob-day-card').forEach(function(c) { c.classList.remove('active'); });
       cityMarkerObjs.forEach(function(obj) { obj.marker.map = map; });
-      document.getElementById('panel').classList.remove('open');
       var bounds = new google.maps.LatLngBounds();
       var uniqueCoords = [];
       currentTrip.days.forEach(function(day) {
@@ -4948,12 +4882,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var splitView = document.getElementById('view-split');
       if (splitView && splitView.style.display !== 'none' && typeof selectSplitDay === 'function' && deCurrentIndex != null) {
         try { selectSplitDay(deCurrentIndex); } catch(e) { console.warn('[saveTransportSheet] selectSplitDay re-render failed:', e.message); }
-      }
-      // Re-render the day panel transport tab if the panel is open
-      var panelEl = document.getElementById('panel');
-      var transportTab = document.getElementById('tab-transport');
-      if (panelEl && panelEl.classList.contains('open') && transportTab && currentDayItem && typeof renderTransportTab === 'function') {
-        try { transportTab.innerHTML = renderTransportTab(currentDayItem); } catch(e) { console.warn('[saveTransportSheet] panel transport tab re-render failed:', e.message); }
       }
     }
 
@@ -6511,7 +6439,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     function editItinDay(index) {
-      openDayPanel(currentTrip.days[index]);
+      selectSplitDay(index);
     }
 
     function toggleItinEdit(dayIndex) {
@@ -8259,7 +8187,6 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
               saveToStorage();
               rebuildTimeline();
               rebuildMobStrip();
-              document.getElementById('panel').classList.remove('open');
               if (currentView === 'itinerary') { renderItinerary(); }
               if (currentView === 'cards' && !deSuppressSync) { renderKanban(); }
               if (currentView === 'budget') { renderBudget(); }
@@ -9229,10 +9156,6 @@ var pinDelay = Math.floor(Math.random() * 150);
             (function(dn, pu, un, mu, t, idx, dayIdx, dk) {
               var handler = function(e) {
                 if (e && e.stopPropagation) { e.stopPropagation(); }
-                document.getElementById('panel').classList.remove('open');
-                if (t === 'activity') { highlightPanelActivity(idx); }
-                if (t === 'food') { highlightPanelFood(idx); }
-                if (t === 'accommodation') { highlightPanelAccom(idx); }
                 showMapFloatCard(dn, pu, un, mu, dayIdx, idx, t, dk);
               };
               marker.addListener('gmp-click', handler);
@@ -9537,20 +9460,6 @@ var pinDelay = Math.floor(Math.random() * 150);
       tl.addEventListener('mouseleave', function() { isDown = false; tl.classList.remove('dragging'); });
       tl.addEventListener('mouseup', function() { isDown = false; tl.classList.remove('dragging'); });
       tl.addEventListener('mousemove', function(e) { if (!isDown) return; e.preventDefault(); tlDragged = true; tl.scrollLeft = scrollLeft - (e.pageX - tl.offsetLeft - startX) * 1.5; });
-      document.getElementById('panel-close').addEventListener('click', function() {
-        document.getElementById('panel').classList.remove('open');
-        document.querySelectorAll('.day-card').forEach(function(c) { c.classList.remove('active'); });
-        document.querySelectorAll('.mob-day-card').forEach(function(c) { c.classList.remove('active'); });
-        clearActivityMarkers();
-        cityMarkerObjs.forEach(function(obj) { obj.marker.map = map; });
-        saveToStorage();
-        var pill = document.getElementById('mob-day-pill');
-        if (pill && isMobile() && currentView === 'map') { pill.classList.add('active'); }
-        if (currentView === 'itinerary') { renderItinerary(); }
-        if (currentView === 'cards') { renderKanban(); }
-        if (currentView === 'budget') { renderBudget(); }
-      });
-
       map.addListener('click', function() {
         closeMapFloatCard();
         closeMobPinSheet();
@@ -9560,7 +9469,6 @@ var pinDelay = Math.floor(Math.random() * 150);
           document.querySelectorAll('.day-card').forEach(function(c) { c.classList.remove('active'); });
           document.querySelectorAll('.mob-day-card').forEach(function(c) { c.classList.remove('active'); });
           cityMarkerObjs.forEach(function(obj) { obj.marker.map = map; });
-          document.getElementById('panel').classList.remove('open');
         }
       });
     }
@@ -9668,9 +9576,6 @@ var pinDelay = Math.floor(Math.random() * 150);
 
     function renderRouteTab(item) {
       var pill = document.getElementById('mob-day-pill');
-      if (pill && isMobile() && document.getElementById('panel').classList.contains('open')) {
-        pill.classList.remove('active');
-      }
       var el = document.getElementById('tab-route');
       if (!el) return;
       el.innerHTML = buildRouteTabHtml(item);
@@ -12298,8 +12203,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             }
             if (isMobile() && currentView === 'map') {
               var pill = document.getElementById('mob-day-pill');
-              var panelOpen = document.getElementById('panel').classList.contains('open');
-              if (pill && !panelOpen) { pill.classList.add('active'); }
+              if (pill) { pill.classList.add('active'); }
             }
             if (currentView === 'home') { renderHome(); }
             if (currentView === 'itinerary') { renderItinerary(); restoreActiveItinEdit(); }
