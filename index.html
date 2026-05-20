@@ -12263,6 +12263,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
             currentTrip = trips[currentTripKey];
+            syncStaysToDays();
             // Defensive: ensure stays exist even if Firestore snapshot pre-dates migration
             if (currentTrip && (!Array.isArray(currentTrip.stays) || currentTrip.stays.length === 0)) {
               var migrationResult = migrateAccommodationToStays();
