@@ -1476,7 +1476,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         : placeholderHtml;
       return '<div style="background:var(--white);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);">' +
         photoHtml +
-        '<div style="padding:12px 14px;cursor:pointer;" onclick="openDayPanel(currentTrip.days[' + dayIndex + '])">' +
+        '<div style="padding:12px 14px;cursor:pointer;" onclick="selectSplitDay(' + dayIndex + ')">' +
           '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;font-weight:700;">' + cat + '</div>' +
           '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">' + name + '</div>' +
           (userNote ? '<div style="font-size:11px;color:var(--accent);font-style:italic;margin-bottom:8px;">' + userNote + '</div>' : '') +
@@ -2261,7 +2261,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               }
             });
           }
-          openDayPanel(item);
+          selectSplitDay(index);
         });
       });
     }
@@ -2281,7 +2281,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         card.addEventListener('click', function() {
           document.querySelectorAll('.mob-day-card').forEach(function(c) { c.classList.remove('active'); });
           card.classList.add('active');
-          openDayPanel(item);
+          selectSplitDay(index);
           if (currentView === 'map') {
             clearActivityMarkers();
             cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
@@ -2296,14 +2296,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         });
         strip.appendChild(card);
       });
-    }
-
-    function openDayPanelOnTab(item, tabName) {
-      openDayPanel(item);
-      setTimeout(function() {
-        var tab = document.querySelector('.panel-tab[data-tab="' + tabName + '"]');
-        if (tab) { tab.click(); }
-      }, 50);
     }
 
     function openDayPanel(item) {
@@ -7915,6 +7907,7 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
     }
 
     function selectSplitDay(index) {
+      if (currentView !== 'split') { setView('split'); }
       splitSelectedIndex = index;
       currentDayItem = currentTrip.days[index];
       document.querySelectorAll('.split-day-item').forEach(function(el) { el.classList.remove('active'); });
@@ -9501,15 +9494,8 @@ var pinDelay = Math.floor(Math.random() * 150);
     function openFloatCardEdit() {
       if (!mapFloatCardItem) return;
       var dayIndex = mapFloatCardItem.dayIndex;
-      var type = mapFloatCardItem.type;
-      var tabMap = { activity: 'activities', food: 'food', accommodation: 'accommodation' };
-      var targetTab = tabMap[type] || 'overview';
       closeMapFloatCard();
-      openDayPanel(currentTrip.days[dayIndex]);
-      setTimeout(function() {
-        var tab = document.querySelector('.panel-tab[data-tab="' + targetTab + '"]');
-        if (tab) { tab.click(); }
-      }, 50);
+      selectSplitDay(dayIndex);
     }
 
     function openMapFloatCardNoteModal() {
@@ -12353,7 +12339,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     </div>
     <div id="mob-day-summary-body"></div>
     <div style="display:flex;gap:6px;margin:0 16px 14px;">
-      <button onclick="closeMobDaySummary();openDayPanel(currentTrip.days[mobPillIndex])" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">✏️ Edit</button>
+      <button onclick="closeMobDaySummary();selectSplitDay(mobPillIndex)" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">✏️ Edit</button>
       <button id="mob-summary-maps-btn" onclick="openDaySummaryMaps()" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📍 Maps</button>
       <button onclick="suggestRouteMobile(mobPillIndex)" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✨ Route</button>
     </div>
