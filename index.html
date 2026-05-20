@@ -3742,6 +3742,39 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var _listsAddTargetId = null;
     var _listsAddPlaceId = null;
     var _listsAddMapsLink = null;
+    var _listsAddToDayListId = null;
+    var _listsAddToDayItemId = null;
+
+    function showAddToDaySheet(listId, itemId) {
+      _listsAddToDayListId = listId;
+      _listsAddToDayItemId = itemId;
+      var item = null;
+      var list = (currentTrip.lists || []).find(function(l) { return l.id === listId; });
+      if (list) item = (list.items || []).find(function(i) { return i.id === itemId; });
+      if (!item) return;
+      var bodyHtml = '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px;">Add to day</div>';
+      bodyHtml += '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:16px;">' + item.name + '</div>';
+      bodyHtml += '<div style="display:flex;flex-direction:column;gap:2px;">';
+      currentTrip.days.forEach(function(day, index) {
+        var emoji = getCityEmoji(day.city);
+        var dateLabel = getDayDate(day, currentTrip);
+        var isAssigned = item.assignedDayIndex === index;
+        bodyHtml += '<div onclick="confirmAddToDay(' + index + ')" style="display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--sand-dark);cursor:pointer;">';
+        bodyHtml += '<span style="font-size:18px;width:24px;text-align:center;">' + emoji + '</span>';
+        bodyHtml += '<div style="flex:1;min-width:0;">';
+        bodyHtml += '<div style="font-size:13px;font-weight:700;color:var(--ink);">Day ' + (index + 1) + ' · ' + day.city + '</div>';
+        bodyHtml += '<div style="font-size:11px;color:var(--ink-muted);">' + dateLabel + '</div>';
+        bodyHtml += '</div>';
+        if (isAssigned) bodyHtml += '<span style="font-size:11px;font-weight:700;color:var(--accent);">✓ Added</span>';
+        bodyHtml += '</div>';
+      });
+      bodyHtml += '</div>';
+      bodyHtml += '<button onclick="closeAddToListSheet()" style="width:100%;font-family:inherit;font-size:13px;font-weight:600;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;margin-top:16px;">Cancel</button>';
+      document.getElementById('lists-add-body').innerHTML = bodyHtml;
+      document.getElementById('lists-add-overlay').classList.add('open');
+      document.getElementById('lists-add-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'lists' });
+    }
 
     function showAddToListSheet(listId) {
       _listsAddTargetId = listId;
@@ -3771,12 +3804,34 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       setTimeout(function() { initListsPlaceAutocomplete(); }, 200);
     }
 
+    function confirmAddToDay(dayIndex) {
+      var list = (currentTrip.lists || []).find(function(l) { return l.id === _listsAddToDayListId; });
+      if (!list) return;
+      var item = (list.items || []).find(function(i) { return i.id === _listsAddToDayItemId; });
+      if (!item) return;
+      var day = currentTrip.days[dayIndex];
+      if (!day) return;
+      if (!Array.isArray(day.activities)) day.activities = [];
+      var uid = 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      var activity = { name: item.name, uid: uid };
+      if (item.mapsLink) activity.link = item.mapsLink;
+      day.activities.push(activity);
+      item.assignedDayIndex = dayIndex;
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      closeAddToListSheet();
+      renderLists();
+    }
+
     function closeAddToListSheet() {
       document.getElementById('lists-add-overlay').classList.remove('open');
       document.getElementById('lists-add-sheet').classList.remove('open');
       _listsAddTargetId = null;
       _listsAddPlaceId = null;
       _listsAddMapsLink = null;
+      _listsAddToDayListId = null;
+      _listsAddToDayItemId = null;
     }
 
     function initListsPlaceAutocomplete() {
@@ -3917,13 +3972,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                 html += '<div style="font-size:13px;font-weight:700;color:var(--ink);">' + item.name + '</div>';
                 if (item.assignedDayIndex !== null && item.assignedDayIndex !== undefined) {
                   var assignedDay = currentTrip.days[item.assignedDayIndex];
-                  var dayLabel = assignedDay ? (assignedDay.city + ' · ' + assignedDay.date) : 'Day ' + (item.assignedDayIndex + 1);
+                  var dayLabel = assignedDay ? (assignedDay.city + ' · ' + getDayDate(assignedDay, currentTrip)) : 'Day ' + (item.assignedDayIndex + 1);
                   html += '<div style="font-size:10px;font-weight:700;color:var(--accent);margin-top:4px;">✓ Added to ' + dayLabel + '</div>';
                 }
                 html += '<div style="display:flex;gap:8px;margin-top:6px;">';
                 if (item.mapsLink) html += '<a href="' + item.mapsLink + '" target="_blank" style="font-size:18px;text-decoration:none;" title="Open in Maps" onclick="event.stopPropagation()">📍</a>';
                 if (item.instagramLink) html += '<a href="' + item.instagramLink + '" target="_blank" style="font-size:18px;text-decoration:none;" title="Instagram" onclick="event.stopPropagation()">📸</a>';
                 html += '</div></div>';
+                html += '<button onclick="showAddToDaySheet(\'' + list.id + '\',\'' + item.id + '\')" style="font-family:inherit;font-size:11px;padding:4px 8px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;flex-shrink:0;margin-right:4px;">+ Day</button>';
                 html += '<button onclick="deleteListItem(\'' + list.id + '\',\'' + item.id + '\')" style="font-family:inherit;font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--danger);color:var(--danger);background:none;cursor:pointer;flex-shrink:0;">✕</button>';
                 html += '</div>';
                 // Inline edit panel
@@ -7690,10 +7746,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '<div class="de-header-title">' + dateStr + '</div>' +
           '<div class="de-header-note" id="split-header-note-display" onclick="splitNoteInlineEdit()" style="cursor:pointer;min-height:18px;">' + (day.note || '<span style="opacity:0.4;font-style:italic;">Add a note...</span>') + '</div>' +
         '</div>' +
+        '<div class="de-section"><div class="de-section-label">Transport</div>' + renderTransportTab(day) + '</div>' +
         '<div class="de-section"><div class="de-section-label">Stay</div><div id="de-sort-accom">' + accomCards + '</div><button class="de-add-btn">+ Add accommodation</button></div>' +
         '<div class="de-section"><div class="de-section-label">Activities</div><div id="de-sort-acts">' + actCards + '</div><button class="de-add-btn">+ Add activity</button></div>' +
         '<div class="de-section"><div class="de-section-label">Food & Drink</div><div id="de-sort-food">' + foodCards + '</div><button class="de-add-btn">+ Add food</button></div>' +
-        '<div class="de-section"><div class="de-section-label">Transport</div>' + renderTransportTab(day) + '</div>' +
         '<div class="de-section"><div class="de-section-label">Note</div>' +
           '<textarea class="de-note-field" id="split-note-field" rows="3" placeholder="Day notes..." onblur="updateDayField(\'note\', this.value)">' + (day.note||'') + '</textarea>' +
 '<button class="kbtn" style="margin-top:8px;font-weight:700;border-color:var(--accent);color:var(--accent);" onclick="saveSplitNote(' + index + ')">Save note</button>' +        '</div>' +
@@ -8606,6 +8662,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
         if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
+        syncStaysToDays();
         setupRealtimeSync();
         if (isMobile()) { initMobPill(); updateMobPill(); }
         (function retryAddCityMarkers(attempts) {
