@@ -509,7 +509,10 @@
     #struct-inner { max-width: 680px; margin: 0 auto; padding: 16px 16px 40px; }
 
     /* City blocks */
-    .struct-city-block { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); margin-bottom: 12px; overflow: hidden; }
+    .struct-city-block { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); margin-bottom: 16px; overflow: hidden; border-left: 5px solid var(--city-color, #ccc); }
+ .struct-city-block .struct-city-header { border-left: none; }
+ .struct-city-block .struct-day-row { border-left: 3px solid transparent; background: linear-gradient(to right, color-mix(in srgb, var(--city-color, #ccc) 6%, transparent), transparent 60px); }
+ .struct-city-block .plan-day-content { border-left: 3px solid transparent; background: linear-gradient(to right, color-mix(in srgb, var(--city-color, #ccc) 4%, transparent), transparent 60px); }
     .struct-city-header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: grab; border-left: 5px solid #ccc; }
     .struct-city-header:active { cursor: grabbing; }
     .struct-city-emoji { font-size: 20px; flex-shrink: 0; }
@@ -5113,22 +5116,19 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (day.activities && day.activities.length) {
             day.activities.forEach(function(act) {
               var isDone = !!(day.done && day.done['act_' + act.uid]);
-              actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-di="' + di + '" data-type="activity">' +
+              actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-di="' + di + '" data-type="activity" onclick="selectSplitDay(' + di + ');setView(\'split\');event.stopPropagation();">' +
                 '<span class="plan-act-handle">⠿</span>' +
                 '<span class="plan-act-emoji">' + (act.emoji || '📍') + '</span>' +
                 '<span class="plan-act-name">' + escHtml(act.name || '') + '</span>' +
-                '<button class="plan-act-done' + (isDone ? ' done' : '') + '" onclick="planToggleDone(\'' + act.uid + '\',' + di + ', event)">' + (isDone ? '✓' : '') + '</button>' +
                 '</div>';
             });
           }
           if (day.food && day.food.length) {
             day.food.forEach(function(f) {
-              var isDone = !!(day.done && day.done['food_' + f.uid]);
-              actRows += '<div class="plan-activity-row" data-uid="' + f.uid + '" data-di="' + di + '" data-type="food">' +
+              actRows += '<div class="plan-activity-row" data-uid="' + f.uid + '" data-di="' + di + '" data-type="food" onclick="selectSplitDay(' + di + ');setView(\'split\');event.stopPropagation();">' +
                 '<span class="plan-act-handle">⠿</span>' +
                 '<span class="plan-act-emoji">🍴</span>' +
                 '<span class="plan-act-name">' + escHtml(f.name || '') + '</span>' +
-                '<button class="plan-act-done' + (isDone ? ' done' : '') + '" onclick="planToggleDone(\'' + f.uid + '\',' + di + ', food, event)">' + (isDone ? '✓' : '') + '</button>' +
                 '</div>';
             });
           }
@@ -5152,7 +5152,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '</div>';
         }).join('');
 
-        return '<div class="struct-city-block" data-city="' + escHtml(block.city) + '" data-block-index="' + bi + '">' +
+        return '<div class="struct-city-block" data-city="' + escHtml(block.city) + '" data-block-index="' + bi + '" style="--city-color:' + colour + '">' +
           '<div class="struct-city-header" style="border-left-color:' + colour + '">' +
             '<span class="struct-city-drag-handle" title="Drag to reorder">⠿</span>' +
             '<span class="struct-city-emoji">' + emoji + '</span>' +
