@@ -2122,7 +2122,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           }
           saveToStorage(); populateTripSelector(); updateMobTripLabel();
           rebuildTimeline(); rebuildMobStrip();
-          if (currentView === 'calendar') { renderCalendar(); }
           if (currentView === 'itinerary') { renderItinerary(); }
           if (currentView === 'budget') { renderBudget(); }
         }
@@ -2252,7 +2251,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         card.className = 'mob-day-card';
         card.dataset.index = index;
         card.innerHTML =
-          '<div class="mob-day-card-num">Day ' + item.day + ' · ' + item.date + '</div>' +
+          '<div class="mob-day-card-num">Day ' + (index + 1) + ' · ' + getDayDate(item, currentTrip) + '</div>' +
           '<div class="mob-day-card-city">' + getCityEmoji(item.city) + ' ' + item.city + '</div>' +
           '<div class="mob-day-card-note">' + (item.note || 'Tap to view details') + '</div>';
         card.addEventListener('click', function() {
@@ -2282,8 +2281,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var base = currentTrip.baseCurrency || 'AUD';
       var baseSym = currentTrip.baseCurrencySymbol || '$';
       _insertDayAt(currentTrip.days.length, {
-        day: lastDay.day + 1,
-        date: 'New day',
         city: lastDay.city.split('>').pop().trim(),
         lat: lastDay.lat,
         lng: lastDay.lng,
@@ -3554,7 +3551,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (view === 'accommodation') { renderAccommodation(); }
       if (view === 'lists') { renderLists(); }
       if (view === 'transport') { renderTransport(); }
-      if (view === 'calendar') { renderCalendar(); }
       if (view === 'discovery') { renderDiscovery(); }
       if (view === 'map') { google.maps.event.trigger(map, 'resize'); }
       if (view !== 'split') { clearSplitActivityMarkers(); }
@@ -5691,239 +5687,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       saveToStorage();
     }
 
-    // ===== CALENDAR VIEW =====
-    function renderCalendar() {
-      var el = document.getElementById('view-calendar');
-      var today = new Date(); today.setHours(0,0,0,0);
-
-      // build a map of date string -> day item
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-
-      // extract year dynamically — check trip object first, then current year
-      var tripYear = currentTrip.year || new Date().getFullYear();
-
-      var dayMap = {};
-      currentTrip.days.forEach(function(day) {
-        var parts = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-        var m = months[parts[0]]; var d = parseInt(parts[1]);
-        if (!isNaN(m) && !isNaN(d)) {
-          var key = tripYear + '-' + m + '-' + d;
-          dayMap[key] = day;
-        }
-      });
-
-      // find unique months in trip
-      var tripMonths = [];
-      var seen = {};
-      currentTrip.days.forEach(function(day) {
-        var parts = day.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-        var m = months[parts[0]];
-        if (!isNaN(m) && !seen[m]) { seen[m] = true; tripMonths.push(m); }
-      });
-
-      var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      var dowNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-      var selectedKey = null;
-
-      // build codeMap dynamically from citySettings
-      var codeMap = {};
-      Object.keys(citySettings).forEach(function(name) {
-        if (citySettings[name].code) { codeMap[name] = citySettings[name].code; }
-      });
-
-      function renderAll() {
-        var html = tripMonths.map(function(monthIdx) {
-          var firstDay = new Date(tripYear, monthIdx, 1).getDay();
-          var daysInMonth = new Date(tripYear, monthIdx + 1, 0).getDate();
-
-          var cells = '';
-          for (var i = 0; i < firstDay; i++) {
-            cells += '<div class="cal-cell empty"><div class="cal-date"></div></div>';
-          }
-          for (var d = 1; d <= daysInMonth; d++) {
-            var key = tripYear + '-' + monthIdx + '-' + d;
-            var tripDay = dayMap[key];
-            var cellDate = new Date(tripYear, monthIdx, d); cellDate.setHours(0,0,0,0);
-            var isToday = cellDate.getTime() === today.getTime();
-            var isSelected = key === selectedKey;
-            var cls = 'cal-cell';
-            if (!tripDay && d) { cls += ' empty'; }
-            if (tripDay) { cls += ' trip-day'; }
-            if (isToday) { cls += ' today'; }
-            if (isSelected) { cls += ' selected'; }
-
-            var cityColor = '#2D9E75';
-            var cityPill = '';
-            if (tripDay) {
-              var parts = tripDay.city.split('>');
-              var isTransit = parts.length > 1;
-              var baseName = parts.pop().trim();
-              var fromName = isTransit ? parts[0].trim() : null;
-              var cs = citySettings[baseName];
-              var fromCs = fromName ? citySettings[fromName] : null;
-              if (isTransit) {
-                cityColor = '#5B9BD5';
-                var fromCode = codeMap[fromName] || (fromCs && fromCs.code) || (fromName ? fromName.substring(0,3).toUpperCase() : '');
-                var toCode = codeMap[baseName] || (cs && cs.code) || baseName.substring(0,3).toUpperCase();
-                cityPill = '<span class="cal-city-pill" style="background:' + cityColor + ';">' + fromCode + '→' + toCode + '</span>';
-              } else {
-                if (cs) { cityColor = cs.color; }
-                var code = codeMap[baseName] || (cs && cs.code) || baseName.substring(0,3).toUpperCase();
-                cityPill = '<span class="cal-city-pill" style="background:' + cityColor + ';">' + code + '</span>';
-              }
-            }
-
-            cells += '<div class="' + cls + '" onclick="calSelectDay(\'' + key + '\')" data-key="' + key + '">' +
-              '<div class="cal-date-num">' + d + '</div>' +
-              cityPill +
-            '</div>';
-          }
-
-          var detailHtml = '';
-          if (selectedKey && dayMap[selectedKey]) {
-            var parts = selectedKey.split('-');
-            if (parseInt(parts[1]) === monthIdx && parseInt(parts[0]) === tripYear) {
-              var sd = dayMap[selectedKey];
-              normaliseAccom(sd); normaliseDayTransport(sd);
-              var accomHtml = sd.accommodation.length ? sd.accommodation.map(function(a) { return '<div class="cal-detail-item">🏨 ' + a.name + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
-              var actHtml = sd.activities.length ? sd.activities.map(function(a, i) { var name = (typeof a === 'object') ? a.name : a; var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return '<div class="cal-detail-item">' + (activityCategories[cat]||activityCategories['default']).emoji + ' ' + name + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';
-var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 'string' ? f : f.name; return '<div class="cal-detail-item">🍽️ ' + fn + '</div>'; }).join('') : '<div class="cal-detail-item" style="color:var(--ink-muted);font-style:italic;">None added</div>';              var dayIndex = sd.day - 1;
-              var makeCalItinItem = function(emoji, text, type, itemIndex) {
-                var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + sd.city.split('>').pop().trim() + ' ' + getTripDestination());
-                var detailId = 'cal-detail-' + sd.day + '-' + type + '-' + itemIndex;
-                var photoKey = (type === 'act' && sd.activities && sd.activities[itemIndex] && sd.activities[itemIndex].uid)
-                  ? 'act_' + sd.activities[itemIndex].uid
-                  : 'day' + sd.day + '_act' + itemIndex;
-                var photo = (type === 'act') ? (cardPhotos[photoKey] || '') : '';
-                var noteKey = (type === 'act' && sd.activities && sd.activities[itemIndex] && sd.activities[itemIndex].uid) ? ('act_' + sd.activities[itemIndex].uid) : String(itemIndex);
-                var note = (type === 'act' && sd.cardNotes && sd.cardNotes[noteKey]) ? sd.cardNotes[noteKey] : '';
-                return '<div style="border-bottom:1px solid var(--sand-dark);">' +
-                  '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;" onclick="toggleItinItem(\'' + detailId + '\')">' +
-                    '<span>' + emoji + '</span>' +
-                    '<span style="flex:1;font-size:13px;color:var(--ink-light);font-weight:500;">' + text + '</span>' +
-                    '<span style="font-size:10px;color:var(--ink-muted);">▾</span>' +
-                  '</div>' +
-                  '<div id="' + detailId + '" style="display:none;margin-bottom:8px;background:var(--sand);border-radius:8px;overflow:hidden;">' +
-                    (photo ? '<img src="' + photo + '" style="width:100%;height:140px;object-fit:cover;display:block;">' : '') +
-                    '<div style="padding:10px 12px;">' +
-                      (note ? '<div style="font-size:12px;color:var(--ink-light);font-style:italic;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sand-dark);">' + note + '</div>' : '') +
-                      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
-                        '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
-                        '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(text + ' ' + sd.city.split('>').pop().trim()) + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-muted);text-decoration:none;">🧭 Directions</a>' +
-                        (type === 'act' ? '<span onclick="openItinNoteModal(' + dayIndex + ',' + itemIndex + ')" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--ink-muted);cursor:pointer;">📝 ' + (note ? 'Edit note' : 'Add note') + '</span>' : '') +
-                      '</div>' +
-                    '</div>' +
-                  '</div>' +
-                '</div>';
-              };
-
-              var accomItems = sd.accommodation.length
-                ? sd.accommodation.map(function(a, i) { return makeCalItinItem('🏨', a.name, 'accom', i); }).join('')
-                : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:6px 0;">None added</div>';
-              var actItems = sd.activities.length
-                ? sd.activities.map(function(a, i) { var name = (typeof a === 'object') ? a.name : a; var cat = (sd.activityCategories && sd.activityCategories[i]) || 'default'; return makeCalItinItem((activityCategories[cat]||activityCategories['default']).emoji, name, 'act', i); }).join('')
-                : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:6px 0;">None added</div>';
-              var foodItems = sd.food.length
-                ? sd.food.map(function(f, i) { var fname = typeof f === 'string' ? f : f.name; return makeCalItinItem('🍽️', fname, 'food', i); }).join('')
-                : '<div style="font-size:12px;color:var(--ink-muted);font-style:italic;padding:6px 0;">None added</div>';
-
-              detailHtml = '<div class="cal-detail-panel">' +
-                '<div class="cal-detail-header">' +
-                  '<span style="font-size:24px;">' + getCityEmoji(sd.city) + '</span>' +
-                  '<div><div class="cal-detail-day-num">Day ' + sd.day + ' · ' + sd.date + '</div><div class="cal-detail-city">' + sd.city + '</div></div>' +
-                  '<div style="display:flex;gap:6px;margin-left:auto;">' +
-                    '<button onclick="calMoveDay(' + dayIndex + ')" style="font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">Move date</button>' +
-                    '<button onclick="toggleCalEdit(' + dayIndex + ')" id="cal-edit-btn-' + dayIndex + '" style="font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">Edit</button>' +
-                  '</div>' +
-                '</div>' +
-                '<div class="cal-detail-body" id="cal-detail-body-' + dayIndex + '">' +
-                  '<div class="cal-detail-section"><div class="cal-detail-label">Accommodation</div>' + accomItems + '</div>' +
-                  '<div class="cal-detail-section"><div class="cal-detail-label">Activities</div>' + actItems + '</div>' +
-                  '<div class="cal-detail-section"><div class="cal-detail-label">Food</div>' + foodItems + '</div>' +
-                '</div>' +
-                '<div id="cal-edit-panel-' + dayIndex + '" style="display:none;"></div>' +
-              '</div>';
-            }
-          }
-
-          return '<div class="cal-month">' +
-            '<div class="cal-month-header">' +
-              '<div><div class="cal-month-title">' + monthNames[monthIdx] + ' ' + tripYear + '</div><div class="cal-month-sub">' + (currentTrip.name || 'Trip') + '</div></div>' +
-              '<div style="font-size:22px;">' + getCityEmoji(currentTrip.days[0] ? currentTrip.days[0].city : 'Bangkok') + '</div>' +
-            '</div>' +
-            '<div class="cal-dow-row">' + dowNames.map(function(d) { return '<div class="cal-dow">' + d + '</div>'; }).join('') + '</div>' +
-            '<div class="cal-grid">' + cells + '</div>' +
-          '</div>' + detailHtml;
-        }).join('');
-
-        el.innerHTML = html;
-      }
-
-      window.calSelectDay = function(key) {
-        if (inlineEditDragging) return;
-        if (!dayMap[key]) {
-          // empty cell — offer to add a day on this date
-          var parts = key.split('-');
-          var yr = parts[0], mi = parseInt(parts[1]), dy = parseInt(parts[2]);
-          var monthNames2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-          var dateObj = new Date(parseInt(yr), mi, dy);
-          var dowNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-          var dateStr = dowNames2[dateObj.getDay()] + ' ' + monthNames2[mi] + ' ' + dy;
-          var lastCity = currentTrip.days.length ? currentTrip.days[currentTrip.days.length-1].city.split('>').pop().trim() : '';
-          showModal('Add day on ' + dateStr,
-            '<div class="modal-field"><label>City</label><input type="text" id="cal-new-city" placeholder="e.g. Bangkok" value="' + lastCity + '"></div>' +
-            '<div class="modal-field"><label>Note</label><input type="text" id="cal-new-note" placeholder="Optional note..."></div>',
-            function() {
-              var city = document.getElementById('cal-new-city').value.trim() || 'City';
-              var note = document.getElementById('cal-new-note').value.trim();
-              var lastDay = currentTrip.days[currentTrip.days.length - 1];
-              var base = currentTrip.baseCurrency || 'AUD';
-              var baseSym = currentTrip.baseCurrencySymbol || '$';
-              var newDay = {
-                day: currentTrip.days.length + 1,
-                date: dateStr,
-                city: city,
-                lat: lastDay ? lastDay.lat : 13.7563,
-                lng: lastDay ? lastDay.lng : 100.5018,
-                note: note,
-                accommodation: [], activities: [], activityCategories: [],
-                food: [], transport: [],
-                currency: base, currencySymbol: baseSym
-              };
-              currentTrip.days.push(newDay);
-              // sort days by date
-              currentTrip.days.sort(function(a, b) {
-                var parse = function(d) {
-                  var p = d.date.replace(/^[A-Za-z]+\s/, '').split(' ');
-                  var mo = months[p[0]]; var dy2 = parseInt(p[1]);
-                  return new Date(tripYear, mo, dy2);
-                };
-                return parse(a) - parse(b);
-              });
-              // renumber days
-              currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
-              saveToStorage();
-              rebuildTimeline();
-              rebuildMobStrip();
-              renderCalendar();
-            }
-          );
-          return;
-        }
-        selectedKey = selectedKey === key ? null : key;
-        renderAll();
-        if (selectedKey) {
-          setTimeout(function() {
-            var panel = el.querySelector('.cal-detail-panel');
-            if (panel) { panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-          }, 50);
-        }
-      };
-
-      renderAll();
-    }
-
     // ===== BUDGET VIEW =====
     function renderFood() {
       var el = document.getElementById('view-food');
@@ -6548,12 +6311,6 @@ var foodHtml = sd.food.length ? sd.food.map(function(f) { var fn = typeof f === 
       var mm = String(d.getUTCMonth() + 1).padStart(2, '0');
       var dd = String(d.getUTCDate()).padStart(2, '0');
       currentTrip.startDate = yyyy + '-' + mm + '-' + dd;
-    }
-
-    function calMoveDay(dayIndex) {
-      // Phase 4 Step 8 — gutted. Calendar view removed from nav (dead code).
-      // day.date no longer exists; date ordering is derived from trip.startDate + index.
-      console.warn('[calMoveDay] called but calendar view is dead code — no-op');
     }
 
     function toggleCalEdit(dayIndex) {
@@ -12211,7 +11968,6 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             if (currentView === 'split' && !deSuppressSync) { renderSplit(); }
             if (currentView === 'budget') { renderBudget(); }
             if (currentView === 'food') { renderFood(); }
-            if (currentView === 'calendar') { renderCalendar(); }
           }
         }
       });
