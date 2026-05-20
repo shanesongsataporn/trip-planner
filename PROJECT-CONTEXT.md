@@ -147,7 +147,7 @@ This view has caused serious data corruption. Multiple bugs fixed this session. 
 - #struct-history-overlay + #struct-history-sheet — changelog sheet
 
 ### Key functions
-renderStructure() — groups currentTrip.days by CONSECUTIVE city runs in STORAGE ORDER. NEVER sorts by date.
+renderPlanView() — groups currentTrip.days by CONSECUTIVE city runs in STORAGE ORDER. NEVER sorts by date.
 structReorderCities() — reads day indices from DOM rows inside each block (NOT by city name match)
 structReorderDays(evt) — rebuilds order from all DOM rows, updates moved day city if cross-block, recalculates ALL dates sequentially
 structDeleteDay(di, e) — splices day, renumbers, saves

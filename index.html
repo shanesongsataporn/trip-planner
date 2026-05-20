@@ -325,8 +325,10 @@
     .mob-kb-col { flex-shrink: 0; width: 130px; display: flex; flex-direction: column; background: var(--white); border-radius: var(--radius); overflow-y: auto; overflow-x: hidden; border: 1px solid var(--sand-dark); scrollbar-width: none; }
     .mob-kb-col::-webkit-scrollbar { display: none; }
     .mob-kb-col-header { padding: 8px 10px 6px; border-bottom: 3px solid #ccc; flex-shrink: 0; }
+    .mob-kb-col-top { display: flex; justify-content: space-between; align-items: baseline; }
     .mob-kb-col-day { font-size: 9px; font-weight: 800; color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
-    .mob-kb-col-date { font-size: 11px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mob-kb-col-city { font-size: 9px; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.06em; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+    .mob-kb-col-date { font-size: 11px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin-top: 1px; display: flex; justify-content: space-between; align-items: baseline; }
     .mob-kb-col-body { overflow: visible; padding: 6px; flex: 0 0 auto; scrollbar-width: none; }
     .mob-kb-col-body::-webkit-scrollbar { display: none; }
     .mob-kb-pill { font-size: 10px; font-weight: 600; color: var(--ink); background: var(--sand); border-radius: 6px; padding: 4px 6px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
@@ -545,8 +547,9 @@
     .struct-history-btn { padding: 8px 14px; border-radius: var(--radius-sm); border: none; background: var(--white); box-shadow: var(--card-shadow); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; }
     .struct-history-btn:active { background: var(--sand); }
     /* Undo toast */
-#struct-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--white); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 12px; font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 4000; white-space: normal; max-width: 88vw; flex-wrap: wrap; }    #struct-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
-    #struct-toast button { background: var(--accent); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+#struct-toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: var(--white); border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; gap: 14px; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; z-index: 4000; white-space: normal; max-width: 88vw; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(0,0,0,0.4); min-width: 260px; }
+    #struct-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
+    #struct-toast button { background: var(--accent); color: var(--white); border: none; border-radius: var(--radius-sm); padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
     /* History sheet */
     #struct-history-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 5000; }
     #struct-history-sheet { display: none; position: fixed; bottom: 0; left: 0; right: 0; max-height: 70vh; background: var(--sand); border-radius: 20px 20px 0 0; padding: 16px; z-index: 5100; overflow-y: auto; }
@@ -577,6 +580,56 @@
     .struct-city-block.sortable-ghost { opacity: 0.4; }
     .struct-day-row.sortable-ghost { opacity: 0.4; background: var(--accent-light); }
     .struct-city-block.sortable-chosen { box-shadow: var(--card-shadow-hover); }
+
+    /* Plan view — tighter city header */
+    .struct-city-name { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .struct-city-meta { font-size: 11px; color: var(--ink-muted); margin-left: auto; white-space: nowrap; }
+    .struct-city-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    /* Plan view — day rows */
+    .struct-day-row { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-top: 1px solid var(--sand-dark); cursor: pointer; position: relative; }
+    .struct-day-num { font-size: 11px; font-weight: 700; color: var(--ink-muted); width: 36px; flex-shrink: 0; }
+    .struct-day-date { font-size: 12px; font-weight: 600; color: var(--ink); flex-shrink: 0; width: 72px; }
+    .struct-day-label { font-size: 12px; color: var(--ink-muted); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; }
+    .struct-drag-handle { font-size: 16px; color: var(--ink-muted); cursor: grab; user-select: none; flex-shrink: 0; margin-left: auto; }
+    .struct-drag-handle:active { cursor: grabbing; }
+    .struct-day-chevron { font-size: 12px; color: var(--ink-muted); flex-shrink: 0; transition: transform 0.2s; margin-left: 4px; }
+    .struct-day-row.expanded .struct-day-chevron { transform: rotate(90deg); }
+
+    /* Plan view — expand/collapse button */
+    .struct-expand-btn { font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; }
+
+    /* Plan view — pinned section (transport + accom) */
+    .plan-pinned-section { background: var(--sand); border-top: 1px solid var(--sand-dark); }
+    .plan-pinned-row { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 42px; border-bottom: 1px solid var(--sand-dark); opacity: 0.85; }
+    .plan-pinned-icon { font-size: 14px; flex-shrink: 0; }
+    .plan-pinned-label { font-size: 12px; color: var(--ink); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Plan view — activity rows */
+    .plan-activity-section { border-top: 1px solid var(--sand-dark); }
+    .plan-activity-row { display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-bottom: 1px solid var(--sand-dark); cursor: pointer; }
+    .plan-activity-row:last-child { border-bottom: none; }
+    .plan-act-handle { font-size: 15px; color: var(--ink-muted); cursor: grab; user-select: none; flex-shrink: 0; }
+    .plan-act-handle:active { cursor: grabbing; }
+    .plan-act-emoji { font-size: 14px; flex-shrink: 0; }
+    .plan-act-name { font-size: 12px; color: var(--ink); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .plan-act-done { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--sand-dark); background: transparent; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    .plan-act-done.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Plan view — expanded day content hidden by default */
+    .plan-day-content { display: none; margin-bottom: 8px; }
+    .plan-day-content.open { display: block; }
+
+    /* Plan view — day row as section header */
+    .struct-day-list .struct-day-row { background: var(--sand); border-top: 2px solid var(--sand-dark); }
+    .struct-day-list .struct-day-row:first-child { border-top: none; }
+
+    /* Plan view — empty placeholder */
+    .plan-empty-drop { padding: 10px 14px 10px 42px; font-size: 12px; color: var(--ink-muted); font-style: italic; min-height: 36px; }
+
+    /* Sortable states for activity rows */
+    .plan-activity-row.sortable-ghost { opacity: 0.4; background: var(--accent-light); }
+    .plan-activity-row.sortable-chosen { background: var(--sand); }
 
     /* ===== DISCOVERY VIEW ===== */
     #disc-search-bar { position: sticky; top: 0; z-index: 10; background: var(--white); border-bottom: 1px solid var(--sand-dark); padding: 12px 16px; display: flex; gap: 8px; align-items: center; }
@@ -1174,6 +1227,10 @@
     <div id="struct-inner">
       <div id="struct-top-bar">
         <button class="struct-history-btn" onclick="showStructHistory()">🕐 History</button>
+        <div style="display:flex;gap:8px;margin-left:auto;">
+          <button class="struct-expand-btn" onclick="expandAllPlanDays()">Expand all</button>
+          <button class="struct-expand-btn" onclick="collapseAllPlanDays()">Collapse all</button>
+        </div>
       </div>
       <div id="struct-city-list"></div>
       <button class="struct-add-dest-btn" onclick="showAddDestSheet()">+ Add destination</button>
@@ -1187,6 +1244,11 @@
     <button onclick="undoStructAction()">Undo</button>
   </div>
 
+  <!-- Structure: undo toast -->
+  <div id="struct-toast">
+    <span id="struct-toast-label"></span>
+    <button onclick="undoStructAction()">↩ Undo</button>
+  </div>
   <!-- Structure: history sheet -->
   <div id="struct-history-overlay" onclick="closeStructHistory()"></div>
   <div id="struct-history-sheet">
@@ -1552,6 +1614,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function enterMobKanban() {
+      var indText = document.getElementById('mob-cards-indicator-text');
+      var indDate = document.getElementById('mob-cards-indicator-date');
+      if (indText) indText.style.display = 'none';
+      if (indDate) indDate.style.display = 'none';
       mobKanbanMode = true;
       var mobView = document.getElementById('mob-cards-view');
       var trackWrap = document.getElementById('mob-cards-track-wrap');
@@ -1587,7 +1653,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var header = document.createElement('div');
         header.className = 'mob-kb-col-header';
         header.style.borderBottomColor = cityColor;
-        header.innerHTML = '<div class="mob-kb-col-day">D' + item.day + '</div><div class="mob-kb-col-date">' + shortDate + '</div>';
+        var cityParts = (item.city || '').split('>');
+        var isTransit = cityParts.length > 1;
+        var topCity = isTransit ? cityParts[0].trim().toUpperCase() + ' >' : '';
+        var bottomCity = isTransit ? cityParts[1].trim().toUpperCase() : cityParts[0].trim().toUpperCase();
+        header.innerHTML = '<div class="mob-kb-col-top"><span class="mob-kb-col-day">D' + item.day + '</span><span class="mob-kb-col-city">' + escHtml(topCity) + '</span></div><div class="mob-kb-col-date"><span>' + shortDate.toUpperCase() + '</span><span class="mob-kb-col-city">' + escHtml(bottomCity) + '</span></div>';
         col.appendChild(header);
 
         // Activities body
@@ -1744,6 +1814,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       mobKanbanMode = false;
       var kanban = document.getElementById('mob-kanban-view');
       if (kanban) { kanban.remove(); }
+      var indText = document.getElementById('mob-cards-indicator-text');
+      var indDate = document.getElementById('mob-cards-indicator-date');
+      if (indText) indText.style.display = '';
+      if (indDate) indDate.style.display = '';
       document.getElementById('mob-cards-track-wrap').style.overflow = '';
       mobCardsCurrentIndex = dayIndex;
       renderMobCards();
@@ -3505,7 +3579,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('view-structure').style.display = view === 'structure' ? 'block' : 'none';
       var rEl = document.getElementById('view-route');
       if (rEl) { rEl.style.display = view === 'route' ? 'block' : 'none'; }
-      if (view === 'structure') renderStructure();
+      if (view === 'structure') renderPlanView();
       if (view === 'route') renderRoutePage();
       var discEl = document.getElementById('view-discovery');
       if (discEl) { discEl.style.display = view === 'discovery' ? 'flex' : 'none'; }
@@ -4971,12 +5045,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var structHistory = [];
     var structToastTimer = null;
 
-    function renderStructure() {
+    var planExpandedDays = {};
+
+    function renderPlanView() {
       var el = document.getElementById('struct-city-list');
       if (!el) return;
       var days = currentTrip.days || [];
 
-      // Group by consecutive city runs in storage order (do NOT re-sort by date)
+      // Group by consecutive city runs in storage order
       var blocks = [];
       days.forEach(function(day) {
         var last = blocks[blocks.length - 1];
@@ -4991,27 +5067,88 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var cs = (citySettings && citySettings[block.city]) || {};
         var colour = cs.color || '#aaa';
         var emoji = cs.emoji || '📍';
-        var dayDates = block.days.map(function(d) { return d.date; }).filter(Boolean);
-        var dateRange = dayDates.length ? (fmtShortDate(dayDates[0]) + (dayDates.length > 1 ? '–' + fmtShortDate(dayDates[dayDates.length-1]) : '')) : '';
         var dayCount = block.days.length;
+        var dateFirst = getDayDate(block.days[0], currentTrip);
+        var dateLast = getDayDate(block.days[block.days.length - 1], currentTrip);
+        var dateRange = dayCount > 1 ? (fmtShortDate(dateFirst) + '–' + fmtShortDate(dateLast)) : fmtShortDate(dateFirst);
 
-        var rowsHtml = block.days.map(function(day, ri) {
+        var rowsHtml = block.days.map(function(day) {
           var di = days.indexOf(day);
-          var hasTransport = day.transport && day.transport.length > 0;
-          var hasContent = (day.activities && day.activities.length) || (day.food && day.food.length) || (day.accommodation && day.accommodation.length);
+          var isOpen = !!planExpandedDays[day.id];
+
+          // Warnings
           var warns = [];
-          if (!day.accommodation || !day.accommodation.length) warns.push('No accommodation');
-          if (day.food) day.food.forEach(function(f) { if (f.reservationRequired && !f.reservationBooked) warns.push('Unbooked reservation: ' + f.name); });
-          if (day.transport) day.transport.forEach(function(t) { if (t.type === 'flight' && (!t.depart || !t.arrive)) warns.push('Flight missing depart/arrive: ' + (t.carrier || t.from || 'unknown')); });
+          if (day.food) day.food.forEach(function(f) { if (f.reservationRequired && !f.reservationBooked) warns.push(f.name); });
+          if (day.transport) day.transport.forEach(function(t) { if (t.type === 'flight' && (!t.depart || !t.arrive)) warns.push(t.carrier || 'flight'); });
           var warnHtml = warns.length ? '<button class="struct-day-warning" onclick="showStructWarning(' + di + ', event)">⚠️</button>' : '';
-          var label = day.note || '';
-          return '<div class="struct-day-row" data-di="' + di + '" onclick="structDayTap(' + di + ', event)">' +
-            '<span class="struct-day-num">Day ' + day.day + '</span>' +
+
+          // Pinned section — transport + accommodation
+          var pinnedRows = '';
+          if (day.transport && day.transport.length) {
+            day.transport.forEach(function(t) {
+              var fd = getFlightDisplay(t);
+              var label = fd.isMultiLeg
+                ? (fd.from + ' → ' + fd.to + ' · ' + (fd.carrier || '') + ' ' + (fd.flightNum || ''))
+                : ((fd.carrier || '') + ' ' + (fd.flightNum || '') + ' · ' + (fd.from || '') + ' → ' + (fd.to || ''));
+              pinnedRows += '<div class="plan-pinned-row">' +
+                '<span class="plan-pinned-icon">✈️</span>' +
+                '<span class="plan-pinned-label">' + escHtml(label.trim()) + '</span>' +
+                '</div>';
+            });
+          }
+          if (day.accommodation && day.accommodation.length) {
+            day.accommodation.forEach(function(a) {
+              pinnedRows += '<div class="plan-pinned-row">' +
+                '<span class="plan-pinned-icon">🏨</span>' +
+                '<span class="plan-pinned-label">' + escHtml(a.name || 'Hotel') + '</span>' +
+                '</div>';
+            });
+          }
+          var pinnedHtml = pinnedRows
+            ? '<div class="plan-pinned-section">' + pinnedRows + '</div>'
+            : '';
+
+          // Draggable section — activities + food
+          var actRows = '';
+          if (day.activities && day.activities.length) {
+            day.activities.forEach(function(act) {
+              var isDone = !!(day.done && day.done['act_' + act.uid]);
+              actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-di="' + di + '" data-type="activity">' +
+                '<span class="plan-act-handle">⠿</span>' +
+                '<span class="plan-act-emoji">' + (act.emoji || '📍') + '</span>' +
+                '<span class="plan-act-name">' + escHtml(act.name || '') + '</span>' +
+                '<button class="plan-act-done' + (isDone ? ' done' : '') + '" onclick="planToggleDone(\'' + act.uid + '\',' + di + ', event)">' + (isDone ? '✓' : '') + '</button>' +
+                '</div>';
+            });
+          }
+          if (day.food && day.food.length) {
+            day.food.forEach(function(f) {
+              var isDone = !!(day.done && day.done['food_' + f.uid]);
+              actRows += '<div class="plan-activity-row" data-uid="' + f.uid + '" data-di="' + di + '" data-type="food">' +
+                '<span class="plan-act-handle">⠿</span>' +
+                '<span class="plan-act-emoji">🍴</span>' +
+                '<span class="plan-act-name">' + escHtml(f.name || '') + '</span>' +
+                '<button class="plan-act-done' + (isDone ? ' done' : '') + '" onclick="planToggleDone(\'' + f.uid + '\',' + di + ', food, event)">' + (isDone ? '✓' : '') + '</button>' +
+                '</div>';
+            });
+          }
+          if (!actRows) {
+            actRows = '<div class="plan-empty-drop">No activities yet</div>';
+          }
+          var actHtml = '<div class="plan-activity-section plan-act-list" data-di="' + di + '">' + actRows + '</div>';
+
+          return '<div class="struct-day-row' + (isOpen ? ' expanded' : '') + '" data-di="' + di + '" data-day-id="' + day.id + '" onclick="planDayRowTap(\'' + day.id + '\', ' + di + ', event)">' +
+            '<span class="struct-day-num">Day ' + (di + 1) + '</span>' +
             '<span class="struct-day-date">' + fmtDayDate(getDayDate(day, currentTrip)) + '</span>' +
-            '<span class="struct-day-label">' + escHtml(label) + '</span>' +
+            '<span class="struct-day-label">' + escHtml(day.note || '') + '</span>' +
             warnHtml +
             '<button class="struct-day-delete" onclick="structDeleteDay(' + di + ', event)" title="Remove day">✕</button>' +
+            '<span class="struct-day-chevron">›</span>' +
             '<span class="struct-drag-handle">⠿</span>' +
+            '</div>' +
+            '<div class="plan-day-content' + (isOpen ? ' open' : '') + '" data-day-id="' + day.id + '">' +
+            pinnedHtml +
+            actHtml +
             '</div>';
         }).join('');
 
@@ -5022,7 +5159,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<span class="struct-city-name">' + escHtml(block.city) + '</span>' +
             '<span class="struct-city-meta">' + dateRange + ' · ' + dayCount + (dayCount === 1 ? ' day' : ' days') + '</span>' +
             '<div class="struct-city-actions">' +
-'<button class="struct-add-day-btn" onclick="structAddDay(\'' + escHtml(block.city) + '\',' + bi + ', event)">+ Add day</button>' +              '<button class="struct-remove-city-btn" onclick="structRemoveCity(\'' + escHtml(block.city) + '\', event)" title="Remove destination">✕</button>' +
+              '<button class="struct-add-day-btn" onclick="structAddDay(\'' + escHtml(block.city) + '\',' + bi + ', event)">+ Add day</button>' +
+              '<button class="struct-remove-city-btn" onclick="structRemoveCity(\'' + escHtml(block.city) + '\', event)" title="Remove destination">✕</button>' +
             '</div>' +
           '</div>' +
           '<div class="struct-day-list" data-city="' + escHtml(block.city) + '">' + rowsHtml + '</div>' +
@@ -5030,6 +5168,52 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }).join('');
 
       initStructSortables();
+    }
+
+    function planDayRowTap(dayId, di, e) {
+      if (e) e.stopPropagation();
+      // Ignore taps on buttons/handles
+      if (e && (e.target.classList.contains('struct-drag-handle') ||
+          e.target.classList.contains('struct-day-delete') ||
+          e.target.classList.contains('struct-day-warning'))) return;
+      togglePlanDay(dayId);
+    }
+
+    function togglePlanDay(dayId) {
+      planExpandedDays[dayId] = !planExpandedDays[dayId];
+      var row = document.querySelector('.struct-day-row[data-day-id="' + dayId + '"]');
+      var content = document.querySelector('.plan-day-content[data-day-id="' + dayId + '"]');
+      if (row) row.classList.toggle('expanded', !!planExpandedDays[dayId]);
+      if (content) content.classList.toggle('open', !!planExpandedDays[dayId]);
+      if (planExpandedDays[dayId]) initPlanActivitySortables();
+    }
+
+    function expandAllPlanDays() {
+      (currentTrip.days || []).forEach(function(day) { planExpandedDays[day.id] = true; });
+      renderPlanView();
+    }
+
+    function collapseAllPlanDays() {
+      planExpandedDays = {};
+      renderPlanView();
+    }
+
+    function planToggleDone(uid, di, type, e) {
+      if (e) { e.stopPropagation(); e.preventDefault(); }
+      var day = currentTrip.days[di];
+      if (!day) return;
+      if (!day.done) day.done = {};
+      var key = (type === 'food' ? 'food_' : 'act_') + uid;
+      day.done[key] = !day.done[key];
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      // Update button in place without full re-render
+      if (e) {
+        var btn = e.target;
+        btn.classList.toggle('done', !!day.done[key]);
+        btn.textContent = day.done[key] ? '✓' : '';
+      }
     }
 
     // Shared date utilities — use these everywhere dates need parsing or formatting
@@ -5146,7 +5330,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentTrip.days = newOrder;
       renumberDays();
       saveToStorage();
-      renderStructure();
+      renderPlanView();
     }
 
     function structReorderDays(evt) {
@@ -5197,7 +5381,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // re-anchored on reorder — that caused silent drift between two
       // independent date-computation paths.
       saveToStorage();
-      renderStructure();
+      renderPlanView();
     }
 
     function renumberDays() {
@@ -5245,7 +5429,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       pushStructHistory('Day added to ' + city);
       _insertDayAt(lastIdx + 1, newDay);
       saveToStorage();
-      renderStructure();
+      renderPlanView();
     }
 
     function showStructWarning(di, e) {
@@ -5286,15 +5470,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!day) return;
       var hasContent = (day.activities && day.activities.length) ||
                        (day.food && day.food.length) ||
-                       (day.accommodation && day.accommodation.length);
-      var proceed = !hasContent || confirm('Day ' + day.day + ' has content. Delete anyway?');
-      if (!proceed) return;
-      pushStructHistory('Day ' + day.day + ' deleted from ' + (day.city || 'trip'));
-
+                       (day.transport && day.transport.length);
+      var msg = hasContent
+        ? 'Delete Day ' + (di + 1) + ' (' + day.city + ')? This day has content and cannot be undone easily.'
+        : 'Delete Day ' + (di + 1) + ' (' + day.city + ')?';
+      if (!confirm(msg)) return;
+      pushStructHistory('Day ' + (di + 1) + ' deleted from ' + (day.city || 'trip'));
       currentTrip.days.splice(di, 1);
       renumberDays();
       saveToStorage();
-      renderStructure();
+      renderPlanView();
     }
 
     function structRemoveCity(city, e) {
@@ -5311,7 +5496,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentTrip.days = currentTrip.days.filter(function(d) { return d.city !== city; });
       renumberDays();
       saveToStorage();
-      renderStructure();
+      renderPlanView();
     }
 
     // ---- Add destination sheet ----
@@ -5339,7 +5524,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       citySettings[name] = { emoji: emoji, color: colour, code: name.slice(0,3).toUpperCase() };
       saveToStorage();
       closeAddDestSheet();
-      renderStructure();
+      renderPlanView();
     }
 
     // ---- Undo / changelog ----
@@ -5359,7 +5544,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (structToastTimer) clearTimeout(structToastTimer);
       structToastTimer = setTimeout(function() {
         toast.classList.remove('visible');
-      }, 5000);
+      }, 8000);
     }
 
     function undoStructAction() {
@@ -5367,7 +5552,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var entry = structHistory.shift();
       currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
       saveToStorage();
-      renderStructure();
+      renderPlanView();
       var toast = document.getElementById('struct-toast');
       if (toast) toast.classList.remove('visible');
     }
@@ -5417,7 +5602,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
       structHistory = structHistory.slice(index + 1);
       saveToStorage();
-      renderStructure();
+      renderPlanView();
       closeStructHistory();
     }
 
@@ -5461,7 +5646,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function applyAutoShift(fromDayNum, byDays) {
       shiftDatesFrom(fromDayNum, byDays);
       closeShiftSheet();
-      renderStructure();
+      renderPlanView();
     }
 
     function applyManualShift() {
@@ -5473,7 +5658,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var diffDays = Math.round((newStart - currentStart) / (1000 * 60 * 60 * 24));
       if (diffDays !== 0) { shiftTripDates(diffDays); saveToStorage(); }
       closeShiftSheet();
-      renderStructure();
+      renderPlanView();
     }
 
     function shiftDatesFrom(fromDayNum, byDays) {
