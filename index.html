@@ -3490,6 +3490,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     // ===== VIEW SWITCHING =====
     function setView(view) {
+      if (!__suppressHistoryPush) { pushHistoryState(view); }
       currentView = view;
       var pill = document.getElementById('mob-day-pill');
       var fab = document.getElementById('mob-search-btn');
@@ -3560,23 +3561,33 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     // ===== ROUTE PAGE + HISTORY-AWARE NAVIGATION =====
     var routeCurrentIndex = null;
     var __routeNavInited = false;
+    var __suppressHistoryPush = false;
 
     function initRouteNav() {
       if (__routeNavInited) return;
       __routeNavInited = true;
       window.addEventListener('popstate', function(ev) {
         var st = ev.state;
-        if (st && st.view) {
-          // Navigate to the view stored in history without re-pushing
+        if (st && st.sheet) {
+          // Close the sheet without pushing another history entry
+          if (st.sheet === 'transport') { closeTransportSheet(); }
+          else if (st.sheet === 'accom') { closeAddStaySheet(); }
+          else if (st.sheet === 'lists') { closeAddToListSheet(); }
+          else if (st.sheet === 'photo') { closePhotoPicker(); }
+          else if (st.sheet === 'discovery') { closeAddToTripSheet(); }
+        } else if (st && st.view) {
+          __suppressHistoryPush = true;
           if (st.view === 'route' && typeof st.routeIndex === 'number') {
             routeCurrentIndex = st.routeIndex;
             setView('route');
           } else {
             setView(st.view);
           }
+          __suppressHistoryPush = false;
         } else {
-          // Reached the root entry — default to home
+          __suppressHistoryPush = true;
           setView('home');
+          __suppressHistoryPush = false;
         }
       });
     }
@@ -3756,6 +3767,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<button onclick="closeAddToListSheet()" style="width:100%;font-family:inherit;font-size:13px;font-weight:600;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:none;color:var(--ink-muted);cursor:pointer;">Cancel</button>';
       document.getElementById('lists-add-overlay').classList.add('open');
       document.getElementById('lists-add-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'lists' });
       setTimeout(function() { initListsPlaceAutocomplete(); }, 200);
     }
 
@@ -4072,6 +4084,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       renderAccomCal();
       document.getElementById('accom-add-overlay').classList.add('open');
       document.getElementById('accom-add-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'accom' });
     }
 
     function confirmEditStayDates() {
@@ -4230,6 +4243,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       document.getElementById('accom-add-overlay').classList.add('open');
       document.getElementById('accom-add-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'accom' });
     }
 
     function updateAccomConfirmBtn() {
@@ -4664,6 +4678,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       renderTransportSheet();
       document.getElementById('transport-sheet-overlay').classList.add('open');
       document.getElementById('transport-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'transport' });
     }
 
     function closeTransportSheet() {
@@ -6839,6 +6854,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       '</div>';
       document.getElementById('photo-picker-overlay').classList.add('open');
       document.getElementById('photo-picker-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'photo' });
       fetchPlacesPhotos(name, city, photoKey, dayIndex, actIndex, type);
     }
 
@@ -9250,6 +9266,8 @@ var pinDelay = Math.floor(Math.random() * 150);
 
     function getRouteStops(item) {
       normaliseAccom(item); normaliseFood(item);
+      item.activities = item.activities || [];
+      item.food = item.food || [];
       var stops = [];
       item.activities.forEach(function(a, i) {
         var name = (typeof a === 'object') ? a.name : a;
@@ -10361,6 +10379,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         '<button class="disc-save-btn" id="disc-save-btn" onclick="confirmAddToTrip()" disabled>Save to Trip</button>';
       document.getElementById('disc-add-overlay').classList.add('open');
       document.getElementById('disc-add-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'discovery' });
     }
 
     function selectDiscCat(cat) {
