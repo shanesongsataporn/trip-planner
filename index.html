@@ -8498,7 +8498,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
 
     function getStaysForDay(dayIndex) {
       if (!currentTrip || !Array.isArray(currentTrip.stays)) return [];
-      return currentTrip.stays.filter(function(s) {
+      var results = currentTrip.stays.filter(function(s) {
         var ciDay = getDayByCheckinRef(s, currentTrip);
         var coDay = getDayByCheckoutRef(s, currentTrip);
         if (!ciDay || !coDay) return false;
@@ -8506,6 +8506,24 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         var coIdx = currentTrip.days.indexOf(coDay);
         return dayIndex >= ciIdx && dayIndex <= coIdx;
       });
+      // On transit days: show checkout-only stays before checkin stays.
+      // A stay is "checking out today" if coIdx === dayIndex but ciIdx < dayIndex.
+      results.sort(function(a, b) {
+        var aCoDay = getDayByCheckoutRef(a, currentTrip);
+        var bCoDay = getDayByCheckoutRef(b, currentTrip);
+        var aCiDay = getDayByCheckinRef(a, currentTrip);
+        var bCiDay = getDayByCheckinRef(b, currentTrip);
+        var aCoIdx = aCoDay ? currentTrip.days.indexOf(aCoDay) : -1;
+        var bCoIdx = bCoDay ? currentTrip.days.indexOf(bCoDay) : -1;
+        var aCiIdx = aCiDay ? currentTrip.days.indexOf(aCiDay) : -1;
+        var bCiIdx = bCiDay ? currentTrip.days.indexOf(bCiDay) : -1;
+        var aIsCheckout = aCoIdx === dayIndex && aCiIdx < dayIndex;
+        var bIsCheckout = bCoIdx === dayIndex && bCiIdx < dayIndex;
+        if (aIsCheckout && !bIsCheckout) return -1;
+        if (!aIsCheckout && bIsCheckout) return 1;
+        return 0;
+      });
+      return results;
     }
 
     function syncStaysToDays() {
@@ -8524,6 +8542,62 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         });
       });
     }
+
+    // One-shot data heal: rebuild stay.checkinDayId / checkoutDayId from the date strings.
+    // Use when the accommodations page shows the right dates but other views show stays attached to wrong days.
+    // Console: healStayPointers({ dryRun: true }) first to preview, then healStayPointers() to apply.
+    function healStayPointers(opts) {
+      opts = opts || {};
+      var dryRun = !!opts.dryRun;
+      if (!currentTrip || !Array.isArray(currentTrip.stays)) {
+        console.warn('[healStayPointers] no currentTrip.stays');
+        return { changed: 0, warnings: 0 };
+      }
+      var dateToId = {};
+      currentTrip.days.forEach(function(day) {
+        var d = getDayDate(day, currentTrip);
+        if (d && !dateToId[d]) dateToId[d] = day.id;
+      });
+      var changed = 0;
+      var warnings = 0;
+      currentTrip.stays.forEach(function(s) {
+        ['checkin', 'checkout'].forEach(function(which) {
+          var dateField = which + 'Date';
+          var idField = which + 'DayId';
+          var dateStr = s[dateField];
+          if (!dateStr) {
+            console.warn('[healStayPointers]', s.name, '— missing', dateField, '— skipping');
+            warnings++;
+            return;
+          }
+          var targetId = dateToId[dateStr];
+          if (!targetId) {
+            console.warn('[healStayPointers]', s.name, '— no day matches', dateField, '"' + dateStr + '" — leaving', idField, 'unchanged');
+            warnings++;
+            return;
+          }
+          if (s[idField] === targetId) return;
+          console.log('[healStayPointers]', s.name, '—', idField, ':', s[idField], '→', targetId, '(' + dateStr + ')');
+          if (!dryRun) s[idField] = targetId;
+          changed++;
+        });
+      });
+      if (dryRun) {
+        console.log('[healStayPointers] DRY RUN —', changed, 'changes would be made,', warnings, 'warnings');
+        return { changed: changed, warnings: warnings, dryRun: true };
+      }
+      if (changed > 0) {
+        syncStaysToDays();
+        deSuppressSync = true;
+        setTimeout(function() { deSuppressSync = false; }, 2000);
+        saveToStorage();
+        console.log('[healStayPointers] APPLIED —', changed, 'pointer(s) repaired,', warnings, 'warnings. Saved to Firestore.');
+      } else {
+        console.log('[healStayPointers] no changes needed,', warnings, 'warnings');
+      }
+      return { changed: changed, warnings: warnings };
+    }
+    window.healStayPointers = healStayPointers;
 
     // Console handles for manual testing
     window.migrateStays = migrateAccommodationToStays;
