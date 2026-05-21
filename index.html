@@ -400,10 +400,11 @@
     .de-row--expanded .de-row-chevron { transform: rotate(90deg); opacity: 0.7; }
     .de-row-expand-body { background: var(--sand); padding: 0 14px 12px; border-top: none; display: none; border-bottom: 1px solid var(--sand-dark); }
     .de-row-expand-body.open { display: block; }
-    .de-row-expand-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .de-row-expand-btn { flex: 1; min-width: 80px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--sand-dark); background: var(--white); color: var(--ink); font-size: 13px; cursor: pointer; text-align: center; font-family: inherit; text-decoration: none; display: inline-block; }
+    .de-row-expand-actions { display: flex; flex-direction: column; gap: 8px; }
+    .de-row-expand-actions-secondary { display: flex; gap: 8px; }
+    .de-row-expand-btn { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--sand-dark); background: var(--white); color: var(--ink); font-size: 12px; cursor: pointer; text-align: center; font-family: inherit; text-decoration: none; display: inline-block; white-space: nowrap; }
     .de-row-expand-btn:active { background: var(--sand-dark); }
-    .de-row-expand-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .de-row-expand-btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 13px; padding: 9px 10px; }
     .de-row-expand-note { width: 100%; box-sizing: border-box; background: var(--white); border: 1px solid var(--sand-dark); border-radius: 6px; color: var(--ink); font-size: 13px; padding: 7px 10px; margin-top: 10px; resize: none; font-family: inherit; }
     .de-row-expand-note::placeholder { color: var(--ink-muted); }
     .de-add-row { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px dashed var(--sand-dark); color: var(--ink-muted); font-size: 13px; cursor: pointer; transition: background 0.12s; }
@@ -437,15 +438,16 @@
     .de-expand-save { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
     .de-expand-delete { background: rgba(224,85,85,0.15); color: var(--danger); border: 1px solid rgba(224,85,85,0.3); border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
     .de-cat-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
-    .de-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); cursor: pointer; border: 1px solid transparent; }
+    .de-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: var(--sand-dark); color: var(--ink-muted); cursor: pointer; border: 1px solid transparent; }
     .de-cat-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     /* Add sheet */
-#de-add-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a2e; border-radius: 20px 20px 0 0; padding: 20px 20px 36px; z-index: 5300; transform: translateY(100%); transition: transform 0.3s ease; box-shadow: 0 -4px 30px rgba(0,0,0,0.4); }
+    #de-add-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--sand); border-radius: 20px 20px 0 0; padding: 20px 20px 36px; z-index: 5300; transform: translateY(100%); transition: transform 0.3s ease; box-shadow: 0 -4px 30px rgba(0,0,0,0.4); border-top: 1px solid var(--sand-dark); }
     .pac-container { z-index: 5400 !important; }    #de-add-sheet.open { transform: translateY(0); }
-    .de-add-sheet-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 16px; }
-    .de-add-input { width: 100%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
-    .de-add-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); cursor: pointer; border: 1px solid transparent; }
-    .de-add-cat-chip.active { background: var(--accent); color: #fff; }
+    .de-add-sheet-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 16px; }
+    .de-add-input { width: 100%; background: var(--white); border: 1px solid var(--sand-dark); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: var(--ink); box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
+    .de-add-input::placeholder { color: var(--ink-muted); }
+    .de-add-cat-chip { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: var(--sand-dark); color: var(--ink-muted); cursor: pointer; border: 1px solid transparent; }
+    .de-add-cat-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     .de-add-confirm { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
     .de-add-cancel { width: 100%; background: transparent; color: rgba(255,255,255,0.4); border: none; padding: 10px; font-size: 13px; cursor: pointer; margin-top: 4px; }
     .de-empty { font-size: 12px; color: rgba(255,255,255,0.25); font-style: italic; padding: 8px 0 12px; }
@@ -1342,21 +1344,23 @@
     <input class="de-add-input" id="de-add-input" type="text" placeholder="Search a place...">
     <input class="de-add-input" id="de-add-manual-input" type="text" placeholder="Name..." style="display:none;">
     <textarea class="de-add-input" id="de-add-note" rows="2" placeholder="Note (optional)" style="resize:none;"></textarea>
+    <div id="de-add-link-row" style="display:none;">
+      <input class="de-add-input" id="de-add-link" type="url" placeholder="Link (optional, e.g. Instagram URL)" style="margin-top:6px;">
+    </div>
     <div style="text-align:center;margin:-4px 0 8px;">
       <span id="de-add-manual-toggle" onclick="deToggleManualAdd()" style="font-size:12px;color:rgba(255,255,255,0.35);cursor:pointer;text-decoration:underline;">or add manually</span>
     </div>
     <div id="de-add-cat-row">
-      <div class="de-expand-label" style="margin-bottom:8px;">Category</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
-        <div class="de-add-cat-chip active" data-cat="default" onclick="deAddPickCat('default')">📌 default</div>
-        <div class="de-add-cat-chip" data-cat="temple" onclick="deAddPickCat('temple')">🛕 temple</div>
-        <div class="de-add-cat-chip" data-cat="food" onclick="deAddPickCat('food')">🍜 food</div>
-        <div class="de-add-cat-chip" data-cat="beach" onclick="deAddPickCat('beach')">🏖️ beach</div>
-        <div class="de-add-cat-chip" data-cat="nature" onclick="deAddPickCat('nature')">🌿 nature</div>
-        <div class="de-add-cat-chip" data-cat="shopping" onclick="deAddPickCat('shopping')">🛍️ shopping</div>
-        <div class="de-add-cat-chip" data-cat="nightlife" onclick="deAddPickCat('nightlife')">🌙 nightlife</div>
-        <div class="de-add-cat-chip" data-cat="transport" onclick="deAddPickCat('transport')">🚌 transport</div>
-      </div>
+      <select class="de-add-input de-add-cat-select" id="de-add-cat-select" style="margin-bottom:10px;">
+        <option value="default">📍 General</option>
+        <option value="temple">🛕 Temple</option>
+        <option value="food">🍜 Food</option>
+        <option value="bars">🍸 Bars</option>
+        <option value="beach">🏖️ Beach</option>
+        <option value="nightlife">🌙 Nightlife</option>
+        <option value="shopping">🛍️ Shopping</option>
+        <option value="dessert">🍨 Dessert</option>
+      </select>
     </div>
     <button class="de-add-confirm" onclick="confirmDeAdd()">Add to Day</button>
     <button class="de-add-cancel" onclick="closeDeAddSheet()">Cancel</button>
@@ -5246,7 +5250,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var actRows = '';
       if (day.activities && day.activities.length) {
         day.activities.forEach(function(act) {
-          actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-day-id="' + day.id + '" data-di="' + di + '" data-type="activity" onclick="if(!event.target.classList.contains(\'plan-act-del\')){selectSplitDay(' + di + ');setView(\'split\');}">' +
+          actRows += '<div class="plan-activity-row" data-uid="' + act.uid + '" data-day-id="' + day.id + '" data-di="' + di + '" data-type="activity" onclick="if(!event.target.classList.contains(\'plan-act-del\')&&!event.target.classList.contains(\'plan-act-link\')){selectSplitDay(' + di + ');setView(\'split\');}">' +
             '<span class="plan-act-handle">⠿</span>' +
             '<span class="plan-act-emoji">' + (act.emoji || '📍') + '</span>' +
             '<span class="plan-act-name">' + escHtml(act.name || '') + '</span>' +
@@ -7423,10 +7427,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + mapsQuery;
 
       if (expandEl) {
+        var itemLink = '';
+        if (section === 'acts') { var aObj = day.activities[i]; itemLink = (typeof aObj === 'object' && aObj.link) ? aObj.link : ''; }
+        else if (section === 'food') { var fObj = day.food[i]; itemLink = (fObj && fObj.link) ? fObj.link : ''; }
         expandEl.innerHTML =
           '<div class="de-row-expand-actions">' +
-            '<a class="de-row-expand-btn" href="' + mapsUrl + '" target="_blank">🗺 Open in Maps</a>' +
-            '<a class="de-row-expand-btn" href="' + directionsUrl + '" target="_blank">🧭 Directions</a>' +
+            '<div class="de-row-expand-actions-secondary">' +
+              '<a class="de-row-expand-btn" href="' + mapsUrl + '" target="_blank">🗺 Maps</a>' +
+              '<a class="de-row-expand-btn" href="' + directionsUrl + '" target="_blank">🧭 Directions</a>' +
+              (itemLink ? '<a class="de-row-expand-btn" href="' + itemLink + '" target="_blank">🔗 Link</a>' : '') +
+            '</div>' +
             '<button class="de-row-expand-btn de-row-expand-btn--primary" onclick="showDeEditSheet(\'' + section + '\',' + i + ')">Edit</button>' +
           '</div>' +
           '<textarea class="de-row-expand-note" id="de-exp-note-' + section + '-' + i + '" rows="2" placeholder="Add a note...">' + escHtml(currentNote) + '</textarea>' +
@@ -7644,11 +7654,17 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('de-add-manual-toggle').textContent = '';
       document.getElementById('de-add-note').value = currentNote;
       document.getElementById('de-add-cat-row').style.display = section === 'acts' ? 'block' : 'none';
+      var linkInput = document.getElementById('de-add-link');
+      if (linkInput) {
+        var currentLink = '';
+        if (section === 'acts') { var actObj = day.activities[i]; currentLink = (typeof actObj === 'object' && actObj.link) ? actObj.link : ''; }
+        else if (section === 'food') { var foodObj = day.food[i]; currentLink = (foodObj && foodObj.link) ? foodObj.link : ''; }
+        linkInput.value = currentLink;
+        document.getElementById('de-add-link-row').style.display = section === 'accom' ? 'none' : 'block';
+      }
 
-      sheet.dataset.selectedCat = currentCat;
-      document.querySelectorAll('.de-add-cat-chip').forEach(function(el) {
-        el.classList.toggle('active', el.dataset.cat === currentCat);
-      });
+      var catSelect = document.getElementById('de-add-cat-select');
+      if (catSelect) catSelect.value = currentCat;
 
       sheet.classList.add('open');
       sheet.dataset.open = '1';
@@ -7662,7 +7678,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         ? document.getElementById('de-add-manual-input').value.trim()
         : document.getElementById('de-add-input').value.trim();
       var note = document.getElementById('de-add-note').value.trim();
-      var cat = sheet.dataset.selectedCat || 'default';
+      var catSelect = document.getElementById('de-add-cat-select');
+      var cat = (catSelect && catSelect.value) ? catSelect.value : (sheet.dataset.selectedCat || 'default');
       if (!name) return;
 
       // Edit mode — update existing item
@@ -7670,7 +7687,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var idx = parseInt(sheet.dataset.editIndex);
         if (section === 'acts') {
           var act = deCurrentDay.activities[idx];
-          if (typeof act === 'object') { act.name = name; } else { deCurrentDay.activities[idx] = { name: name, uid: generateUid() }; }
+          var linkVal = (document.getElementById('de-add-link') || {}).value || '';
+          if (typeof act === 'object') { act.name = name; act.link = linkVal; } else { deCurrentDay.activities[idx] = { name: name, uid: generateUid(), link: linkVal }; }
           if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
           deCurrentDay.activityCategories[idx] = cat;
           var savedAct = deCurrentDay.activities[idx];
@@ -7682,7 +7700,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (deCurrentDay.accommodation[idx]) { deCurrentDay.accommodation[idx].name = name; deCurrentDay.accommodation[idx].notes = note; }
         } else if (section === 'food') {
           normaliseFood(deCurrentDay);
-          if (deCurrentDay.food[idx]) { deCurrentDay.food[idx].name = name; deCurrentDay.food[idx].notes = note; }
+          var linkValF = (document.getElementById('de-add-link') || {}).value || '';
+          if (deCurrentDay.food[idx]) { deCurrentDay.food[idx].name = name; deCurrentDay.food[idx].notes = note; deCurrentDay.food[idx].link = linkValF; }
         }
         sheet.dataset.editMode = '0';
         deSuppressSync = true;
@@ -7694,8 +7713,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       // Add mode — create new item
+      var linkVal = (document.getElementById('de-add-link') || {}).value || '';
       if (section === 'acts') {
-        deCurrentDay.activities.push(name);
+        var newAct = { name: name, uid: generateUid(), link: linkVal || '' };
+        deCurrentDay.activities.push(newAct);
         if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
         deCurrentDay.activityCategories.push(cat);
       } else if (section === 'accom') {
@@ -8638,14 +8659,14 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     };
 
     var activityCategories = {
-      "temple":    { emoji: "\u26E9\uFE0F", color: "#9B59B6" },
-      "food":      { emoji: "\uD83C\uDF5C", color: "#E74C3C" },
-      "beach":     { emoji: "\uD83C\uDFD6\uFE0F", color: "#3498DB" },
-      "transport": { emoji: "\u2708\uFE0F", color: "#95A5A6" },
-      "nature":    { emoji: "\uD83C\uDF3F", color: "#27AE60" },
-      "nightlife": { emoji: "\uD83C\uDF19", color: "#2C3E50" },
-      "shopping":  { emoji: "\uD83D\uDECD\uFE0F", color: "#E91E63" },
-      "default":   { emoji: "\uD83D\uDCCD", color: "#2D9E75" }
+      "default":   { emoji: "📍", color: "#2D9E75" },
+      "temple":    { emoji: "🛕", color: "#9B59B6" },
+      "food":      { emoji: "🍜", color: "#E74C3C" },
+      "bars":      { emoji: "🍸", color: "#2980B9" },
+      "beach":     { emoji: "🏖️", color: "#3498DB" },
+      "nightlife": { emoji: "🌙", color: "#2C3E50" },
+      "shopping":  { emoji: "🛍️", color: "#E91E63" },
+      "dessert":   { emoji: "🍨", color: "#E67E22" }
     };
 
     function getCityEmoji(cityName) {
