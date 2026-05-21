@@ -3213,6 +3213,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var day = currentTrip.days[di];
       if (!day) { return; }
 
+      // suppress Firestore re-render while float is open
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 3000);
+
       // no route yet — show prompt in float card
       if (!day.routeOrder || !day.routeOrder.length) {
         bodyEl.innerHTML =
@@ -3222,6 +3226,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<button onclick="openRoutePage(' + di + ')" style="padding:10px 20px;background:var(--accent);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;">✨ Optimise today\'s route</button>' +
           '</div>';
         floatEl.style.display = 'block';
+        setTimeout(function() {
+          var container = document.getElementById('view-home');
+          if (container) { container.scrollTo({ top: floatEl.offsetTop - 20, behavior: 'smooth' }); }
+        }, 50);
         return;
       }
 
