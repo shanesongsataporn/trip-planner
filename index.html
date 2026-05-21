@@ -11633,9 +11633,21 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       (currentTrip.stays || []).forEach(function(s) {
         if (!s.checkinDayId || !getDayByCheckinRef(s, currentTrip)) {
           issues.stayRefs.push(s.name + ' checkinDayId=' + s.checkinDayId + ' does not resolve');
+        } else {
+          var ciDay = getDayByCheckinRef(s, currentTrip);
+          var ciDerived = getDayDate(ciDay, currentTrip);
+          if (ciDerived !== s.checkinDate) {
+            issues.stayRefs.push(s.name + ' checkin pointer/date drift: pointer→' + ciDerived + ' string=' + s.checkinDate);
+          }
         }
         if (!s.checkoutDayId || !getDayByCheckoutRef(s, currentTrip)) {
           issues.stayRefs.push(s.name + ' checkoutDayId=' + s.checkoutDayId + ' does not resolve');
+        } else {
+          var coDay = getDayByCheckoutRef(s, currentTrip);
+          var coDerived = getDayDate(coDay, currentTrip);
+          if (coDerived !== s.checkoutDate) {
+            issues.stayRefs.push(s.name + ' checkout pointer/date drift: pointer→' + coDerived + ' string=' + s.checkoutDate);
+          }
         }
       });
       // Orphaned uid-based keys & out-of-bounds routes
