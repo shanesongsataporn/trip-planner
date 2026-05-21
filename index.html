@@ -327,6 +327,7 @@
     .mob-kb-col-header { padding: 8px 10px 6px; border-bottom: 3px solid #ccc; flex-shrink: 0; }
     .mob-kb-col-top { display: flex; justify-content: space-between; align-items: baseline; }
     .mob-kb-col-day { font-size: 9px; font-weight: 800; color: var(--ink-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+    .mob-kb-col-dow { font-size: 9px; font-weight: 800; color: var(--accent); letter-spacing: 0.06em; margin-right: 4px; }
     .mob-kb-col-city { font-size: 9px; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.06em; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
     .mob-kb-col-date { font-size: 11px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; margin-top: 1px; display: flex; justify-content: space-between; align-items: baseline; }
     .mob-kb-col-body { overflow: visible; padding: 6px; flex: 0 0 auto; scrollbar-width: none; }
@@ -1674,7 +1675,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var isTransit = cityParts.length > 1;
         var topCity = isTransit ? cityParts[0].trim().toUpperCase() + ' >' : '';
         var bottomCity = isTransit ? cityParts[1].trim().toUpperCase() : cityParts[0].trim().toUpperCase();
-        header.innerHTML = '<div class="mob-kb-col-top"><span class="mob-kb-col-day">D' + item.day + '</span><span class="mob-kb-col-city">' + escHtml(topCity) + '</span></div><div class="mob-kb-col-date"><span>' + shortDate.toUpperCase() + '</span><span class="mob-kb-col-city">' + escHtml(bottomCity) + '</span></div>';
+        var dayOfWeek = dateParts.length >= 1 ? dateParts[0].toUpperCase() : '';
+        header.innerHTML = '<div class="mob-kb-col-top"><span class="mob-kb-col-day">D' + (idx + 1) + '</span><span class="mob-kb-col-city">' + escHtml(topCity) + '</span></div><div class="mob-kb-col-date"><span class="mob-kb-col-dow">' + dayOfWeek + '</span><span>' + shortDate.toUpperCase() + '</span><span class="mob-kb-col-city">' + escHtml(bottomCity) + '</span></div>';
         col.appendChild(header);
 
         // Activities body
