@@ -1438,6 +1438,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var splitActivityMarkers = [], splitOpenInfoWindow = null;
     var currentDayItem = null, currentView = 'map', lastView = 'map';
     var cardPhotos = {}, tlDragged = false;
+    var geocodeCache = {};
     var cardsViewMode = 'single';
     var isMobile = function() { return window.innerWidth <= 640; };
 
@@ -7175,6 +7176,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
     }
 
+    function saveGeocodeCache() {
+      db.collection('trips').doc(currentTripKey).set({
+        geocodeCache: JSON.stringify(geocodeCache)
+      }, { merge: true }).catch(function(e) { console.warn('Firestore geocodeCache save failed:', e); });
+    }
+
     function loadCardPhotos() {
       var saved = localStorage.getItem('card_photos');
       if (saved) { cardPhotos = JSON.parse(saved); }
@@ -9061,12 +9068,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         syncStaysToDays();
         setupRealtimeSync();
         if (isMobile()) { initMobPill(); updateMobPill(); }
-        (function retryAddCityMarkers(attempts) {
-          addCityMarkers();
-          if (cityMarkerObjs.length === 0 && attempts > 0) {
-            setTimeout(function() { retryAddCityMarkers(attempts - 1); }, 500);
-          }
-        })(10);
+        loadAllDayPins();
         var pill = document.getElementById('mob-day-pill');
         if (pill && isMobile() && currentView === 'map') { pill.classList.add('active'); }
         fetchExchangeRates(function() {
@@ -9094,6 +9096,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         if (!seen[baseName] && citySettings[baseName] && !citySettings[baseName].noMarker) { seen[baseName] = true; cities.push({ name: baseName, lat: day.lat, lng: day.lng }); }
       });
       cities.forEach(function(city) {
+          if (true) return; // city pins removed — map labels provide city context
           var el = buildCityMarkerEl(city.name);
           var marker = new google.maps.marker.AdvancedMarkerElement({ position: { lat: city.lat, lng: city.lng }, map: map, title: city.name, content: el });
           cityMarkerObjs.push({ marker: marker, city: city });
@@ -9346,12 +9349,42 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
     }
 
     function geocodeActivity(task, item, callback) {
-      var service = new google.maps.places.PlacesService(map);
-      var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
-      var query = rawName + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination();
       var baseCity = item.city.split('>').pop().trim();
       var cs = (citySettings && citySettings[baseCity]) || {};
       var cityColour = cs.color || '#2D9E75';
+      var cacheKey = task.type + '_' + task.name + '_' + baseCity;
+      var cached = geocodeCache[cacheKey];
+      if (cached) {
+        var isDone = item.done && item.done[task.type === 'food' ? 'food_' + ((item.food[task.index] && item.food[task.index].uid) ? item.food[task.index].uid : task.index) : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object' && item.activities[task.index].uid) ? item.activities[task.index].uid : task.index)];
+        var el = buildActivityPinEl(task.type, cityColour, isDone);
+        var dayIdx2 = currentTrip.days.indexOf(item);
+        var doneKey = task.type === 'food' ? 'food_' + ((item.food[task.index] && item.food[task.index].uid) ? item.food[task.index].uid : task.index) : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object' && item.activities[task.index].uid) ? item.activities[task.index].uid : task.index);
+        el.id = 'pinbubble-' + dayIdx2 + '-' + doneKey;
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-10px) scale(0.8)';
+        el.style.transition = 'opacity 0.3s ease,transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+        setTimeout(function() {
+          el.style.opacity = isDone ? '0.45' : '1';
+          el.style.transform = 'translateY(0) scale(1)';
+        }, 80);
+        var position = { lat: cached.lat, lng: cached.lng };
+        var marker = new google.maps.marker.AdvancedMarkerElement({ position: position, map: map, title: task.name, content: el });
+        var mapsUrl = cached.mapsUrl || 'https://www.google.com/maps/search/' + encodeURIComponent(task.name);
+        var photoUrl = cached.photoUrl || '';
+        var displayName = cached.name || task.name;
+        var userNote = (task.type === 'activity' && item.cardNotes) ? (item.cardNotes['act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object') ? item.activities[task.index].uid : task.index)] || '') : '';
+        (function(dn, pu, un, mu, t, idx, dayIdx, dk) {
+          var handler = function(e) { if (e && e.stopPropagation) e.stopPropagation(); showMapFloatCard(dn, pu, un, mu, dayIdx, idx, t, dk); };
+          marker.addListener('gmp-click', handler);
+          el.addEventListener('click', handler);
+        })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index, dayIdx2, doneKey);
+        activityMarkers.push({ marker: marker, index: task.index, type: task.type, position: position, dayIndex: dayIdx2 });
+        if (callback) callback();
+        return;
+      }
+      var service = new google.maps.places.PlacesService(map);
+      var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
+      var query = rawName + ' ' + baseCity + ' ' + getTripDestination();
       service.findPlaceFromQuery({ query: query, fields: ['name', 'geometry', 'place_id'] }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           var place = results[0];
@@ -9412,10 +9445,30 @@ var pinDelay = Math.floor(Math.random() * 150);
               marker.addListener('gmp-click', handler);
               el.addEventListener('click', handler);
             })(displayName, photoUrl, userNote, mapsUrl, task.type, task.index, currentTrip.days.indexOf(item), doneKey);
-            activityMarkers.push({ marker: marker, index: task.index, type: task.type, position: place.geometry.location });
+            activityMarkers.push({ marker: marker, index: task.index, type: task.type, position: place.geometry.location, dayIndex: currentTrip.days.indexOf(item) });
+            geocodeCache[cacheKey] = { lat: place.geometry.location.lat(), lng: place.geometry.location.lng(), name: displayName, mapsUrl: mapsUrl, photoUrl: photoUrl };
+            saveGeocodeCache();
             if (callback) { callback(); }
           });
         } else { if (callback) { callback(); } }
+      });
+    }
+
+    function loadAllDayPins() {
+      clearActivityMarkers();
+      var days = currentTrip.days;
+      var total = days.length, completed = 0;
+      days.forEach(function(day) {
+        addActivityMarkers(day, function() {
+          completed++;
+          if (completed === total) {
+            if (activityMarkers.length > 0) {
+              var bounds = new google.maps.LatLngBounds();
+              activityMarkers.forEach(function(obj) { if (obj.position) bounds.extend(obj.position); });
+              if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 60 });
+            }
+          }
+        });
       });
     }
 
@@ -9465,20 +9518,17 @@ var pinDelay = Math.floor(Math.random() * 150);
       closeMobPinSheet();
       var day = currentTrip.days[mobPillIndex];
       if (!day) return;
-      clearActivityMarkers();
-      cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
-      addActivityMarkers(day, function() {
-        if (activityMarkers.length > 0) {
-          var bounds = new google.maps.LatLngBounds();
-          activityMarkers.forEach(function(obj) {
-            if (obj.position) { bounds.extend(obj.position); }
-          });
-          if (!bounds.isEmpty()) { map.fitBounds(bounds, { padding: 60 }); }
-        } else {
-          map.panTo({ lat: day.lat, lng: day.lng });
-          map.setZoom(13);
-        }
+      var dayMarkers = activityMarkers.filter(function(obj) {
+        return obj.dayIndex === currentTrip.days.indexOf(day);
       });
+      if (dayMarkers.length > 0) {
+        var bounds = new google.maps.LatLngBounds();
+        dayMarkers.forEach(function(obj) { if (obj.position) bounds.extend(obj.position); });
+        if (!bounds.isEmpty()) { map.fitBounds(bounds, { padding: 60 }); }
+      } else {
+        map.panTo({ lat: day.lat, lng: day.lng });
+        map.setZoom(13);
+      }
     }
 
     function toggleMobDaySummary() {
@@ -12322,6 +12372,14 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
               try { localStorage.setItem('card_photos', JSON.stringify(cardPhotos)); } catch(e) {}
             } catch (e) {
               console.error('[loadFromStorage] cardPhotos unparseable — skipping (probably corrupted):', e.message);
+            }
+          }
+          if (data.geocodeCache) {
+            try {
+              var gc = JSON.parse(data.geocodeCache);
+              Object.keys(gc).forEach(function(key) { geocodeCache[key] = gc[key]; });
+            } catch (e) {
+              console.error('[loadFromStorage] geocodeCache unparseable — skipping:', e.message);
             }
           }
           migrateActivityUids();
