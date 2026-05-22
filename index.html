@@ -842,6 +842,8 @@
     .home-action-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
     .home-action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
     .home-action-btn.primary:hover { opacity: 0.85; }
+    .home-action-btn-discreet { font-family: inherit; font-size: 13px; padding: 7px 10px; border-radius: var(--radius-sm); border: none; background: none; color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
+    .home-action-btn-discreet:hover { color: var(--accent); }
 
     .budget-summary { background: var(--white); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); }    .budget-summary-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.01em; }
     .budget-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
@@ -2917,38 +2919,53 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           case 'map':
             return '<div class="home-tile" data-tile-id="map" onclick="setView(\'map\')">' +
               '<div class="home-tile-emoji">🗺️</div>' +
-              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-label">Map</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Map</div>' +
+              '<div class="home-tile-sub">See where you\'re going</div>' +
             '</div>';
           case 'structure':
             return '<div class="home-tile" data-tile-id="structure" onclick="setView(\'structure\')">' +
               '<div class="home-tile-emoji">✏️</div>' +
-              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-label">Plan</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Plan</div>' +
+              '<div class="home-tile-sub">Structure your trip</div>' +
             '</div>';
           case 'itinerary':
             return '<div class="home-tile" data-tile-id="itinerary" onclick="setView(\'itinerary\')">' +
               '<div class="home-tile-emoji">📋</div>' +
-              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-label">Itinerary</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Itinerary</div>' +
+              '<div class="home-tile-sub">Day by day breakdown</div>' +
             '</div>';
           case 'cards':
             return '<div class="home-tile" data-tile-id="cards" onclick="setView(\'cards\')">' +
               '<div class="home-tile-emoji">🃏</div>' +
-              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-label">Cards</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Cards</div>' +
+              '<div class="home-tile-sub">Visual itinerary</div>' +
             '</div>';
           case 'discovery':
+            var wishlistCount = (discWishlist || []).length;
             return '<div class="home-tile" data-tile-id="discovery" onclick="setView(\'discovery\')">' +
               '<div class="home-tile-emoji">🔍</div>' +
-              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-label">Discovery</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Discovery</div>' +
+              '<div class="home-tile-sub">' + (wishlistCount ? wishlistCount + ' saved' : 'Find places') + '</div>' +
             '</div>';
           case 'transport':
+            var nfDisp2 = nextFlight ? getFlightDisplay(nextFlight.flight) : null;
             return '<div class="home-tile" data-tile-id="transport" onclick="setView(\'transport\')">' +
               '<div class="home-tile-emoji">✈️</div>' +
-              '<div class="home-tile-label">View</div>' +
+              '<div class="home-tile-label">Transport</div>' +
               '<div class="home-tile-value" style="font-size:14px;">Transport</div>' +
+              '<div class="home-tile-sub">' + (nfDisp2 ? nfDisp2.from + ' → ' + nfDisp2.to + ' · ' + getDayDate(nextFlight.day, currentTrip) : 'No upcoming flights') + '</div>' +
+            '</div>';
+          case 'dayeditor':
+            return '<div class="home-tile" data-tile-id="dayeditor" onclick="selectSplitDay(' + Math.max(0, todayDayIndex) + ')">' +
+              '<div class="home-tile-emoji">✏️</div>' +
+              '<div class="home-tile-label">Day Editor</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Day Editor</div>' +
+              '<div class="home-tile-sub">Edit any day</div>' +
             '</div>';
           default: return '';
         }
@@ -3142,8 +3159,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
         var actionsHtml =
           '<div class="home-day-actions">' +
-            '<button class="home-action-btn primary" id="home-edit-btn-' + di + '" onclick="event.stopPropagation();toggleHomeInlineEdit(' + di + ')">✏️ Edit</button>' +
+            '<button class="home-action-btn" id="home-expand-btn-' + di + '" onclick="event.stopPropagation();toggleHomeAllRows(' + di + ')">▼ Expand all</button>' +
             '<button class="home-action-btn" onclick="event.stopPropagation();showHomeRouteFloat(' + di + ')">🗺️ Route</button>' +
+            '<button class="home-action-btn" id="home-edit-btn-' + di + '" onclick="event.stopPropagation();toggleHomeInlineEdit(' + di + ')">✏️ Edit</button>' +
           '</div>' +
           '<div id="home-inline-edit-' + di + '" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--sand-dark);">' +
             '<div style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Accommodation</div>' +
@@ -3267,6 +3285,15 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function toggleHomeDayBody(id) {
       var el = document.getElementById(id);
       if (el) { el.classList.toggle('open'); }
+    }
+
+    function toggleHomeDayContent(di) {
+      var el = document.getElementById('home-day-content-' + di);
+      var btn = document.getElementById('home-collapse-btn-' + di);
+      if (!el || !btn) return;
+      var isHidden = el.style.display === 'none';
+      el.style.display = isHidden ? '' : 'none';
+      btn.textContent = isHidden ? '▲ Hide' : '▼ Show';
     }
 
     function toggleHomeInlineEdit(di) {
@@ -3534,6 +3561,18 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       } else {
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
       }
+    }
+
+    function toggleHomeAllRows(di) {
+      var btn = document.getElementById('home-expand-btn-' + di);
+      if (!btn) return;
+      var expanding = btn.textContent.indexOf('Expand') !== -1;
+      // find all act and food detail divs for this day
+      var body = document.getElementById('home-day-body-' + di);
+      if (!body) return;
+      var details = body.querySelectorAll('[id^="home-act-detail-' + di + '-"],[id^="home-food-detail-' + di + '-"]');
+      details.forEach(function(el) { el.style.display = expanding ? 'block' : 'none'; });
+      btn.textContent = expanding ? '▲ Collapse all' : '▼ Expand all';
     }
 
     // ===== VIEW SWITCHING =====
@@ -6680,11 +6719,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','flight','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','lists'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','lists','dayeditor'];
     var HOME_TILE_META = {
       dates:          { emoji: '📅', label: 'Dates' },
       weather:        { emoji: '🌤️', label: 'Weather' },
-      flight:         { emoji: '✈️', label: 'Next Flight' },
       visa:           { emoji: '🛂', label: 'Visa & Entry' },
       food:           { emoji: '🍜', label: 'Reservations' },
       budget:         { emoji: '💰', label: 'Budget' },
@@ -6696,7 +6734,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       discovery:      { emoji: '🔍', label: 'Discovery' },
       transport:      { emoji: '✈️', label: 'Transport' },
       accommodation:  { emoji: '🏨', label: 'Accommodation' },
-      lists:          { emoji: '📋', label: 'Lists' }
+      lists:          { emoji: '📋', label: 'Lists' },
+      dayeditor:      { emoji: '✏️', label: 'Day Editor' }
     };
 
     function loadHomeTileConfig() {
@@ -6713,6 +6752,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             // Self-heal: add transport tile if missing
             if (cfg.order.indexOf('transport') === -1 && cfg.hidden.indexOf('transport') === -1) {
               cfg.order.push('transport');
+            }
+            // Self-heal: remove legacy flight tile
+            cfg.order = cfg.order.filter(function(id) { return id !== 'flight'; });
+            cfg.hidden = cfg.hidden.filter(function(id) { return id !== 'flight'; });
+            // Self-heal: add dayeditor tile if missing
+            if (cfg.order.indexOf('dayeditor') === -1 && cfg.hidden.indexOf('dayeditor') === -1) {
+              cfg.order.push('dayeditor');
             }
             return cfg;
           }
