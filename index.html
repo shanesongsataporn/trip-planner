@@ -6568,7 +6568,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '<div style="display:flex;align-items:center;gap:6px;margin-left:22px;margin-top:4px;flex-wrap:wrap;">' +
             '<div style="position:relative;">' +
               '<button onclick="toggleInlineCatPicker(\'cat-picker-' + dayIndex + '-' + i + '\')" style="font-family:inherit;font-size:11px;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:4px;">' +
-                activityCategories[cat].emoji + ' ' + cat + ' ▾' +
+                (activityCategories[cat] ? activityCategories[cat].emoji + ' ' : '📍 ') + cat + ' ▾' +
               '</button>' +
               '<div id="cat-picker-' + dayIndex + '-' + i + '" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);box-shadow:var(--card-shadow-hover);padding:4px;min-width:140px;margin-top:2px;">' +
                 Object.keys(activityCategories).map(function(c) {
@@ -8486,14 +8486,8 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       }
       var bubble = document.getElementById('pinbubble-' + dayIndex + '-' + doneKey);
       if (bubble) {
-        var wrap = bubble.closest('.map-pin-wrap');
-        var emojiSpan = bubble.childNodes[0];
-        if (isDone) {
-          if (wrap) wrap.classList.add('done-pin');
-          if (emojiSpan) emojiSpan.textContent = '✓';
-        } else {
-          if (wrap) wrap.classList.remove('done-pin');
-        }
+        bubble.style.opacity = isDone ? '0.45' : '1';
+        bubble.style.filter = isDone ? 'grayscale(0.6)' : '';
       }
       if (typeof loadMobPillDay === 'function' && document.getElementById('mob-day-summary').classList.contains('open')) {
         toggleMobDaySummary();
@@ -9316,6 +9310,27 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       closeMapFloatCard();
     }
 
+    function buildActivityPinEl(type, cityColour, isDone) {
+      var iconPath = '';
+      if (type === 'food') {
+        iconPath = 'M11 3a1 1 0 0 0-2 0v7H7V3a1 1 0 0 0-2 0v7a4 4 0 0 0 3 3.87V21a1 1 0 0 0 2 0v-7.13A4 4 0 0 0 11 10V3zm5-1a1 1 0 0 0-1 1v6h-1V3a1 1 0 0 0-1 0v6a3 3 0 0 0 2 2.83V21a1 1 0 0 0 2 0V3a1 1 0 0 0-1-1z';
+      } else if (type === 'accommodation') {
+        iconPath = 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z';
+      } else {
+        iconPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
+      }
+      var el = document.createElement('div');
+      el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;' + (isDone ? 'opacity:0.45;filter:grayscale(0.6);' : '');
+      el.innerHTML =
+        '<svg width="26" height="32" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));">' +
+          '<path d="M18 0C8.06 0 0 8.06 0 18c0 12 18 26 18 26S36 30 36 18C36 8.06 27.94 0 18 0z" fill="' + cityColour + '"/>' +
+          '<svg x="9" y="7" width="18" height="18" viewBox="0 0 24 24" fill="none">' +
+            '<path d="' + iconPath + '" fill="white"/>' +
+          '</svg>' +
+        '</svg>';
+      return el;
+    }
+
     function addActivityMarkers(item, callback) {
       normaliseAccom(item);
       var tasks = [];
@@ -9334,10 +9349,9 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       var service = new google.maps.places.PlacesService(map);
       var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
       var query = rawName + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination();
-      var pinColor, pinEmoji, pinSize;
-      if (task.type === 'food') { pinColor = '#E74C3C'; pinEmoji = '\uD83C\uDF7D\uFE0F'; pinSize = 28; }
-      else if (task.type === 'accommodation') { pinColor = '#2980B9'; pinEmoji = '\uD83C\uDFE8'; pinSize = 28; }
-      else { var catDef = activityCategories[task.cat] || activityCategories['default']; pinColor = catDef.color; pinEmoji = catDef.emoji; pinSize = 32; }
+      var baseCity = item.city.split('>').pop().trim();
+      var cs = (citySettings && citySettings[baseCity]) || {};
+      var cityColour = cs.color || '#2D9E75';
       service.findPlaceFromQuery({ query: query, fields: ['name', 'geometry', 'place_id'] }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           var place = results[0];
@@ -9355,12 +9369,15 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
             }
             var isDone = item.done && item.done[doneKey];
 var pinDelay = Math.floor(Math.random() * 150);
-            var el = document.createElement('div');
-            el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;opacity:0;transform:translateY(-10px) scale(0.8);transition:opacity 0.3s ease,transform 0.35s cubic-bezier(0.34,1.56,0.64,1);' + (isDone ? 'filter:grayscale(0.6);' : '');
+            var el = buildActivityPinEl(task.type, cityColour, isDone);
+            el.id = 'pinbubble-' + dayIdx2 + '-' + doneKey;
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-10px) scale(0.8)';
+            el.style.transition = 'opacity 0.3s ease,transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
             setTimeout(function() {
               el.style.opacity = isDone ? '0.45' : '1';
               el.style.transform = 'translateY(0) scale(1)';
-            }, 80 + pinDelay);            el.innerHTML = '<div id="pinbubble-' + dayIdx2 + '-' + doneKey + '" style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2.5px solid rgba(255,255,255,0.9);transition:transform 0.15s ease;"><span>' + (isDone ? '✓' : pinEmoji) + '</span></div><div style="width:2px;height:6px;background:rgba(0,0,0,0.2);border-radius:0 0 2px 2px;"></div>';
+            }, 80 + pinDelay);
             var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: map, title: task.name, content: el });
             var cardContent = '<div style="width:' + (isMobile() ? '150px' : '260px') + ';font-family:system-ui,sans-serif;font-size:' + (isMobile() ? '11px' : '13px') + ';">';
             if (details && detailStatus === google.maps.places.PlacesServiceStatus.OK) {
