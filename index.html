@@ -9270,17 +9270,15 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
         var service = new google.maps.places.PlacesService(splitMap);
         var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
         var query = rawName + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination();
-        var pinColor, pinEmoji, pinSize;
-        if (task.type === 'food') { pinColor = '#E74C3C'; pinEmoji = '\uD83C\uDF7D\uFE0F'; pinSize = 28; }
-        else if (task.type === 'accommodation') { pinColor = '#2980B9'; pinEmoji = '\uD83C\uDFE8'; pinSize = 28; }
-        else { var catDef = activityCategories[task.cat] || activityCategories['default']; pinColor = catDef.color; pinEmoji = catDef.emoji; pinSize = 32; }
+        var baseCity2 = item.city.split('>').pop().trim();
+        var cs2 = (citySettings && citySettings[baseCity2]) || {};
+        var cityColour2 = cs2.color || '#2D9E75';
         service.findPlaceFromQuery({ query: query, fields: ['name', 'geometry', 'place_id'] }, function(results, status) {
           if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
             var place = results[0];
             service.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_address', 'opening_hours', 'photos', 'url'] }, function(details, detailStatus) {
-              var el = document.createElement('div');
-              el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
-              el.innerHTML = '<div style="background:' + pinColor + ';border-radius:50%;width:' + pinSize + 'px;height:' + pinSize + 'px;display:flex;align-items:center;justify-content:center;font-size:' + (pinSize*0.5) + 'px;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid #fff;">' + pinEmoji + '</div>';
+              var isDoneSplit = item.done && item.done[task.type === 'food' ? 'food_' + ((item.food[task.index] && item.food[task.index].uid) ? item.food[task.index].uid : task.index) : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object' && item.activities[task.index].uid) ? item.activities[task.index].uid : task.index)];
+              var el = buildActivityPinEl(task.type, cityColour2, isDoneSplit);
               var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: splitMap, title: task.name, content: el });
               var cardContent = '<div style="width:240px;font-family:system-ui,sans-serif;">';
               var photoUrl = (details && detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0)
