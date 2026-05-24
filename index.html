@@ -7499,6 +7499,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               (itemLink ? '<a class="de-row-expand-btn" href="' + itemLink + '" target="_blank">🔗 Link</a>' : '') +
             '</div>' +
             '<button class="de-row-expand-btn de-row-expand-btn--primary" onclick="showDeEditSheet(\'' + section + '\',' + i + ')">Edit</button>' +
+            (section === 'acts' || section === 'food' ? '<button class="de-row-expand-btn" style="margin-top:8px;width:100%;color:#e05c5c;border:1px solid #e05c5c;background:transparent;" onclick="deDeleteRowItem(\'' + section + '\',' + i + ')">Delete</button>' : '') +
           '</div>' +
           '<textarea class="de-row-expand-note" id="de-exp-note-' + section + '-' + i + '" rows="2" placeholder="Add a note...">' + escHtml(currentNote) + '</textarea>' +
           '<button class="de-row-expand-btn" style="margin-top:8px;width:100%;" onclick="deQuickSaveNote(\'' + section + '\',' + i + ')">Save note</button>';
@@ -7661,6 +7662,19 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function closeDeAddSheet() {
       var sheet = document.getElementById('de-add-sheet');
       if (sheet) sheet.classList.remove('open');
+      var confirmBtn = document.querySelector('.de-add-confirm');
+      if (confirmBtn) confirmBtn.textContent = 'Add to Day';
+    }
+
+    function deDeleteRowItem(section, i) {
+      if (!deCurrentDay || !deCurrentDay.id) return;
+      var day = deCurrentDay;
+      var uid = '';
+      var type = section === 'acts' ? 'act' : 'food';
+      if (section === 'acts') { var a = day.activities[i]; uid = (typeof a === 'object' && a.uid) ? a.uid : ''; }
+      else if (section === 'food') { var f = day.food[i]; uid = (typeof f === 'object' && f.uid) ? f.uid : ''; }
+      if (!uid) return;
+      planDeleteActivity(null, day.id, deCurrentIndex, uid, type);
     }
 
     var deAddManualMode = false;
@@ -7693,7 +7707,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         itemName = (typeof act === 'object') ? (act.name || '') : (act || '');
         var noteKey = (typeof act === 'object' && act.uid) ? ('act_' + act.uid) : String(i);
         currentNote = (day.cardNotes && day.cardNotes[noteKey]) || '';
-        currentCat = (day.activityCategories && day.activityCategories[i]) || 'default';
+        currentCat = (typeof act === 'object' && act.category) ? act.category : 'default';
       } else if (section === 'food') {
         var food = day.food[i];
         itemName = typeof food === 'string' ? food : (food.name || '');
@@ -7706,6 +7720,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       var title = section === 'acts' ? 'Edit Activity' : section === 'accom' ? 'Edit Stay' : 'Edit Food & Drink';
       document.getElementById('de-add-sheet-title').textContent = title;
+      var confirmBtn = document.querySelector('.de-add-confirm');
+      if (confirmBtn) confirmBtn.textContent = 'Save Changes';
 
       deAddManualMode = true;
       document.getElementById('de-add-input').style.display = 'none';
