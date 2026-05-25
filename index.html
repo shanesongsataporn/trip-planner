@@ -9517,10 +9517,13 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
 
     function buildActivityPinEl(type, cityColour, isDone) {
       var iconPath = '';
+      var pinColour = '#2D9E75';
       if (type === 'food') {
         iconPath = 'M11 3a1 1 0 0 0-2 0v7H7V3a1 1 0 0 0-2 0v7a4 4 0 0 0 3 3.87V21a1 1 0 0 0 2 0v-7.13A4 4 0 0 0 11 10V3zm5-1a1 1 0 0 0-1 1v6h-1V3a1 1 0 0 0-1 0v6a3 3 0 0 0 2 2.83V21a1 1 0 0 0 2 0V3a1 1 0 0 0-1-1z';
+        pinColour = '#E8622A';
       } else if (type === 'accommodation') {
         iconPath = 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z';
+        pinColour = '#5B5BD6';
       } else {
         iconPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z';
       }
@@ -9528,7 +9531,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;' + (isDone ? 'opacity:0.45;filter:grayscale(0.6);' : '');
       el.innerHTML =
         '<svg width="26" height="32" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));">' +
-          '<path d="M18 0C8.06 0 0 8.06 0 18c0 12 18 26 18 26S36 30 36 18C36 8.06 27.94 0 18 0z" fill="' + cityColour + '"/>' +
+          '<path d="M18 0C8.06 0 0 8.06 0 18c0 12 18 26 18 26S36 30 36 18C36 8.06 27.94 0 18 0z" fill="' + pinColour + '"/>' +
           '<svg x="9" y="7" width="18" height="18" viewBox="0 0 24 24" fill="none">' +
             '<path d="' + iconPath + '" fill="white"/>' +
           '</svg>' +
@@ -9691,20 +9694,16 @@ var pinDelay = Math.floor(Math.random() * 150);
 
       document.getElementById('mob-pill-prev').addEventListener('click', function() {
         if (mobPillIndex > 0) {
-          mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
-          closeMobDaySummary();
-          toggleMobDaySummary();
+          mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); closeMobDaySummary();
         }
       });
       document.getElementById('mob-pill-next').addEventListener('click', function() {
         if (mobPillIndex < currentTrip.days.length - 1) {
-          mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard();
-          closeMobDaySummary();
-          toggleMobDaySummary();
+          mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); closeMobDaySummary();
         }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
-        selectSplitDay(mobPillIndex);
+        toggleMobDaySummary();
       });
     }
 
