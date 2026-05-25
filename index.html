@@ -953,6 +953,7 @@
       }
       #mob-pill-day { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 2px; }
       #mob-pill-city { font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; margin: 0 auto; }
+      #mob-pill-acts { font-size: 9px; font-weight: 600; color: var(--ink-muted); margin-top: 2px; }
 
       /* ===== MAP PIN BOTTOM SHEET ===== */
       #mob-pin-sheet {
@@ -9703,15 +9704,18 @@ var pinDelay = Math.floor(Math.random() * 150);
         }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
-        toggleMobDaySummary();
+        selectSplitDay(mobPillIndex);
       });
     }
 
     function updateMobPill() {
       var day = currentTrip.days[mobPillIndex];
       if (!day) return;
-      document.getElementById('mob-pill-day').textContent = 'Day ' + day.day + ' · ' + getDayDate(day, currentTrip);
+      document.getElementById('mob-pill-day').textContent = 'Day ' + (mobPillIndex + 1) + ' · ' + getDayDate(day, currentTrip);
       document.getElementById('mob-pill-city').textContent = getCityEmoji(day.city) + ' ' + day.city.split('>').pop().trim();
+      var actCount = (day.activities || []).length + (day.food || []).length;
+      var actsEl = document.getElementById('mob-pill-acts');
+      if (actsEl) { actsEl.textContent = actCount > 0 ? actCount + ' ' + (actCount === 1 ? 'place' : 'places') : ''; }
     }
 
     function loadMobPillDay() {
@@ -9875,6 +9879,7 @@ var pinDelay = Math.floor(Math.random() * 150);
     var mapFloatCardItem = null;
 
     function showMapFloatCard(name, photoUrl, note, mapsUrl, dayIndex, actIndex, itemType, doneKey) {
+      closeMobDaySummary();
       mapFloatCardItem = (dayIndex !== undefined && actIndex !== undefined) ? { dayIndex: dayIndex, actIndex: actIndex, type: itemType || 'activity' } : null;
       var card = document.getElementById('map-float-card');
       var img = document.getElementById('map-float-card-img');
@@ -12778,6 +12783,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     <div id="mob-pill-center">
       <div id="mob-pill-day">Day 1 · Sat May 9</div>
       <div id="mob-pill-city">🏙️ Bangkok</div>
+      <div id="mob-pill-acts"></div>
     </div>
     <button class="mob-pill-arrow" id="mob-pill-next">›</button>
   </div>
