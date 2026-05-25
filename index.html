@@ -3415,6 +3415,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           saveHomeTileConfig(newOrder, cfg.hidden);
         }
       });
+      grid.style.touchAction = 'pan-y';
+      grid.style.touchAction = 'pan-y';
 
       // Fix delete tap on mobile — use touchend directly on badges
       grid.querySelectorAll('.home-tile-remove-btn').forEach(function(btn) {
