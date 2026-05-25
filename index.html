@@ -1625,8 +1625,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function undoKanbanMove() {
       if (!mobKanbanLastMove) return;
       var m = mobKanbanLastMove;
-      var fromDay = currentTrip.days[m.fromTripIdx];
-      var toDay = currentTrip.days[m.toTripIdx];
+      var fromTripIdx = currentTrip.days.findIndex(function(d) { return d.id === m.fromDayId; });
+      var toTripIdx = currentTrip.days.findIndex(function(d) { return d.id === m.toDayId; });
+      if (fromTripIdx === -1 || toTripIdx === -1) { hideKanbanUndo(); return; }
+      var fromDay = currentTrip.days[fromTripIdx];
+      var toDay = currentTrip.days[toTripIdx];
       if (m.type === 'act') {
         var act = toDay.activities.splice(m.newIndex, 1)[0];
         fromDay.activities.splice(m.oldIndex, 0, act);
@@ -1762,7 +1765,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             deSuppressSync = true;
             saveToStorage();
             setTimeout(function() { deSuppressSync = false; }, 2000);
-            mobKanbanLastMove = { type: 'act', fromTripIdx: currentTrip.days.indexOf(fromDay), toTripIdx: currentTrip.days.indexOf(toDay), oldIndex: oldIndex, newIndex: newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
+            mobKanbanLastMove = { type: 'act', fromDayId: fromDay.id, toDayId: toDay.id, oldIndex: oldIndex, newIndex: newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
             mobCardsCurrentIndex = toIdx;
             enterMobKanban();
             showKanbanUndo();
@@ -1819,7 +1822,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               deSuppressSync = true;
               saveToStorage();
               setTimeout(function() { deSuppressSync = false; }, 2000);
-              mobKanbanLastMove = { type: 'food', fromTripIdx: currentTrip.days.indexOf(fromDay), toTripIdx: currentTrip.days.indexOf(toDay), oldIndex: evt.oldIndex, newIndex: evt.newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
+              mobKanbanLastMove = { type: 'food', fromDayId: fromDay.id, toDayId: toDay.id, oldIndex: evt.oldIndex, newIndex: evt.newIndex, fromIdx: parseInt(evt.from.dataset.dayIdx), toIdx: toIdx };
               mobCardsCurrentIndex = toIdx;
               enterMobKanban();
               showKanbanUndo();
