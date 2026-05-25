@@ -2968,6 +2968,22 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '<div class="home-tile-value" style="font-size:14px;">Day Editor</div>' +
               '<div class="home-tile-sub">Edit any day</div>' +
             '</div>';
+          case 'route':
+            var routeDayIndex = (function() {
+              var start = Math.max(0, todayDayIndex);
+              for (var ri = start; ri < currentTrip.days.length; ri++) {
+                if (currentTrip.days[ri].routeOrder && currentTrip.days[ri].routeOrder.length) { return ri; }
+              }
+              return -1;
+            })();
+            var routeSub = routeDayIndex !== -1 ? getDayDate(currentTrip.days[routeDayIndex], currentTrip) + ' · ' + currentTrip.days[routeDayIndex].city : 'No routes yet';
+            var routeOnclick = routeDayIndex !== -1 ? 'openRoutePage(' + routeDayIndex + ')' : 'setView(\'map\')';
+            return '<div class="home-tile" data-tile-id="route" onclick="' + routeOnclick + '">' +
+              '<div class="home-tile-emoji">🗺️</div>' +
+              '<div class="home-tile-label">Route</div>' +
+              '<div class="home-tile-value" style="font-size:14px;">Route</div>' +
+              '<div class="home-tile-sub">' + routeSub + '</div>' +
+            '</div>';
           default: return '';
         }
       }
@@ -3262,9 +3278,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           ? '<div style="font-size:10px;color:var(--ink-muted);padding:3px 0 3px 28px;">🚗 ' + leg.durationMins + 'min</div>'
           : '';
         var catEmoji = (activityCategories[stop.cat] && activityCategories[stop.cat].emoji) || '📍';
+        var isLocked = (day.routeLegs && day.routeLegs[pos] && day.routeLegs[pos].locked) || false;
         return travelHtml +
           '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">' +
-            '<div style="width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (pos + 1) + '</div>' +
+            '<div style="width:20px;height:20px;border-radius:50%;background:' + (isLocked ? 'var(--warn)' : 'var(--accent)') + ';color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (isLocked ? '🔒' : (pos + 1)) + '</div>' +
             '<div style="font-size:13px;color:var(--ink);">' + catEmoji + ' ' + stop.name + '</div>' +
           '</div>';
       }).filter(Boolean).join('');
@@ -3532,7 +3549,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       for (var i = 0; i < currentTrip.days.length; i++) {
         var d = parseDate(currentTrip.days[i]);
         if (d && d.getTime() === today.getTime()) {
-          return { mode: 'during', dayIndex: i, text: 'DAY ' + currentTrip.days[i].day + ' of ' + totalDays, sub: currentTrip.days[i].city + ' · ' + getDayDate(currentTrip.days[i], currentTrip) };
+          return { mode: 'during', dayIndex: i, text: 'DAY ' + (i + 1) + ' of ' + totalDays, sub: currentTrip.days[i].city + ' · ' + getDayDate(currentTrip.days[i], currentTrip) };
         }
       }
       return { mode: 'pre', text: 'Trip coming up 🛫', sub: firstDateStr + ' – ' + lastDateStr };
@@ -4754,7 +4771,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<span class="transport-type-badge ' + typeKey + '">' + typeEmoji + ' ' + (t.type||'Transport') + '</span>' +
             '<div class="transport-view-route">' + routeLabel + '</div>' +
             '<div style="font-size:11px;color:var(--ink-muted);text-align:right;flex-shrink:0;">' +
-              '<div style="font-weight:700;">Day ' + day.day + '</div>' +
+              '<div style="font-weight:700;">Day ' + (di + 1) + '</div>' +
               '<div>' + getDayDate(day, currentTrip) + '</div>' +
             '</div>' +
           '</div>' +
@@ -6720,7 +6737,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','lists','dayeditor'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','lists','dayeditor','route'];
     var HOME_TILE_META = {
       dates:          { emoji: '📅', label: 'Dates' },
       weather:        { emoji: '🌤️', label: 'Weather' },
@@ -6736,7 +6753,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       transport:      { emoji: '✈️', label: 'Transport' },
       accommodation:  { emoji: '🏨', label: 'Accommodation' },
       lists:          { emoji: '📋', label: 'Lists' },
-      dayeditor:      { emoji: '✏️', label: 'Day Editor' }
+      dayeditor:      { emoji: '✏️', label: 'Day Editor' },
+      route:          { emoji: '🗺️', label: 'Route' }
     };
 
     function loadHomeTileConfig() {
@@ -6760,6 +6778,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             // Self-heal: add dayeditor tile if missing
             if (cfg.order.indexOf('dayeditor') === -1 && cfg.hidden.indexOf('dayeditor') === -1) {
               cfg.order.push('dayeditor');
+            }
+            // Self-heal: add route tile if missing
+            if (cfg.order.indexOf('route') === -1 && cfg.hidden.indexOf('route') === -1) {
+              cfg.order.push('route');
             }
             return cfg;
           }
