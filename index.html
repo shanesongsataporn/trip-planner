@@ -5305,6 +5305,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       e.stopPropagation();
       var day = currentTrip.days.find(function(d) { return d.id === dayId; });
       if (!day) return;
+      autoBackupToFirestore('delete-' + (type === 'food' ? 'food' : 'activity'));
       pushStructHistory('Delete ' + (type === 'food' ? 'food' : 'activity'));
       if (type === 'activity') {
         day.activities = (day.activities || []).filter(function(a) { return a.uid !== uid; });
@@ -5682,6 +5683,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         ? 'Delete Day ' + (di + 1) + ' (' + day.city + ')? This day has content and cannot be undone easily.'
         : 'Delete Day ' + (di + 1) + ' (' + day.city + ')?';
       if (!confirm(msg)) return;
+      autoBackupToFirestore('delete-day-' + (di + 1));
       pushStructHistory('Day ' + (di + 1) + ' deleted from ' + (day.city || 'trip'));
       currentTrip.days.splice(di, 1);
       renumberDays();
@@ -12525,12 +12527,38 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     };
 
     // ===== STORAGE =====
+
+    // #38 — lightweight auto-backup before destructive user actions.
+    // Writes a timestamped Firestore doc. Fire-and-forget — does not block the action.
+    function autoBackupToFirestore(label) {
+      if (window.__TEST_MODE) return;
+      if (!currentTrip || !currentTripKey) return;
+      var ts = new Date().toISOString().replace(/[:.]/g, '-');
+      var backupId = currentTripKey + '_autobak_' + ts;
+      var payload = {
+        data: JSON.stringify(trips[currentTripKey]),
+        citySettings: JSON.stringify(citySettings),
+        autoBackupLabel: label || 'destructive-action',
+        backedUpAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      db.collection('trips').doc(backupId).set(payload).then(function() {
+        console.log('✅ Auto-backup written:', backupId);
+      }).catch(function(e) {
+        console.warn('⚠️ Auto-backup failed (action will still proceed):', e);
+      });
+    }
+
     function saveToStorage() {
       // IMPORTANT: always use { merge: true } here.
       // cardPhotos and wishlist are saved separately by saveCardPhotos() and saveDiscWishlist().
       // Without merge:true, .set() overwrites the whole Firestore doc and wipes those fields.
       if (window.__TEST_MODE) {
         console.log('🧪 [TEST_MODE] saveToStorage() blocked — no Firestore/localStorage write');
+        return;
+      }
+      // #46 — startDate drift guard. If startDate is wrong, abort save and alert loudly.
+      if (currentTrip && currentTrip.startDate !== '2026-06-09') {
+        console.error('🚨 [saveToStorage] ABORTED — startDate is "' + currentTrip.startDate + '" (expected 2026-06-09). Fix before saving.');
         return;
       }
       db.collection('trips').doc(currentTripKey).set({
