@@ -2636,6 +2636,106 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     // ===== HOME VIEW =====
     var homeWeatherCache = null;
 
+    var tripWeatherCache = null;
+
+    function fetchTripWeather(callback) {
+      if (tripWeatherCache) { callback(tripWeatherCache); return; }
+      var knownCityCoords = {
+        'Bangkok': { lat: 13.7563, lng: 100.5018 },
+        'Koh Samui': { lat: 9.5120, lng: 100.0136 },
+        'Chiang Rai': { lat: 19.9105, lng: 99.8406 }
+      };
+      var cityCoords = {};
+      currentTrip.days.forEach(function(day) {
+        var baseCity = day.city ? day.city.split('>').pop().trim() : null;
+        if (!baseCity || baseCity === 'Sydney') return;
+        if (!cityCoords[baseCity]) {
+          if (day.lat && day.lng && !cityCoords[baseCity]) {
+            cityCoords[baseCity] = { lat: day.lat, lng: day.lng };
+          } else if (knownCityCoords[baseCity]) {
+            cityCoords[baseCity] = knownCityCoords[baseCity];
+          }
+        }
+      });
+      var cities = Object.keys(cityCoords);
+      if (!cities.length) { callback({}); return; }
+      var today = new Date();
+      var maxForecast = new Date(today); maxForecast.setDate(today.getDate() + 15);
+      var tripStart = new Date(getDayDateISO(currentTrip.days[0], currentTrip));
+      var tripEnd = new Date(getDayDateISO(currentTrip.days[currentTrip.days.length - 1], currentTrip));
+      var fetchStart = tripStart > today ? today : tripStart;
+      var fetchEnd = tripEnd < maxForecast ? tripEnd : maxForecast;
+      var pad = function(n) { return String(n).padStart(2,'0'); };
+      var startDate = fetchStart.getFullYear() + '-' + pad(fetchStart.getMonth()+1) + '-' + pad(fetchStart.getDate());
+      var endDate = fetchEnd.getFullYear() + '-' + pad(fetchEnd.getMonth()+1) + '-' + pad(fetchEnd.getDate());
+      var remaining = cities.length;
+      var result = {};
+      cities.forEach(function(city) {
+        var coords = cityCoords[city];
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + coords.lat + '&longitude=' + coords.lng +
+          '&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto&start_date=' + startDate + '&end_date=' + endDate;
+        fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+          var dates = data.daily && data.daily.time ? data.daily.time : [];
+          dates.forEach(function(dateStr, i) {
+            var code = data.daily.weathercode[i] || 0;
+            var max = Math.round(data.daily.temperature_2m_max[i]);
+            var min = Math.round(data.daily.temperature_2m_min[i]);
+            var emoji = code <= 1 ? '☀️' : code <= 3 ? '⛅' : code <= 51 ? '🌥️' : code <= 67 ? '🌧️' : code <= 77 ? '❄️' : code <= 82 ? '🌦️' : '⛈️';
+            result[dateStr] = { emoji: emoji, max: max, min: min, city: city };
+          });
+        }).catch(function() {}).finally(function() {
+          remaining--;
+          if (remaining === 0) { tripWeatherCache = result; callback(result); }
+        });
+      });
+    }
+
+    function showWeatherFloat() {
+      var floatEl = document.getElementById('home-weather-float');
+      if (!floatEl) { return; }
+      if (floatEl.style.display !== 'none') { floatEl.style.display = 'none'; return; }
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 3000);
+      floatEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--ink-muted);font-size:13px;">Loading forecast…</div>';
+      floatEl.style.display = 'block';
+      fetchTripWeather(function(weatherByDate) {
+        var today = new Date();
+        var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+        var cells = currentTrip.days.map(function(day, i) {
+          var dateStr = getDayDateISO(day, currentTrip);
+          var baseCity = day.city ? day.city.split('>').pop().trim() : '';
+          var w = weatherByDate[dateStr];
+          var cityColor = (citySettings[baseCity] && citySettings[baseCity].color) ? citySettings[baseCity].color : 'var(--accent)';
+          var isToday = dateStr === todayStr;
+          var monthSeasons = { Jan:'Cool & dry', Feb:'Cool & dry', Mar:'Hot & dry', Apr:'Hot & dry', May:'Hot & humid', Jun:'Rainy season', Jul:'Rainy season', Aug:'Rainy season', Sep:'Rainy season', Oct:'Rains easing', Nov:'Cool & dry', Dec:'Cool & dry' };
+          var monthEmojis = { Jan:'☀️', Feb:'☀️', Mar:'🌤️', Apr:'🌤️', May:'🌦️', Jun:'🌧️', Jul:'🌧️', Aug:'🌧️', Sep:'🌧️', Oct:'🌦️', Nov:'☀️', Dec:'☀️' };
+          var monthKey = getDayDate(day, currentTrip).replace(/^[A-Za-z]+ /, '').split(' ')[0];
+          var emoji = w ? w.emoji : monthEmojis[monthKey] || '🌡️';
+          var temp = w ? (w.max + '°/' + w.min + '°') : (monthSeasons[monthKey] || 'Seasonal');
+          var displayDate = getDayDate(day, currentTrip).replace(/^[A-Za-z]+ /, ''); // "Jun 9"
+          return '<div style="flex-shrink:0;width:60px;text-align:center;padding:8px 4px;border-radius:10px;background:' + (isToday ? 'var(--accent)' : 'var(--sand)') + ';border:1px solid ' + (isToday ? 'var(--accent)' : 'var(--sand-dark)') + ';">' +
+            '<div style="width:8px;height:8px;border-radius:50%;background:' + cityColor + ';margin:0 auto 4px;"></div>' +
+            '<div style="font-size:9px;font-weight:700;color:' + (isToday ? '#fff' : 'var(--ink-muted)') + ';margin-bottom:2px;">D' + (i+1) + '</div>' +
+            '<div style="font-size:9px;color:' + (isToday ? 'rgba(255,255,255,0.8)' : 'var(--ink-muted)') + ';margin-bottom:4px;">' + displayDate + '</div>' +
+            '<div style="font-size:18px;line-height:1;margin-bottom:4px;">' + emoji + '</div>' +
+            '<div style="font-size:9px;font-weight:600;color:' + (isToday ? '#fff' : 'var(--ink)') + ';">' + temp + '</div>' +
+          '</div>';
+        }).join('');
+        floatEl.innerHTML =
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+            '<div style="font-size:12px;font-weight:700;color:var(--ink);">Trip Forecast</div>' +
+            '<button onclick="document.getElementById(\'home-weather-float\').style.display=\'none\';return false;" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-muted);padding:0;line-height:1;">✕</button>' +
+          '</div>' +
+          '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">' + cells + '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+            Object.keys(citySettings).filter(function(c){ return citySettings[c] && citySettings[c].color && c !== 'Sydney'; }).map(function(c) {
+              return '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-muted);">' +
+                '<div style="width:8px;height:8px;border-radius:50%;background:' + citySettings[c].color + ';"></div>' + c + '</div>';
+            }).join('') +
+          '</div>';
+        });
+    }
+
     function fetchHomeWeather(lat, lng, callback) {
       if (homeWeatherCache && homeWeatherCache.lat === lat && homeWeatherCache.lng === lng) {
         callback(homeWeatherCache); return;
@@ -2868,7 +2968,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '<div class="home-tile-sub">to ' + getDayDate(lastDay, currentTrip) + ' · ' + currentTrip.days.length + ' days</div>' +
             '</div>';
           case 'weather':
-            return '<div class="home-tile" data-tile-id="weather" onclick="">' +
+            return '<div class="home-tile" data-tile-id="weather" onclick="showWeatherFloat()">' +
               '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
               '<div class="home-tile-label">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
               '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
@@ -3018,7 +3118,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // ---- Locked row 1: countdown (always visible) ----
       var row1Html =
         '<div class="home-tile-row home-tile-row-2" style="margin-bottom:10px;">' +
-          '<div class="home-tile home-tile-countdown" onclick="">' +
+          '<div class="home-tile home-tile-countdown" onclick="showWeatherFloat()">' +
             '<div class="home-tile-emoji">🛫</div>' +
             '<div class="home-tile-label">Countdown</div>' +
             '<div class="home-tile-value">' + countdownVal + '</div>' +
@@ -3039,7 +3139,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<div class="home-tile-tray-grid" id="home-tile-tray-grid"></div>' +
       '</div>';
 
-      var tilesHtml = editBtnHtml + '<div class="home-tiles">' + row1Html + sortableHtml + trayHtml + '</div>';
+      var weatherFloatDiv = '<div id="home-weather-float" style="display:none;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius);padding:16px;margin:0 0 16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);"></div>';
+      var tilesHtml = '<div class="home-tiles">' + row1Html + weatherFloatDiv + sortableHtml + trayHtml + '</div>';
 
       // ---- Long-press on grid to enter edit mode ----
       setTimeout(function() {
