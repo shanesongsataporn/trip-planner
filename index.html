@@ -920,11 +920,49 @@
 
       .panel-tab { padding: 8px 10px; font-size: 10px; }
 
+      /* ===== MAP FILTER BAR ===== */
+      #map-filter-bar {
+        display: none;
+        position: fixed;
+        top: 80px;
+        left: 12px;
+        z-index: 40;
+        display: none;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      #map-filter-bar.bar-visible {
+        display: flex;
+      }
+      .map-filter-pill {
+        display: block;
+        padding: 5px 13px;
+        border-radius: 20px;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        background: rgba(30,30,40,0.72);
+        color: rgba(255,255,255,0.55);
+        transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+      }
+      .map-filter-pill.map-filter-active {
+        background: var(--accent);
+        color: #fff;
+      }
+
       /* ===== FLOATING DAY PILL ===== */
       #mob-all-days-chip {
   display: none;
+  position: fixed;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2600;
   text-align: center;
-  margin-bottom: 6px;
 }
 #mob-all-days-chip button {
   background: rgba(30,30,40,0.75);
@@ -934,6 +972,7 @@
   padding: 4px 14px;
   font-size: 12px;
   cursor: pointer;
+  white-space: nowrap;
 }
 .map-pin-dimmed {
   opacity: 0.25;
@@ -1501,6 +1540,40 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var geocodeCache = {};
     var cardsViewMode = 'single';
     var isMobile = function() { return window.innerWidth <= 640; };
+
+    var mapFilterState = { activity: true, food: true, accommodation: true };
+
+    function applyMapFilter() {
+      activityMarkers.forEach(function(m) {
+        var visible = mapFilterState[m.type] !== false;
+        if (m.marker) m.marker.style.display = visible ? '' : 'none';
+      });
+    }
+
+    function toggleMapFilter(type) {
+      if (type === 'all') {
+        var allOn = mapFilterState.activity && mapFilterState.food && mapFilterState.accommodation;
+        var newState = !allOn;
+        mapFilterState.activity = newState;
+        mapFilterState.food = newState;
+        mapFilterState.accommodation = newState;
+      } else {
+        mapFilterState[type] = !mapFilterState[type];
+      }
+      applyMapFilter();
+      updateMapFilterPills();
+    }
+
+    function updateMapFilterPills() {
+      var pills = document.querySelectorAll('.map-filter-pill');
+      var allOn = mapFilterState.activity && mapFilterState.food && mapFilterState.accommodation;
+      pills.forEach(function(pill) {
+        var f = pill.getAttribute('data-filter');
+        var active = f === 'all' ? allOn : mapFilterState[f];
+        if (active) { pill.classList.add('map-filter-active'); }
+        else { pill.classList.remove('map-filter-active'); }
+      });
+    }
 
     // ===== MENUS =====
     function toggleMenu(id) {
@@ -3765,6 +3838,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentView = view;
       var pill = document.getElementById('mob-day-pill');
       var fab = document.getElementById('mob-search-btn');
+      var filterBar = document.getElementById('map-filter-bar');
       if (pill) { 
         if (view === 'map' && isMobile()) { pill.classList.add('active'); }
         else { pill.classList.remove('active'); }
@@ -3772,6 +3846,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (fab) {
         if (view === 'map' && isMobile()) { fab.classList.add('active'); }
         else { fab.classList.remove('active'); }
+      }
+      if (filterBar) {
+        if (view === 'map' && isMobile()) { filterBar.classList.add('bar-visible'); }
+        else { filterBar.classList.remove('bar-visible'); }
       }
       document.body.className = document.body.className.replace(/\bview-\S+/g, '').trim() + ' view-' + view;
       document.getElementById('view-home').style.display = view === 'home' ? 'block' : 'none';
@@ -9846,6 +9924,30 @@ var pinDelay = Math.floor(Math.random() * 150);
     // ===== MOBILE DAY PILL =====
     var mobPillIndex = 0;
 
+    function dimMapPinsToDay(dayIndex) {
+      activityMarkers.forEach(function(m) {
+        var el = m.marker && m.marker.children[0];
+        if (el) {
+          if (m.dayIndex === dayIndex) {
+            el.classList.remove('map-pin-dimmed');
+            m.marker.classList.add('map-pin-active');
+          } else {
+            el.classList.add('map-pin-dimmed');
+            m.marker.classList.remove('map-pin-active');
+          }
+        }
+      });
+      document.getElementById('mob-all-days-chip').style.display = 'block';
+    }
+    function undimAllMapPins() {
+      activityMarkers.forEach(function(m) {
+        var el = m.marker && m.marker.children[0];
+        if (el) el.classList.remove('map-pin-dimmed');
+        if (m.marker) m.marker.classList.remove('map-pin-active');
+      });
+      document.getElementById('mob-all-days-chip').style.display = 'none';
+    }
+
     var mobPillInited = false;
 
     function initMobPill() {
@@ -9857,22 +9959,6 @@ var pinDelay = Math.floor(Math.random() * 150);
 
       if (mobPillInited) return;
       mobPillInited = true;
-
-      function dimMapPinsToDay(dayIndex) {
-    activityMarkers.forEach(function(m) {
-      var el = m.marker && m.marker.children[0];
-      if (el) {
-        if (m.dayIndex === dayIndex) {
-          el.classList.remove('map-pin-dimmed');
-          m.marker.classList.add('map-pin-active');
-        } else {
-          el.classList.add('map-pin-dimmed');
-          m.marker.classList.remove('map-pin-active');
-        }
-      }
-    });
-    document.getElementById('mob-all-days-chip').style.display = 'block';
-  }
   function undimAllMapPins() {
     activityMarkers.forEach(function(m) {
       var el = m.marker && m.marker.children[0];
@@ -9880,7 +9966,9 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (m.marker) m.marker.classList.remove('map-pin-active');
     });
     document.getElementById('mob-all-days-chip').style.display = 'none';
+    applyMapFilter();
   }
+
   document.getElementById('mob-pill-prev').addEventListener('click', function() {
         if (mobPillIndex > 0) {
           mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); closeMobDaySummary();
@@ -10161,12 +10249,7 @@ var pinDelay = Math.floor(Math.random() * 150);
         closeMapFloatCard();
         closeMobPinSheet();
         closeMobDaySummary();
-        if (activityMarkers.length > 0) {
-          clearActivityMarkers();
-          document.querySelectorAll('.day-card').forEach(function(c) { c.classList.remove('active'); });
-          document.querySelectorAll('.mob-day-card').forEach(function(c) { c.classList.remove('active'); });
-          cityMarkerObjs.forEach(function(obj) { obj.marker.map = map; });
-        }
+        undimAllMapPins();
       });
     }
 
@@ -13143,6 +13226,14 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
 
   <!-- MOBILE SEARCH FAB -->
   <button id="mob-search-btn" onclick="setView('discovery'); setTimeout(function(){ var s = document.getElementById('disc-search-input'); if(s) s.focus(); }, 300);">🔍</button>
+
+  <!-- MAP FILTER BAR -->
+  <div id="map-filter-bar">
+    <button class="map-filter-pill map-filter-active" data-filter="all" onclick="toggleMapFilter('all')">All</button>
+    <button class="map-filter-pill map-filter-active" data-filter="activity" onclick="toggleMapFilter('activity')">⭐ Activities</button>
+    <button class="map-filter-pill map-filter-active" data-filter="food" onclick="toggleMapFilter('food')">🍴 Food</button>
+    <button class="map-filter-pill map-filter-active" data-filter="accommodation" onclick="toggleMapFilter('accommodation')">🏠 Stays</button>
+  </div>
 
   <!-- MOBILE DAY PILL -->
   <div id="mob-all-days-chip">
