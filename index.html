@@ -210,7 +210,7 @@
       animation: fadeInUp 0.2s ease;
     }
     @media (max-width: 640px) {
-      #map-float-card { bottom: 82px; left: 50%; transform: translateX(-50%); width: 280px; z-index: 2600; }
+      #map-float-card { bottom: 110px; left: 50%; transform: translateX(-50%); width: 280px; z-index: 2600; }
     }
     #map-float-card.open { display: block; }
     #map-float-card img { width:100%; height:120px; object-fit:cover; display:block; }
@@ -921,7 +921,28 @@
       .panel-tab { padding: 8px 10px; font-size: 10px; }
 
       /* ===== FLOATING DAY PILL ===== */
-      #mob-day-pill {
+      #mob-all-days-chip {
+  display: none;
+  text-align: center;
+  margin-bottom: 6px;
+}
+#mob-all-days-chip button {
+  background: rgba(30,30,40,0.75);
+  color: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 12px;
+  padding: 4px 14px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.map-pin-dimmed {
+  opacity: 0.25;
+  filter: grayscale(1) brightness(1.4);
+}
+gmp-advanced-marker.map-pin-active {
+  z-index: 9999 !important;
+}
+#mob-day-pill {
         display: none;
         position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
         z-index: 2500; align-items: center; gap: 0;
@@ -1045,6 +1066,24 @@
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.pin-name-label {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 3px;
+  font-size: 11px;
+  font-family: Roboto, Arial, sans-serif;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 3px #fff, 0 -1px 3px #fff, 1px 0 3px #fff, -1px 0 3px #fff;
+}
+.map-zoom-labels-on .pin-name-label {
+  display: block;
 }
 .map-pin-bubble.expanded .pin-label {
   display: inline;
@@ -9388,6 +9427,16 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         setupRealtimeSync();
         if (isMobile()) { initMobPill(); updateMobPill(); }
         loadAllDayPins();
+        map.addListener('zoom_changed', function() {
+          var mapEl = document.getElementById('map');
+          if (mapEl) {
+            if (map.getZoom() >= 12) {
+              mapEl.classList.add('map-zoom-labels-on');
+            } else {
+              mapEl.classList.remove('map-zoom-labels-on');
+            }
+          }
+        });
         var pill = document.getElementById('mob-day-pill');
         if (pill && isMobile() && currentView === 'map') { pill.classList.add('active'); }
         fetchExchangeRates(function() {
@@ -9581,7 +9630,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
             var place = results[0];
             service.getDetails({ placeId: place.place_id, fields: ['name', 'rating', 'user_ratings_total', 'formatted_address', 'opening_hours', 'photos', 'url'] }, function(details, detailStatus) {
               var isDoneSplit = item.done && item.done[task.type === 'food' ? 'food_' + ((item.food[task.index] && item.food[task.index].uid) ? item.food[task.index].uid : task.index) : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object' && item.activities[task.index].uid) ? item.activities[task.index].uid : task.index)];
-              var el = buildActivityPinEl(task.type, cityColour2, isDoneSplit);
+              var el = buildActivityPinEl(task.type, cityColour2, isDoneSplit, task.name);
               var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: splitMap, title: task.name, content: el });
               var cardContent = '<div style="width:240px;font-family:system-ui,sans-serif;">';
               var photoUrl = (details && detailStatus === google.maps.places.PlacesServiceStatus.OK && details.photos && details.photos.length > 0)
@@ -9630,7 +9679,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       closeMapFloatCard();
     }
 
-    function buildActivityPinEl(type, cityColour, isDone) {
+    function buildActivityPinEl(type, cityColour, isDone, name) {
       var iconPath = '';
       var pinColour = '#2D9E75';
       if (type === 'food') {
@@ -9644,13 +9693,15 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       }
       var el = document.createElement('div');
       el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;' + (isDone ? 'opacity:0.45;filter:grayscale(0.6);' : '');
+      el.style.position = 'relative';
       el.innerHTML =
         '<svg width="26" height="32" viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 5px rgba(0,0,0,0.3));">' +
           '<path d="M18 0C8.06 0 0 8.06 0 18c0 12 18 26 18 26S36 30 36 18C36 8.06 27.94 0 18 0z" fill="' + pinColour + '"/>' +
           '<svg x="9" y="7" width="18" height="18" viewBox="0 0 24 24" fill="none">' +
             '<path d="' + iconPath + '" fill="white"/>' +
           '</svg>' +
-        '</svg>';
+        '</svg>' +
+        '<div class="pin-name-label">' + (name ? (name.length > 22 ? name.slice(0, 21) + '…' : name) : '') + '</div>';
       return el;
     }
 
@@ -9676,7 +9727,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       var cached = geocodeCache[cacheKey];
       if (cached) {
         var isDone = item.done && item.done[task.type === 'food' ? 'food_' + ((item.food[task.index] && item.food[task.index].uid) ? item.food[task.index].uid : task.index) : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object' && item.activities[task.index].uid) ? item.activities[task.index].uid : task.index)];
-        var el = buildActivityPinEl(task.type, cityColour, isDone);
+        var el = buildActivityPinEl(task.type, cityColour, isDone, task.name);
         var dayIdx2 = currentTrip.days.indexOf(item);
         var doneKey = task.type === 'food' ? 'food_' + ((item.food[task.index] && item.food[task.index].uid) ? item.food[task.index].uid : task.index) : task.type === 'accommodation' ? 'accom_' + task.index : 'act_' + ((item.activities[task.index] && typeof item.activities[task.index] === 'object' && item.activities[task.index].uid) ? item.activities[task.index].uid : task.index);
         el.id = 'pinbubble-' + dayIdx2 + '-' + doneKey;
@@ -9722,7 +9773,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
             }
             var isDone = item.done && item.done[doneKey];
 var pinDelay = Math.floor(Math.random() * 150);
-            var el = buildActivityPinEl(task.type, cityColour, isDone);
+            var el = buildActivityPinEl(task.type, cityColour, isDone, task.name);
             el.id = 'pinbubble-' + dayIdx2 + '-' + doneKey;
             el.style.opacity = '0';
             el.style.transform = 'translateY(-10px) scale(0.8)';
@@ -9807,14 +9858,39 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (mobPillInited) return;
       mobPillInited = true;
 
-      document.getElementById('mob-pill-prev').addEventListener('click', function() {
+      function dimMapPinsToDay(dayIndex) {
+    activityMarkers.forEach(function(m) {
+      var el = m.marker && m.marker.children[0];
+      if (el) {
+        if (m.dayIndex === dayIndex) {
+          el.classList.remove('map-pin-dimmed');
+          m.marker.classList.add('map-pin-active');
+        } else {
+          el.classList.add('map-pin-dimmed');
+          m.marker.classList.remove('map-pin-active');
+        }
+      }
+    });
+    document.getElementById('mob-all-days-chip').style.display = 'block';
+  }
+  function undimAllMapPins() {
+    activityMarkers.forEach(function(m) {
+      var el = m.marker && m.marker.children[0];
+      if (el) el.classList.remove('map-pin-dimmed');
+      if (m.marker) m.marker.classList.remove('map-pin-active');
+    });
+    document.getElementById('mob-all-days-chip').style.display = 'none';
+  }
+  document.getElementById('mob-pill-prev').addEventListener('click', function() {
         if (mobPillIndex > 0) {
           mobPillIndex--; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); closeMobDaySummary();
+          dimMapPinsToDay(mobPillIndex);
         }
       });
       document.getElementById('mob-pill-next').addEventListener('click', function() {
         if (mobPillIndex < currentTrip.days.length - 1) {
           mobPillIndex++; updateMobPill(); loadMobPillDay(); closeMapFloatCard(); closeMobDaySummary();
+          dimMapPinsToDay(mobPillIndex);
         }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
@@ -13069,6 +13145,9 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
   <button id="mob-search-btn" onclick="setView('discovery'); setTimeout(function(){ var s = document.getElementById('disc-search-input'); if(s) s.focus(); }, 300);">🔍</button>
 
   <!-- MOBILE DAY PILL -->
+  <div id="mob-all-days-chip">
+    <button onclick="undimAllMapPins()">Show all days</button>
+  </div>
   <div id="mob-day-pill">
     <button class="mob-pill-arrow" id="mob-pill-prev">‹</button>
     <div id="mob-pill-center">
