@@ -684,7 +684,7 @@
     #disc-search-input:focus { border-color: var(--accent); background: var(--white); }
     #disc-search-btn { font-family: inherit; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap; }
     #disc-map { width: 100%; height: 280px; flex-shrink: 0; background: var(--sand-dark); }
-    #disc-body { padding: 16px; flex: 1; }
+    #disc-body { padding: 0; flex: 0 0 auto; }
     .disc-result-card { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; }
     .disc-result-card:hover { box-shadow: var(--card-shadow-hover); }
     .disc-result-card-body { padding: 12px 14px; }
@@ -1438,7 +1438,8 @@ gmp-advanced-marker.map-pin-active {
       <button id="disc-search-btn" onclick="runDiscoverySearch()">Search</button>
     </div>
     <div id="disc-map"></div>
-    <div id="disc-body"></div>
+    <div id="disc-body" style="margin:0;padding:0;"></div>
+    <div id="disc-lists-section" style="margin-top:0;"></div>
   </div>
   <div id="de-add-sheet">
     <div class="de-add-sheet-title" id="de-add-sheet-title">Add Activity</div>
@@ -3929,7 +3930,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('view-food').style.display = view === 'food' ? 'block' : 'none';
       document.getElementById('view-transport').style.display = view === 'transport' ? 'block' : 'none';
       document.getElementById('view-accommodation').style.display = view === 'accommodation' ? 'block' : 'none';
-      document.getElementById('view-lists').style.display = view === 'lists' ? 'block' : 'none';
+      document.getElementById('view-lists').style.display = 'none';
+      if (view === 'lists') { view = 'discovery'; currentView = 'discovery'; }
       document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
       document.getElementById('view-structure').style.display = view === 'structure' ? 'block' : 'none';
       var rEl = document.getElementById('view-route');
@@ -4349,7 +4351,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       list.items.push(item);
       saveToStorage();
       closeAddToListSheet();
-      renderLists();
+      renderDiscLists();
     }
 
     function deleteListItem(listId, itemId) {
@@ -4442,7 +4444,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                 html += '<div style="padding:12px 16px;border-bottom:1px solid var(--sand-dark);">';
                 // Item header
                 html += '<div style="display:flex;align-items:flex-start;gap:10px;">';
-                html += '<div style="flex:1;min-width:0;cursor:pointer;" onclick="toggleListItemEdit(\'' + list.id + '\',\'' + item.id + '\')">';
+                html += '<div style="flex:1;min-width:0;cursor:pointer;" onclick="discPanToListItem(\'' + (item.placeId || '') + '\',\'' + item.name.replace(/'/g, "\\'") + '\')">';
                 html += '<div style="font-size:13px;font-weight:700;color:var(--ink);">' + item.name + '</div>';
                 if (item.assignedDayIndex !== null && item.assignedDayIndex !== undefined) {
                   var assignedDay = currentTrip.days[item.assignedDayIndex];
@@ -9594,7 +9596,6 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         gestureHandling: 'greedy'
       });
 
-      loadDiscWishlist();
       loadApiKeys();
       loadFromStorage(function() {
         currentTrip = trips[currentTripKey];
@@ -11426,6 +11427,127 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     var discMap = null, discMarkers = [], discTripMarkers = [], discCurrentPlace = null;
     var discWishlist = [];
 
+    function renderDiscLists() {
+      var el = document.getElementById('disc-lists-section');
+      if (!el) return;
+      if (!Array.isArray(currentTrip.lists)) currentTrip.lists = [];
+      var lists = currentTrip.lists;
+      var html = '<div style="padding:16px;max-width:680px;margin:0 auto;">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:8px;border-top:2px solid var(--sand-dark);">';
+      html += '<h2 style="margin:0;font-size:20px;">📋 Lists</h2>';
+      html += '<button onclick="createList();setTimeout(renderDiscLists,100)" style="font-family:inherit;font-size:13px;font-weight:700;padding:8px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;">+ New List</button>';
+      html += '</div>';
+      if (lists.length === 0) {
+        html += '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);">';
+        html += '<div style="font-size:40px;margin-bottom:12px;">📋</div>';
+        html += '<div style="font-size:15px;font-weight:600;margin-bottom:6px;">No lists yet</div>';
+        html += '<div style="font-size:13px;">Create a list to start saving places</div>';
+        html += '</div>';
+      } else {
+        lists.forEach(function(list) {
+          var isExpanded = !!_listsExpandedIds[list.id];
+          var itemCount = list.items ? list.items.length : 0;
+          html += '<div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--card-shadow);margin-bottom:12px;overflow:hidden;">';
+          html += '<div style="display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer;" onclick="toggleListExpand(\'' + list.id + '\');renderDiscLists()">';
+          html += '<div style="font-size:12px;color:var(--ink-muted);">' + (isExpanded ? '▼' : '▶') + '</div>';
+          html += '<div style="flex:1;font-size:15px;font-weight:700;color:var(--ink);">' + list.name + '</div>';
+          html += '<span style="font-size:12px;color:var(--ink-muted);margin-right:4px;">' + itemCount + ' place' + (itemCount !== 1 ? 's' : '') + '</span>';
+          html += '<button onclick="event.stopPropagation();discRenameList(\'' + list.id + '\',\'' + list.name.replace(/'/g, "\\'") + '\')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;" title="Rename">✏️</button>';
+          html += '<button onclick="event.stopPropagation();deleteList(\'' + list.id + '\');renderDiscLists()" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;" title="Delete">🗑️</button>';
+          html += '</div>';
+          if (isExpanded) {
+            html += '<div style="border-top:1px solid var(--sand-dark);">';
+            if (itemCount === 0) {
+              html += '<div style="padding:16px;font-size:13px;color:var(--ink-muted);">No places yet — tap + Add Place to get started</div>';
+            } else {
+              list.items.forEach(function(item) {
+                var key = list.id + '_' + item.id;
+                html += '<div style="padding:12px 16px;border-bottom:1px solid var(--sand-dark);">';
+                html += '<div style="display:flex;align-items:flex-start;gap:10px;">';
+                html += '<div style="flex:1;min-width:0;cursor:pointer;" onclick="discPanToListItem(\'' + (item.placeId || '') + '\',\'' + item.name.replace(/'/g, "\\'") + '\')">';
+                html += '<div style="font-size:13px;font-weight:700;color:var(--ink);">' + item.name + '</div>';
+                if (item.assignedDayIndex !== null && item.assignedDayIndex !== undefined) {
+                  var assignedDay = currentTrip.days[item.assignedDayIndex];
+                  var dayLabel = assignedDay ? (assignedDay.city + ' · ' + getDayDate(assignedDay, currentTrip)) : 'Day ' + (item.assignedDayIndex + 1);
+                  html += '<div style="font-size:10px;font-weight:700;color:var(--accent);margin-top:4px;">✓ Added to ' + dayLabel + '</div>';
+                }
+                html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+                if (item.mapsLink) html += '<a href="' + item.mapsLink + '" target="_blank" style="font-size:18px;text-decoration:none;" title="Open in Maps" onclick="event.stopPropagation()">📍</a>';
+                if (item.instagramLink) html += '<a href="' + item.instagramLink + '" target="_blank" style="font-size:18px;text-decoration:none;" title="Instagram" onclick="event.stopPropagation()">📸</a>';
+                html += '</div></div>';
+                html += '<button onclick="showAddToDaySheet(\'' + list.id + '\',\'' + item.id + '\')" style="font-family:inherit;font-size:11px;padding:4px 8px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;flex-shrink:0;margin-right:4px;">+ Day</button>';
+                html += '<button onclick="deleteListItem(\'' + list.id + '\',\'' + item.id + '\');renderDiscLists()" style="font-family:inherit;font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--danger);color:var(--danger);background:none;cursor:pointer;flex-shrink:0;">✕</button>';
+                html += '</div>';
+                html += '<div id="disc-list-item-edit-' + key + '" style="display:none;margin-top:10px;padding:10px;background:var(--sand);border-radius:var(--radius-sm);">';
+                html += '<label style="display:block;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Notes</label>';
+                html += '<textarea id="disc-list-item-notes-' + key + '" placeholder="e.g. great for sunset drinks..." rows="2" style="width:100%;font-family:inherit;font-size:12px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);box-sizing:border-box;margin-bottom:8px;resize:none;">' + (item.notes || '') + '</textarea>';
+                html += '<label style="display:block;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Maps link</label>';
+                html += '<input id="disc-list-item-maps-' + key + '" type="text" value="' + (item.mapsLink || '') + '" placeholder="https://maps.google.com/..." style="width:100%;font-family:inherit;font-size:12px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);box-sizing:border-box;margin-bottom:8px;">';
+                html += '<label style="display:block;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Instagram link</label>';
+                html += '<input id="disc-list-item-ig-' + key + '" type="text" value="' + (item.instagramLink || '') + '" placeholder="https://instagram.com/..." style="width:100%;font-family:inherit;font-size:12px;color:var(--ink);border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);box-sizing:border-box;margin-bottom:8px;">';
+                html += '<button onclick="discSaveListItem(\'' + list.id + '\',\'' + item.id + '\')" style="font-family:inherit;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;">Save</button>';
+                html += '</div>';
+                html += '</div>';
+              });
+            }
+            html += '<div style="padding:12px 16px;">';
+            html += '<button onclick="showAddToListSheet(\'' + list.id + '\')" style="font-family:inherit;font-size:12px;font-weight:700;padding:7px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;cursor:pointer;">+ Add Place</button>';
+            html += '</div>';
+            html += '</div>';
+          }
+          html += '</div>';
+        });
+      }
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function discPanToListItem(placeId, name) {
+      if (!placeId) return;
+      function doPan() {
+        if (!discMap) return;
+        var service = new google.maps.places.PlacesService(discMap);
+        service.getDetails({ placeId: placeId, fields: ['geometry', 'name'] }, function(place, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place.geometry) {
+            discMap.panTo(place.geometry.location);
+            discMap.setZoom(16);
+            var mapEl = document.getElementById('disc-map');
+            if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      }
+      if (!discMap) {
+        setView('discovery');
+        setTimeout(doPan, 600);
+      } else {
+        doPan();
+      }
+    }
+
+    function discRenameList(listId, currentName) {
+      var n = prompt('Rename list:', currentName);
+      if (n && n.trim()) {
+        var l = (currentTrip.lists || []).find(function(x) { return x.id === listId; });
+        if (l) { l.name = n.trim(); saveToStorage(); renderDiscLists(); }
+      }
+    }
+
+    function discSaveListItem(listId, itemId) {
+      var list = (currentTrip.lists || []).find(function(l) { return l.id === listId; });
+      if (!list) return;
+      var item = (list.items || []).find(function(i) { return i.id === itemId; });
+      if (!item) return;
+      var key = listId + '_' + itemId;
+      var notes = document.getElementById('disc-list-item-notes-' + key);
+      var maps = document.getElementById('disc-list-item-maps-' + key);
+      var ig = document.getElementById('disc-list-item-ig-' + key);
+      if (notes) item.notes = notes.value.trim();
+      if (maps) item.mapsLink = maps.value.trim();
+      if (ig) item.instagramLink = ig.value.trim();
+      saveToStorage();
+      renderDiscLists();
+    }
+
     function renderDiscovery() {
       var body = document.getElementById('disc-body');
       if (!body) return;
@@ -11443,8 +11565,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         google.maps.event.trigger(discMap, 'resize');
       }
 
-      renderDiscWishlistPill();
       renderDiscBody();
+      renderDiscLists();
     }
 
     function clearDiscoverySearch() {
@@ -11453,6 +11575,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (input) input.value = '';
       if (clearBtn) clearBtn.style.display = 'none';
       renderDiscBody();
+      renderDiscLists();
     }
 
     function initDiscAutocomplete() {
@@ -11515,18 +11638,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     }
 
-    function renderDiscWishlistPill() {
-      var existing = document.getElementById('disc-wishlist-pill');
-      if (existing) { existing.remove(); }
-      var discView = document.getElementById('view-discovery');
-      if (!discView) return;
-      var pill = document.createElement('div');
-      pill.id = 'disc-wishlist-pill';
-      pill.style.cssText = 'position:fixed;bottom:' + (isMobile() ? '24px' : '120px') + ';right:16px;z-index:2000;background:var(--white);border:1px solid var(--sand-dark);border-radius:50px;padding:8px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.25);cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink);transition:all 0.15s;';
-      pill.innerHTML = '⭐ <span>Wishlist</span><span style="background:var(--accent);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;">' + discWishlist.length + '</span>';
-      pill.onclick = openWishlistDrawer;
-      discView.appendChild(pill);
-    }
+    function renderDiscWishlistPill() { /* wishlist removed */ }
 
     function addDiscTripMarkers() {
       discTripMarkers.forEach(function(m) { m.map = null; });
@@ -11550,11 +11662,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     function renderDiscBody() {
       var body = document.getElementById('disc-body');
       if (!body) return;
-      body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);">' +
-        '<div style="font-size:40px;margin-bottom:12px;">🔍</div>' +
-        '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Discover places</div>' +
-        '<div style="font-size:12px;line-height:1.6;">Search above to find restaurants, temples, beaches and more. Save them to your wishlist or add directly to a day.</div>' +
-      '</div>';
+      body.innerHTML = '';
+      body.style.minHeight = '0';
+      body.style.padding = '0';
+      body.style.margin = '0';
     }
 
     function runDiscoverySearch() {
@@ -11602,7 +11713,6 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
               '</div>' +
               '<div class="disc-result-actions">'
                 '<button class="kbtn" style="border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="event.stopPropagation();showAddToTripSheet(' + idx + ')">+ Add to Trip</button>' +
-                '<button class="kbtn" onclick="event.stopPropagation();saveDiscResultToWishlist(' + idx + ')">⭐ Wishlist</button>' +
                 '<a href="https://www.google.com/maps/place/?q=place_id:' + place.place_id + '" target="_blank" onclick="event.stopPropagation();" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
               '</div>' +
             '</div>' +
@@ -11611,6 +11721,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         discMap.fitBounds(bounds, { padding: 40 });
         body.innerHTML = '<div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">' + results.length + ' results for "' + query + '"</div>' + cards.join('');
         window._discResults = results.slice(0, 8);
+        renderDiscLists();
       });
     }
 
@@ -11771,124 +11882,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       document.getElementById('disc-add-overlay').classList.remove('open');
     }
 
-    function saveDiscResultToWishlist(idx) {
-      var results = window._discResults;
-      if (!results || !results[idx]) return;
-      var place = results[idx];
-      var already = discWishlist.some(function(w) { return w.place_id === place.place_id; });
-      if (already) { return; }
-      var linkInput = idx === 0
-        ? document.getElementById('disc-link-input')
-        : document.getElementById('disc-link-input-' + idx);
-      var savedLink = linkInput ? linkInput.value.trim() : '';
-      discWishlist.push({ name: place.name, address: place.formatted_address || '', rating: place.rating || 0, place_id: place.place_id, lat: place.geometry.location.lat(), lng: place.geometry.location.lng(), link: savedLink });
-      saveDiscWishlist();
-      renderDiscWishlistPill();
-      var btn = document.querySelectorAll('.disc-result-card')[idx];
-      var wbtn = btn ? btn.querySelector('button:nth-child(2)') : null;
-      if (wbtn) { wbtn.textContent = '⭐ Saved!'; wbtn.style.color = 'var(--accent)'; wbtn.style.borderColor = 'var(--accent)'; }
-    }
-
-    function removeFromWishlist(idx) {
-      discWishlist.splice(idx, 1);
-      saveDiscWishlist();
-      renderDiscWishlistPill();
-      openWishlistDrawer();
-    }
-
-    function promoteWishlistItem(idx) {
-      showAddToTripSheet(idx, true);
-    }
-
-    function showWishlistOnMap(idx) {
-      var item = discWishlist[idx];
-      if (!item || !discMap) return;
-      discMap.panTo({ lat: item.lat, lng: item.lng });
-      discMap.setZoom(15);
-      var el = document.getElementById('disc-map');
-      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-    }
-
-    function openWishlistDrawer() {
-      var existing = document.getElementById('disc-wishlist-drawer');
-      if (existing) { existing.remove(); }
-      var overlay = document.createElement('div');
-      overlay.id = 'disc-wishlist-overlay';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:5400;';
-      overlay.onclick = closeWishlistDrawer;
-      document.body.appendChild(overlay);
-      var drawer = document.createElement('div');
-      drawer.id = 'disc-wishlist-drawer';
-      drawer.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:5500;background:var(--white);border-radius:20px 20px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,0.3);border-top:1px solid var(--sand-dark);max-height:75vh;display:flex;flex-direction:column;animation:fadeInUp 0.25s ease;';
-      var bodyHtml;
-      if (!discWishlist.length) {
-        bodyHtml = '<div style="padding:40px 20px;text-align:center;color:var(--ink-muted);"><div style="font-size:36px;margin-bottom:12px;">⭐</div><div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Wishlist is empty</div><div style="font-size:12px;line-height:1.6;">Search for a place and tap ⭐ Wishlist to save it here for later.</div></div>';
-      } else {
-        bodyHtml = discWishlist.map(function(item, idx) {
-          return '<div class="disc-wishlist-item" style="margin:0;border-radius:0;border-left:none;border-right:none;border-top:none;">' +
-            '<div class="disc-wishlist-icon">📍</div>' +
-            '<div class="disc-wishlist-info">' +
-              '<div class="disc-wishlist-name">' + item.name + '</div>' +
-              '<div class="disc-wishlist-address">' + (item.address || '') + '</div>' +
-              (item.rating ? '<div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px;">★ ' + item.rating + '</div>' : '') +
-              '<div class="disc-wishlist-actions">' +
-                '<button class="kbtn" onclick="closeWishlistDrawer();setTimeout(function(){showAddToTripSheet(' + idx + ',true);},200);" style="border-color:var(--accent);color:var(--accent);font-weight:700;">+ Add to Trip</button>' +
-                '<button class="kbtn" onclick="showWishlistOnMap(' + idx + ');closeWishlistDrawer();">📍 Map</button>' +
-                (item.link
-                  ? '<a href="' + item.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn">🔗 Link</button></a>'
-                  : '<button class="kbtn" onclick="addWishlistLink(' + idx + ')">🔗 Add link</button>') +
-                '<button class="kbtn" onclick="removeFromWishlist(' + idx + ')" style="border-color:var(--danger);color:var(--danger);">✕</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('');
-      }
-      drawer.innerHTML =
-        '<div style="width:36px;height:4px;background:var(--sand-dark);border-radius:2px;margin:12px auto 0;flex-shrink:0;"></div>' +
-        '<div style="padding:14px 20px 10px;border-bottom:1px solid var(--sand-dark);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">' +
-          '<div style="font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-0.02em;">⭐ Wishlist <span style="font-size:12px;font-weight:600;color:var(--ink-muted);">(' + discWishlist.length + ')</span></div>' +
-          '<button onclick="closeWishlistDrawer()" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--sand-dark);background:var(--sand);cursor:pointer;font-size:12px;color:var(--ink-muted);">×</button>' +
-        '</div>' +
-        '<div style="overflow-y:auto;flex:1;">' + bodyHtml + '</div>';
-      document.body.appendChild(drawer);
-    }
-
-    function closeWishlistDrawer() {
-      var drawer = document.getElementById('disc-wishlist-drawer');
-      var overlay = document.getElementById('disc-wishlist-overlay');
-      if (drawer) { drawer.remove(); }
-      if (overlay) { overlay.remove(); }
-    }
-
-    function addWishlistLink(idx) {
-      showModal('Add link',
-        '<div class="modal-field"><label>Instagram, TikTok, website...</label><input type="text" id="wishlist-link-input" placeholder="https://..." value="' + (discWishlist[idx].link || '') + '" autofocus></div>',
-        function() {
-          var val = document.getElementById('wishlist-link-input').value.trim();
-          discWishlist[idx].link = val;
-          saveDiscWishlist();
-          closeWishlistDrawer();
-          openWishlistDrawer();
-        }
-      );
-    }
-
-    function saveDiscWishlist() {
-      try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
-      db.collection('trips').doc(currentTripKey).update({ wishlist: JSON.stringify(discWishlist) })
-        .then(function() { console.log('Wishlist saved to Firestore', discWishlist.length, 'items'); })
-        .catch(function(e) { console.warn('Wishlist Firestore save failed:', e); });
-    }
-
-    function loadDiscWishlist() {
-      try { var s = localStorage.getItem('disc_wishlist'); if (s) { discWishlist = JSON.parse(s); } } catch(e) {}
-      db.collection('trips').doc(currentTripKey).get().then(function(doc) {
-        if (doc.exists && doc.data().wishlist) {
-          discWishlist = JSON.parse(doc.data().wishlist);
-          try { localStorage.setItem('disc_wishlist', JSON.stringify(discWishlist)); } catch(e) {}
-        }
-      }).catch(function(e) { console.warn('Could not load wishlist:', e); });
-    }
+    /* wishlist removed v5.70 */
 
     // ===== MOBILE ROUTE SUGGEST =====
     function openDaySummaryMaps() {
