@@ -4166,6 +4166,25 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var _listsAddToDayListId = null;
     var _listsAddToDayItemId = null;
 
+    var _addToDayOpenIndex = null;
+
+    function toggleAddToDayRow(index) {
+      var prev = _addToDayOpenIndex;
+      _addToDayOpenIndex = (prev === index) ? null : index;
+      // Collapse previous
+      if (prev !== null && prev !== index) {
+        var prevEl = document.getElementById('add-to-day-row-' + prev);
+        if (prevEl) prevEl.style.display = 'none';
+        var prevRow = document.getElementById('add-to-day-header-' + prev);
+        if (prevRow) prevRow.style.background = 'none';
+      }
+      // Toggle current
+      var curEl = document.getElementById('add-to-day-row-' + index);
+      if (curEl) curEl.style.display = (_addToDayOpenIndex === index) ? 'block' : 'none';
+      var curRow = document.getElementById('add-to-day-header-' + index);
+      if (curRow) curRow.style.background = (_addToDayOpenIndex === index) ? 'var(--sand)' : 'none';
+    }
+
     function showAddToDaySheet(listId, itemId) {
       _listsAddToDayListId = listId;
       _listsAddToDayItemId = itemId;
@@ -4173,20 +4192,54 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var list = (currentTrip.lists || []).find(function(l) { return l.id === listId; });
       if (list) item = (list.items || []).find(function(i) { return i.id === itemId; });
       if (!item) return;
+      _addToDayOpenIndex = null;
       var bodyHtml = '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px;">Add to day</div>';
       bodyHtml += '<div style="font-size:12px;color:var(--ink-muted);margin-bottom:16px;">' + item.name + '</div>';
-      bodyHtml += '<div style="display:flex;flex-direction:column;gap:2px;">';
+      bodyHtml += '<div style="display:flex;flex-direction:column;gap:0;">';
       currentTrip.days.forEach(function(day, index) {
         var emoji = getCityEmoji(day.city);
         var dateLabel = getDayDate(day, currentTrip);
         var isAssigned = item.assignedDayIndex === index;
-        bodyHtml += '<div onclick="confirmAddToDay(' + index + ')" style="display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--sand-dark);cursor:pointer;">';
+        var acts = (day.activities || []);
+        var foods = (day.food || []);
+        var actCount = acts.length;
+        var foodCount = foods.length;
+        var countParts = [];
+        if (actCount > 0) countParts.push(actCount + ' activit' + (actCount === 1 ? 'y' : 'ies'));
+        if (foodCount > 0) countParts.push(foodCount + ' restaurant' + (foodCount === 1 ? '' : 's'));
+        var countLabel = countParts.length ? countParts.join(' · ') : 'Empty day';
+        // Build preview items
+        var allItems = [];
+        acts.forEach(function(a) { allItems.push({ name: a.name || 'Activity', type: 'act' }); });
+        foods.forEach(function(f) { allItems.push({ name: f.name || 'Food', type: 'food' }); });
+        var previewItems = allItems.slice(0, 5);
+        var overflow = allItems.length - previewItems.length;
+        var previewHtml = '';
+        previewItems.forEach(function(pi) {
+          var icon = pi.type === 'food' ? '🍽️' : '📍';
+          previewHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:var(--ink-muted);">';
+          previewHtml += '<span>' + icon + '</span><span>' + pi.name + '</span></div>';
+        });
+        if (overflow > 0) {
+          previewHtml += '<div style="font-size:11px;color:var(--ink-muted);padding:4px 0;">+ ' + overflow + ' more</div>';
+        }
+        bodyHtml += '<div id="add-to-day-header-' + index + '" onclick="toggleAddToDayRow(' + index + ')" style="display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid var(--sand-dark);cursor:pointer;border-radius:var(--radius-sm);transition:background 0.15s;">';
         bodyHtml += '<span style="font-size:18px;width:24px;text-align:center;">' + emoji + '</span>';
         bodyHtml += '<div style="flex:1;min-width:0;">';
         bodyHtml += '<div style="font-size:13px;font-weight:700;color:var(--ink);">Day ' + (index + 1) + ' · ' + day.city + '</div>';
-        bodyHtml += '<div style="font-size:11px;color:var(--ink-muted);">' + dateLabel + '</div>';
+        bodyHtml += '<div style="font-size:11px;color:var(--ink-muted);">' + dateLabel + ' · ' + countLabel + '</div>';
         bodyHtml += '</div>';
-        if (isAssigned) bodyHtml += '<span style="font-size:11px;font-weight:700;color:var(--accent);">✓ Added</span>';
+        if (isAssigned) bodyHtml += '<span style="font-size:11px;font-weight:700;color:var(--accent);">✓</span>';
+        bodyHtml += '<span style="font-size:11px;color:var(--ink-muted);">›</span>';
+        bodyHtml += '</div>';
+        // Expanded accordion panel
+        bodyHtml += '<div id="add-to-day-row-' + index + '" style="display:none;padding:10px 16px 4px 16px;background:var(--sand);border-bottom:1px solid var(--sand-dark);">';
+        if (allItems.length === 0) {
+          bodyHtml += '<div style="font-size:12px;color:var(--ink-muted);padding:4px 0 8px;">Nothing planned yet.</div>';
+        } else {
+          bodyHtml += previewHtml;
+        }
+        bodyHtml += '<button onclick="confirmAddToDay(' + index + ')" style="width:100%;font-family:inherit;font-size:13px;font-weight:700;padding:9px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;margin-top:8px;margin-bottom:8px;">Add here</button>';
         bodyHtml += '</div>';
       });
       bodyHtml += '</div>';
