@@ -6404,7 +6404,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function deleteFoodDirect(dayIndex, foodIndex) {
       normaliseFood(currentTrip.days[dayIndex]);
-      currentTrip.days[dayIndex].food.splice(foodIndex, 1);
+      var day = currentTrip.days[dayIndex];
+      var uid = (day.food[foodIndex] || {}).uid;
+      if (uid) { var k = 'food_' + uid; if (day.done) delete day.done[k]; if (day.costs) delete day.costs[k]; if (day.cardNotes) delete day.cardNotes[k]; }
+      day.food.splice(foodIndex, 1);
       saveToStorage();
       renderFood();
     }
@@ -6622,7 +6625,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       });
       var daysHtml = sortedDays.map(function(item) {
         normaliseAccom(item); normaliseDayTransport(item);
-        var cityEmoji = getCityEmoji(item.city);
+        var cityEmoji = isTransitDay(item) ? '📍' : getCityEmoji(item.city);
 
         function makeItinItem(emoji, text, dayIndex, type, itemIndex) {
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(text + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination());
@@ -7238,7 +7241,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function inlineDeleteFood(dayIndex, i) {
       normaliseFood(currentTrip.days[dayIndex]);
-      currentTrip.days[dayIndex].food.splice(i, 1);
+      var day = currentTrip.days[dayIndex];
+      var uid = (day.food[i] || {}).uid;
+      if (uid) { var k = 'food_' + uid; if (day.done) delete day.done[k]; if (day.costs) delete day.costs[k]; if (day.cardNotes) delete day.cardNotes[k]; }
+      day.food.splice(i, 1);
       saveToStorage();
       refreshInlineEdit(dayIndex);
     }
@@ -8990,7 +8996,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     }
 
     function deleteActivity(index) { currentDayItem.activities.splice(index, 1); if (currentDayItem.activityCategories) { currentDayItem.activityCategories.splice(index, 1); } saveToStorage(); refreshPanelTabs(currentDayItem); }
-    function deleteFood(index) { currentDayItem.food.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
+    function deleteFood(index) { normaliseFood(currentDayItem); var uid = (currentDayItem.food[index] || {}).uid; if (uid) { var k = 'food_' + uid; if (currentDayItem.done) delete currentDayItem.done[k]; if (currentDayItem.costs) delete currentDayItem.costs[k]; if (currentDayItem.cardNotes) delete currentDayItem.cardNotes[k]; } currentDayItem.food.splice(index, 1); saveToStorage(); refreshPanelTabs(currentDayItem); }
     function updateActivityName(index, value) { if (!currentDayItem || !value.trim()) return; currentDayItem.activities[index] = value.trim(); saveToStorage(); rebuildTimeline(); }
     function updateActivityCat(index, value) { if (!currentDayItem) return; if (!currentDayItem.activityCategories) { currentDayItem.activityCategories = []; } currentDayItem.activityCategories[index] = value; saveToStorage(); refreshPanelTabs(currentDayItem); }
     function normaliseFood(item) {
