@@ -684,6 +684,9 @@
     #disc-search-input:focus { border-color: var(--accent); background: var(--white); }
     #disc-search-btn { font-family: inherit; font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; white-space: nowrap; }
     #disc-map { width: 100%; height: 280px; flex-shrink: 0; background: var(--sand-dark); }
+    #disc-divider { width: 100%; height: 10px; background: var(--sand-dark); cursor: row-resize; touch-action: none; display: flex; align-items: center; justify-content: center; z-index: 10; flex-shrink: 0; }
+    #disc-divider::after { content: ''; width: 36px; height: 3px; border-radius: 999px; background: var(--ink-muted); opacity: 0.4; }
+    #disc-drag-overlay { width: 100%; height: 40px; background: transparent; touch-action: none; flex-shrink: 0; margin-top: -40px; z-index: 11; pointer-events: none; }
     #disc-body { padding: 0; flex: 0 0 auto; }
     .disc-result-card { background: var(--white); border-radius: var(--radius); margin-bottom: 10px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; }
     .disc-result-card:hover { box-shadow: var(--card-shadow-hover); }
@@ -1438,6 +1441,8 @@ gmp-advanced-marker.map-pin-active {
       <button id="disc-search-btn" onclick="runDiscoverySearch()">Search</button>
     </div>
     <div id="disc-map"></div>
+    <div id="disc-divider"></div>
+    <div id="disc-drag-overlay"></div>
     <div id="disc-body" style="margin:0;padding:0;"></div>
     <div id="disc-lists-section" style="margin-top:0;"></div>
   </div>
@@ -11558,6 +11563,66 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       renderDiscLists();
     }
 
+    var discDividerInited = false;
+    function initDiscDivider() {
+      var mapPane = document.getElementById('disc-map');
+      var divider = document.getElementById('disc-divider');
+      var overlay = document.getElementById('disc-drag-overlay');
+      if (!mapPane || !divider) return;
+
+      function applyDiscDividerH(newH) {
+        var minH = 120;
+        var maxH = window.innerHeight - 200;
+        newH = Math.min(Math.max(newH, minH), maxH);
+        mapPane.style.height = newH + 'px';
+        localStorage.setItem('disc_divider_h', newH);
+        if (discMap) google.maps.event.trigger(discMap, 'resize');
+      }
+
+      var savedH = parseFloat(localStorage.getItem('disc_divider_h'));
+      if (!isNaN(savedH)) applyDiscDividerH(savedH);
+
+      if (discDividerInited) return;
+      discDividerInited = true;
+
+      var dragging = false;
+
+      if (!isMobile()) {
+        divider.addEventListener('pointerdown', function(e) {
+          dragging = true;
+          divider.setPointerCapture(e.pointerId);
+          e.preventDefault();
+        });
+        divider.addEventListener('pointermove', function(e) {
+          if (!dragging) return;
+          var mapTop = mapPane.getBoundingClientRect().top;
+          var newH = e.clientY - mapTop;
+          applyDiscDividerH(newH);
+        });
+        divider.addEventListener('pointerup', function() {
+          dragging = false;
+        });
+      } else {
+        if (overlay) {
+          overlay.style.pointerEvents = 'auto';
+          overlay.addEventListener('touchstart', function(e) {
+            dragging = true;
+            e.preventDefault();
+          }, { passive: false });
+          overlay.addEventListener('touchmove', function(e) {
+            if (!dragging) return;
+            var touch = e.touches[0];
+            var mapTop = mapPane.getBoundingClientRect().top;
+            var newH = touch.clientY - mapTop;
+            applyDiscDividerH(newH);
+            e.preventDefault();
+          }, { passive: false });
+          overlay.addEventListener('touchend', function() { dragging = false; });
+          overlay.addEventListener('touchcancel', function() { dragging = false; });
+        }
+      }
+    }
+
     function renderDiscovery() {
       var body = document.getElementById('disc-body');
       if (!body) return;
@@ -11571,10 +11636,21 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         });
         addDiscTripMarkers();
         initDiscAutocomplete();
+        discMap.addListener('zoom_changed', function() {
+          var discMapEl = document.getElementById('disc-map');
+          if (discMapEl) {
+            if (discMap.getZoom() >= 12) {
+              discMapEl.classList.add('map-zoom-labels-on');
+            } else {
+              discMapEl.classList.remove('map-zoom-labels-on');
+            }
+          }
+        });
       } else {
         google.maps.event.trigger(discMap, 'resize');
       }
 
+      initDiscDivider();
       renderDiscBody();
       renderDiscLists();
     }
@@ -11671,8 +11747,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         discMap.panTo(loc);
         discMap.setZoom(15);
         var el = document.createElement('div');
-        el.style.cssText = 'width:26px;height:26px;border-radius:50%;background:#e53935;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;cursor:pointer;';
-        el.textContent = '1';
+        el.style.cssText = 'width:26px;height:26px;border-radius:50%;background:#e53935;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);cursor:pointer;';
+        el.textContent = '';
         var marker = new google.maps.marker.AdvancedMarkerElement({ position: loc, map: discMap, content: el });
         discMarkers.push(marker);
         var closest = findClosestDay(loc);
@@ -11712,20 +11788,38 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     function addDiscItineraryPins() {
       discItineraryPins.forEach(function(m) { m.map = null; });
       discItineraryPins = [];
+      if (!discMap) return;
       currentTrip.days.forEach(function(day) {
-        var cityColour = (citySettings[day.city] || {}).color || '#2D9E75';
-        var allItems = (day.activities || []).concat(day.food || []);
-        allItems.forEach(function(act) {
-          geocodeActivity(act, day, function(lat, lng) {
-            if (!lat || !lng || !discMap) return;
-            var pinEl = buildActivityPinEl(act.type || 'default', cityColour, false, act.name);
-            var marker = new google.maps.marker.AdvancedMarkerElement({
-              position: { lat: lat, lng: lng },
-              map: discMap,
-              content: pinEl
-            });
-            discItineraryPins.push(marker);
+        var baseCity = day.city.split('>').pop().trim();
+        var cityColour = (citySettings[baseCity] || {}).color || '#2D9E75';
+        var allItems = (day.activities || []).map(function(a){ return { item: a, type: 'activity' }; })
+          .concat((day.food || []).map(function(f){ return { item: f, type: 'food' }; }));
+        allItems.forEach(function(entry) {
+          var act = entry.item;
+          var cacheKey = entry.type + '_' + act.name + '_' + baseCity;
+          var cached = geocodeCache[cacheKey];
+          if (!cached) return;
+          var pinEl = buildActivityPinEl(entry.type, cityColour, false, act.name);
+          var marker = new google.maps.marker.AdvancedMarkerElement({
+            position: { lat: cached.lat, lng: cached.lng },
+            map: discMap,
+            content: pinEl
           });
+          discItineraryPins.push(marker);
+        });
+        (currentTrip.stays || []).forEach(function(stay) {
+          var ciDay = getDayByCheckinRef(stay, currentTrip);
+          if (!ciDay || ciDay.id !== day.id) return;
+          var cacheKey = 'accom_' + stay.name + '_' + baseCity;
+          var cached = geocodeCache[cacheKey];
+          if (!cached) return;
+          var pinEl = buildActivityPinEl('accom', cityColour, false, stay.name);
+          var marker = new google.maps.marker.AdvancedMarkerElement({
+            position: { lat: cached.lat, lng: cached.lng },
+            map: discMap,
+            content: pinEl
+          });
+          discItineraryPins.push(marker);
         });
       });
     }
@@ -11733,20 +11827,6 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     function addDiscTripMarkers() {
       discTripMarkers.forEach(function(m) { m.map = null; });
       discTripMarkers = [];
-      var seen = {};
-      currentTrip.days.forEach(function(day) {
-        var baseName = day.city.split('>').pop().trim();
-        if (seen[baseName] || !day.lat || !day.lng) return;
-        seen[baseName] = true;
-        var s = citySettings[baseName] || { emoji: '📍', color: '#2D9E75' };
-        if (s.noMarker) return;
-        var el = document.createElement('div');
-        el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:default;';
-        el.innerHTML = '<div style="background:' + s.color + ';border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;opacity:0.75;">' + s.emoji + '</div>' +
-          '<div style="background:#fff;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-top:3px;box-shadow:0 1px 4px rgba(0,0,0,0.2);opacity:0.85;white-space:nowrap;">' + baseName + '</div>';
-        var m = new google.maps.marker.AdvancedMarkerElement({ position: { lat: day.lat, lng: day.lng }, map: discMap, content: el });
-        discTripMarkers.push(m);
-      });
       addDiscItineraryPins();
     }
 
@@ -11783,11 +11863,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           var closestHtml = closest ? '<div class="disc-closest-day">📅 Nearest to Day ' + closest.day + ' · ' + closest.city + '</div>' : '';
           var ratingHtml = place.rating ? '<span class="disc-result-rating">★ ' + place.rating + '</span>' : '';
           var el = document.createElement('div');
-          el.style.cssText = 'width:26px;height:26px;border-radius:50%;background:#e53935;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;';
-          el.textContent = (idx + 1) + '';
-          el.style.fontSize = '10px';
-          el.style.fontWeight = '700';
-          el.style.color = '#fff';
+          el.style.cssText = 'width:26px;height:26px;border-radius:50%;background:#e53935;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);cursor:pointer;';
+          el.textContent = '';
           var marker = new google.maps.marker.AdvancedMarkerElement({ position: place.geometry.location, map: discMap, content: el });
           marker.addListener('gmp-click', function() { scrollToDiscResult(idx); });
           discMarkers.push(marker);
@@ -11795,7 +11872,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           return '<div class="disc-result-card" id="disc-result-' + idx + '" onclick="selectDiscResult(' + idx + ')">' +
             '<div class="disc-result-card-body">' +
               '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">' +
-                '<div style="width:22px;height:22px;border-radius:50%;background:#e53935;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + (idx+1) + '</div>' +
+                '<div style="width:22px;height:22px;border-radius:50%;background:#e53935;border:2px solid #fff;flex-shrink:0;"></div>' +
                 '<div class="disc-result-name">' + place.name + '</div>' +
               '</div>' +
               closestHtml +
