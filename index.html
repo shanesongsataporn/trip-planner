@@ -6808,6 +6808,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var nightCount = block.days.length;
 
         // Hero banner: first available activity photo in this city
+        // Track it so activity cards below don't repeat it
         var heroPhoto = '';
         block.days.forEach(function(entry) {
           if (heroPhoto) return;
@@ -6815,10 +6816,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             if (!heroPhoto) { var p = getActPhoto(a); if (p) heroPhoto = p; }
           });
         });
+        var heroPhotoUrl = heroPhoto;
 
         html += '<div class="pdf-city-block">';
         if (heroPhoto) {
-          html += '<div style="position:relative;height:240px;overflow:hidden;">';
+          html += '<div class="pdf-city-banner" style="position:relative;height:240px;overflow:hidden;">';
           html += '<img src="' + heroPhoto + '" style="width:100%;height:100%;object-fit:cover;display:block;" />';
           html += '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(20,15,8,0.78),rgba(20,15,8,0.05));"></div>';
           html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:26px 34px;color:#f4f1ea;">';
@@ -6843,7 +6845,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
           // Day header — big numeral + date + note
           var dayNum = (di + 1) < 10 ? '0' + (di + 1) : '' + (di + 1);
-          html += '<div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:22px;">';
+          html += '<div class="pdf-day-header" style="display:flex;align-items:flex-end;gap:14px;margin-bottom:22px;">';
           html += '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:56px;font-weight:900;line-height:0.8;color:' + col + ';">' + dayNum + '</div>';
           html += '<div style="flex:1;border-bottom:1px solid #d8d0c0;padding-bottom:8px;">';
           html += '<div style="font-size:13px;font-weight:600;color:#2b2b28;">' + escP(getDayDate(day, trip)) + '</div>';
@@ -6872,8 +6874,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var name = typeof a === 'object' ? a.name : a;
             return { name: name, photo: getActPhoto(a) };
           }).filter(function(x) { return x.name; });
-          var withPhoto = acts.filter(function(x) { return x.photo; });
-          var noPhoto = acts.filter(function(x) { return !x.photo; });
+          var withPhoto = acts.filter(function(x) { return x.photo && x.photo !== heroPhotoUrl; });
+          var noPhoto = acts.filter(function(x) { return !x.photo || x.photo === heroPhotoUrl; });
 
           if (withPhoto.length) {
             // First photo big (full width), rest in 2-col grid
@@ -6906,7 +6908,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       html += '</div>';
 
-      var printCss = '<style>' + fontImport + '@page{margin:0}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.pdf-day{break-inside:avoid}}body{margin:0;background:#f4f1ea}<' + '/style>';
+      var printCss = '<style>' + fontImport + '@page{margin:0}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.pdf-day-header{break-after:avoid}.pdf-city-banner{break-inside:avoid}}body{margin:0;background:#f4f1ea}<' + '/style>';
       var fullHtml = '<!DOCTYPE html><html><head><meta charset="utf-8">' + printCss + '</head><bo' + 'dy>' + html + '</bo' + 'dy></html>';
       var blob = new Blob([fullHtml], {type: 'text/html;charset=utf-8'});
       var blobUrl = URL.createObjectURL(blob);
