@@ -674,6 +674,10 @@
     /* Plan view — empty placeholder */
     .plan-empty-drop { padding: 10px 14px 10px 42px; font-size: 12px; color: var(--ink-muted); font-style: italic; min-height: 36px; }
 
+    /* Plan view — add button */
+    .plan-add-btn { display: block; width: 100%; text-align: left; padding: 8px 14px 8px 42px; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; }
+    .plan-add-btn:active { background: var(--accent-light); }
+
     /* Sortable states for activity rows */
     .plan-activity-row.sortable-ghost { opacity: 0.4; background: var(--accent-light); }
     .plan-activity-row.sortable-chosen { background: var(--sand); }
@@ -3925,6 +3929,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (view === 'map' && isMobile()) { filterBar.classList.add('bar-visible'); }
         else { filterBar.classList.remove('bar-visible'); }
       }
+      var mapBackBtn = document.getElementById('map-back-btn');
+      if (mapBackBtn) { mapBackBtn.style.display = (view === 'map' && isMobile()) ? 'block' : 'none'; }
       if (view !== 'map') { undimAllMapPins(); }
       document.body.className = document.body.className.replace(/\bview-\S+/g, '').trim() + ' view-' + view;
       document.getElementById('view-home').style.display = view === 'home' ? 'block' : 'none';
@@ -3957,7 +3963,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       lastView = currentView === view ? lastView : currentView;
       var mobBackBtn = document.getElementById('mob-back-btn');
       if (mobBackBtn) {
-        mobBackBtn.style.display = view !== 'map' ? 'block' : 'none';
+        mobBackBtn.style.display = 'block';
       }
 
       document.querySelectorAll('.view-btn').forEach(function(btn) { btn.classList.remove('active'); });
@@ -5608,6 +5614,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (!actRows) {
             actRows = '<div class="plan-empty-drop">No activities yet</div>';
           }
+          actRows += '<button class="plan-add-btn" onclick="event.stopPropagation();selectSplitDay(' + di + ');setView(\'split\')">+ Add to day</button>';
           var actHtml = '<div class="plan-activity-section plan-act-list" data-di="' + di + '" data-day-id="' + day.id + '">' + actRows + '</div>';
 
           return '<div class="struct-day-row' + (isOpen ? ' expanded' : '') + '" data-di="' + di + '" data-day-id="' + day.id + '" onclick="planDayRowTap(\'' + day.id + '\', ' + di + ', event)">' +
@@ -5717,6 +5724,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         });
       }
       if (!actRows) actRows = '<div class="plan-empty-drop">No activities yet — drop one here</div>';
+      actRows += '<button class="plan-add-btn" onclick="selectSplitDay(' + di + ');setView(\'split\')">+ Add</button>';
       return '<div class="plan-activity-section plan-act-list" data-di="' + di + '" data-day-id="' + day.id + '">' + actRows + '</div>';
     }
 
