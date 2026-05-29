@@ -1044,20 +1044,20 @@ gmp-advanced-marker.map-pin-active {
 
       /* ===== DAY SUMMARY CARD ===== */
       #mob-day-summary {
-        position: fixed; bottom: 86px; left: 50%; transform: translateX(-50%);
+        position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
         z-index: 2400; width: calc(100vw - 32px); max-width: 360px;
         background: var(--white); border-radius: var(--radius);
         box-shadow: 0 4px 24px rgba(0,0,0,0.25); border: 1px solid var(--sand-dark);
         display: none; animation: fadeInUp 0.2s ease;
-        max-height: 75vh; overflow-y: auto;
+        max-height: 65vh; overflow-y: auto;
       }
       #mob-day-summary.open { display: block; }
-      #mob-day-summary-head { padding: 14px 16px 10px; border-bottom: 1px solid var(--sand-dark); display: flex; align-items: center; gap: 10px; }
-      #mob-day-summary-emoji { font-size: 22px; }
+      #mob-day-summary-head { padding: 8px 12px; border-bottom: 1px solid var(--sand-dark); display: flex; align-items: center; gap: 8px; }
+      #mob-day-summary-emoji { font-size: 16px; }
       #mob-day-summary-title { flex: 1; }
-      #mob-day-summary-daynum { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 2px; }
-      #mob-day-summary-city { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
-      #mob-day-summary-body { padding: 10px 16px 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+      #mob-day-summary-daynum { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 1px; }
+      #mob-day-summary-city { font-size: 13px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+      #mob-day-summary-body { padding: 8px 12px 10px; display: flex; gap: 5px; flex-wrap: wrap; }
       @keyframes pinDrop {
   0%   { opacity: 0; transform: translateY(-8px) scale(0.85); }
   60%  { opacity: 1; transform: translateY(2px) scale(1.05); }
@@ -3925,6 +3925,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (view === 'map' && isMobile()) { filterBar.classList.add('bar-visible'); }
         else { filterBar.classList.remove('bar-visible'); }
       }
+      if (view !== 'map') { undimAllMapPins(); }
       document.body.className = document.body.className.replace(/\bview-\S+/g, '').trim() + ' view-' + view;
       document.getElementById('view-home').style.display = view === 'home' ? 'block' : 'none';
       document.getElementById('map').style.display = view === 'map' ? 'block' : 'none';
@@ -6741,16 +6742,30 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         return r + ',' + g + ',' + b;
       }
 
-      function sectionLabel(text) {
-        return '<div style="font-family:\'Helvetica Neue\',Helvetica,sans-serif;font-size:8px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#999;margin:10px 0 4px 0;">' + text + '</div>';
+      function escP(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      function getActPhoto(a) {
+        var photoKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : '';
+        return (photoKey && cardPhotos[photoKey]) ? cardPhotos[photoKey] : '';
       }
 
-      function itemRow(emoji, primary, secondary) {
-        if (!primary) return '';
-        return '<div style="display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:1px solid #f0f0f0;">' +
-          '<span style="flex-shrink:0;font-size:12px;width:18px;text-align:center;">' + emoji + '</span>' +
-          '<span style="font-family:\'Helvetica Neue\',Helvetica,sans-serif;font-size:12px;color:#2a2a2a;flex:1;">' + primary + '</span>' +
-          (secondary ? '<span style="font-family:\'Helvetica Neue\',Helvetica,sans-serif;font-size:11px;color:#999;flex-shrink:0;">' + secondary + '</span>' : '') +
+      function mzSectionLabel(text) {
+        return '<div style="font-family:\'Inter\',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#a89f8d;margin-bottom:7px;">' + escP(text) + '</div>';
+      }
+
+      function mzDivider(text) {
+        return '<div style="display:flex;align-items:center;gap:10px;margin:22px 0 8px;">' +
+          '<div style="font-family:\'Inter\',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#a89f8d;">' + escP(text) + '</div>' +
+          '<div style="flex:1;height:1px;background:#d8d0c0;"></div>' +
+        '</div>';
+      }
+
+      function mzPhotoCard(name, photo, big) {
+        var h = big ? '200px' : '140px';
+        var fs = big ? '18px' : '16px';
+        return '<div>' +
+          '<img src="' + photo + '" style="width:100%;height:' + h + ';object-fit:cover;display:block;" />' +
+          '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:' + fs + ';font-weight:600;margin-top:9px;line-height:1.1;color:#2b2b28;">' + escP(name) + '</div>' +
         '</div>';
       }
 
@@ -6760,14 +6775,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var uniqueCities = [];
       cityBlocks.forEach(function(b) { if (uniqueCities.indexOf(b.city) === -1) uniqueCities.push(b.city); });
 
-      var html = '<div style="font-family:Georgia,\'Times New Roman\',serif;color:#1a1a1a;background:#fff;">';
+      var fontImport = '@import url(\'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Inter:wght@400;500;600&display=swap\');';
+
+      var html = '<div style="font-family:\'Inter\',sans-serif;color:#2b2b28;background:#f4f1ea;">';
 
       // Cover
-      html += '<div style="padding:48px 48px 40px;border-bottom:2px solid #eeeeee;margin-bottom:0;">';
-      html += '<div style="font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#aaaaaa;margin-bottom:16px;font-family:Helvetica,sans-serif;">Travel Itinerary</div>';
-      html += '<div style="font-size:36px;font-weight:700;letter-spacing:-0.02em;line-height:1.1;color:#111111;margin-bottom:10px;">' + (trip.name || 'Trip Itinerary') + '</div>';
-      html += '<div style="font-size:14px;color:#666666;margin-bottom:28px;font-family:Helvetica,sans-serif;">' + dateRange + '</div>';
-      html += '<div style="display:flex;gap:0;margin-bottom:14px;border-radius:3px;overflow:hidden;height:5px;">';
+      html += '<div style="padding:56px 48px 44px;">';
+      html += '<div style="font-family:\'Inter\',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:#b0a692;margin-bottom:18px;">Travel Itinerary</div>';
+      html += '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:56px;font-weight:900;letter-spacing:-0.02em;line-height:0.95;color:#2b2b28;margin-bottom:14px;">' + escP(trip.name || 'Trip Itinerary') + '</div>';
+      html += '<div style="font-size:13px;color:#8a8170;margin-bottom:30px;letter-spacing:0.02em;">' + escP(dateRange) + '</div>';
+      html += '<div style="display:flex;gap:0;margin-bottom:14px;overflow:hidden;height:4px;">';
       uniqueCities.forEach(function(city) {
         html += '<div style="flex:1;background:' + cityColour(city) + ';"></div>';
       });
@@ -6776,7 +6793,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       uniqueCities.forEach(function(city) {
         html += '<div style="display:flex;align-items:center;gap:6px;">';
         html += '<div style="width:7px;height:7px;border-radius:50%;background:' + cityColour(city) + ';"></div>';
-        html += '<span style="font-family:Helvetica,sans-serif;font-size:11px;color:#555555;">' + city + '</span>';
+        html += '<span style="font-size:11px;color:#8a8170;">' + escP(city) + '</span>';
         html += '</div>';
       });
       html += '</div>';
@@ -6785,60 +6802,103 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // City blocks
       cityBlocks.forEach(function(block, blockIdx) {
         var col = cityColour(block.city);
-        var rgb = hexToRgb(col);
         var firstDate = getDayDate(block.days[0].day, trip);
         var lastDate = getDayDate(block.days[block.days.length-1].day, trip);
         var dateStr = block.days.length === 1 ? firstDate : firstDate + ' — ' + lastDate;
         var nightCount = block.days.length;
+
+        // Hero banner: first available activity photo in this city
+        var heroPhoto = '';
+        block.days.forEach(function(entry) {
+          if (heroPhoto) return;
+          (entry.day.activities || []).forEach(function(a) {
+            if (!heroPhoto) { var p = getActPhoto(a); if (p) heroPhoto = p; }
+          });
+        });
+
         html += '<div class="pdf-city-block">';
-        html += '<div style="background:' + col + ';padding:20px 48px 16px;">';
-        html += '<div style="font-size:22px;font-weight:700;color:#ffffff;margin-bottom:3px;">' + block.city + '</div>';
-        html += '<div style="font-family:Helvetica,sans-serif;font-size:11px;color:rgba(255,255,255,0.72);">' + dateStr + '  ·  ' + nightCount + (nightCount === 1 ? ' day' : ' days') + '</div>';
-        html += '</div>';
+        if (heroPhoto) {
+          html += '<div style="position:relative;height:240px;overflow:hidden;">';
+          html += '<img src="' + heroPhoto + '" style="width:100%;height:100%;object-fit:cover;display:block;" />';
+          html += '<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(20,15,8,0.78),rgba(20,15,8,0.05));"></div>';
+          html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:26px 34px;color:#f4f1ea;">';
+          html += '<div style="font-family:\'Inter\',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:#e8c9a0;margin-bottom:8px;">' + escP(dateStr) + '</div>';
+          html += '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:46px;font-weight:900;line-height:0.92;">' + escP(block.city) + '</div>';
+          html += '<div style="font-size:12px;opacity:0.85;margin-top:8px;">' + nightCount + (nightCount === 1 ? ' day' : ' days') + '</div>';
+          html += '</div></div>';
+        } else {
+          html += '<div style="background:' + col + ';padding:24px 34px 20px;">';
+          html += '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:32px;font-weight:900;color:#fff;line-height:1;">' + escP(block.city) + '</div>';
+          html += '<div style="font-size:11px;color:rgba(255,255,255,0.8);margin-top:6px;">' + escP(dateStr) + '  ·  ' + nightCount + (nightCount === 1 ? ' day' : ' days') + '</div>';
+          html += '</div>';
+        }
+
         block.days.forEach(function(entry, dayIdx) {
           var day = entry.day;
           var di = entry.idx;
           normaliseAccom(day);
           normaliseDayTransport(day);
-          var bgCol = dayIdx % 2 === 1 ? 'rgba(' + rgb + ',0.04)' : '#ffffff';
-          html += '<div class="pdf-day" style="padding:16px 48px 14px;background:' + bgCol + ';border-bottom:1px solid #eeeeee;">';
-          html += '<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px;">';
-          html += '<div style="font-size:16px;font-weight:700;color:' + col + ';font-family:Georgia,serif;">Day ' + (di + 1) + '</div>';
-          html += '<div style="font-family:Helvetica,sans-serif;font-size:12px;color:#888888;">' + getDayDate(day, trip) + '</div>';
+
+          html += '<div class="pdf-day" style="padding:32px 34px 8px;">';
+
+          // Day header — big numeral + date + note
+          var dayNum = (di + 1) < 10 ? '0' + (di + 1) : '' + (di + 1);
+          html += '<div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:22px;">';
+          html += '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:56px;font-weight:900;line-height:0.8;color:' + col + ';">' + dayNum + '</div>';
+          html += '<div style="flex:1;border-bottom:1px solid #d8d0c0;padding-bottom:8px;">';
+          html += '<div style="font-size:13px;font-weight:600;color:#2b2b28;">' + escP(getDayDate(day, trip)) + '</div>';
           if (day.note) {
-            html += '<div style="font-family:Georgia,serif;font-size:11px;color:#aaaaaa;font-style:italic;flex:1;text-align:right;">' + day.note + '</div>';
+            html += '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:15px;font-style:italic;color:#8a8170;">' + escP(day.note) + '</div>';
           }
-          html += '</div>';
-          if (day.transport && day.transport.length) {
-            html += sectionLabel('Transport');
-            day.transport.forEach(function(t) {
-              var fd = getFlightDisplay(t);
-              var primary = fd.from + ' to ' + fd.to;
-              if (fd.carrier || fd.flightNum) primary += '  ·  ' + [fd.carrier, fd.flightNum].filter(Boolean).join(' ');
-              var secondary = fd.depart ? fd.depart + (fd.arrive ? ' – ' + fd.arrive : '') : '';
-              html += itemRow('✈️', primary, secondary);
-            });
+          html += '</div></div>';
+
+          // Transport + Stay (two columns)
+          var transHtml = '';
+          (day.transport || []).forEach(function(t) {
+            var fd = getFlightDisplay(t);
+            transHtml += escP(fd.from + ' → ' + fd.to) + '<br><span style="color:#a89f8d;">' + escP([fd.carrier, fd.flightNum].filter(Boolean).join(' ') + (fd.depart ? ' · ' + fd.depart + (fd.arrive ? '–' + fd.arrive : '') : '')) + '</span><br>';
+          });
+          var stayHtml = '';
+          (day.accommodation || []).forEach(function(a) { stayHtml += escP(a.name) + '<br>'; });
+          if (transHtml || stayHtml) {
+            html += '<div style="display:flex;gap:24px;margin-bottom:24px;">';
+            if (transHtml) html += '<div style="flex:1;">' + mzSectionLabel('Getting there') + '<div style="font-size:12px;color:#5a5448;line-height:1.5;">' + transHtml + '</div></div>';
+            if (stayHtml) html += '<div style="flex:1;">' + mzSectionLabel('Where we stay') + '<div style="font-size:12px;color:#5a5448;line-height:1.5;">' + stayHtml + '</div></div>';
+            html += '</div>';
           }
-          if (day.accommodation && day.accommodation.length) {
-            html += sectionLabel('Stay');
-            day.accommodation.forEach(function(a) { html += itemRow('🏨', a.name, ''); });
+
+          // Activities — split into photo cards + text-only list
+          var acts = (day.activities || []).map(function(a) {
+            var name = typeof a === 'object' ? a.name : a;
+            return { name: name, photo: getActPhoto(a) };
+          }).filter(function(x) { return x.name; });
+          var withPhoto = acts.filter(function(x) { return x.photo; });
+          var noPhoto = acts.filter(function(x) { return !x.photo; });
+
+          if (withPhoto.length) {
+            // First photo big (full width), rest in 2-col grid
+            html += mzPhotoCard(withPhoto[0].name, withPhoto[0].photo, true);
+            if (withPhoto.length > 1) {
+              html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">';
+              for (var wi = 1; wi < withPhoto.length; wi++) {
+                html += mzPhotoCard(withPhoto[wi].name, withPhoto[wi].photo, false);
+              }
+              html += '</div>';
+            }
           }
-          if (day.activities && day.activities.length) {
-            html += sectionLabel('Activities');
-            day.activities.forEach(function(a) {
-              var name = typeof a === 'object' ? a.name : a;
-              var cat = (typeof a === 'object' && a.category) ? a.category : 'default';
-              var emoji = (activityCategories[cat] || activityCategories['default']).emoji;
-              if (name) html += itemRow(emoji, name, '');
-            });
+
+          if (noPhoto.length) {
+            html += mzDivider(withPhoto.length ? 'Also today' : 'Activities');
+            html += '<div style="font-size:12px;color:#5a5448;line-height:1.8;">' + noPhoto.map(function(x) { return escP(x.name); }).join('&nbsp;&nbsp;·&nbsp;&nbsp;') + '</div>';
           }
-          if (day.food && day.food.length) {
-            html += sectionLabel('Food & Drink');
-            day.food.forEach(function(f) {
-              var name = typeof f === 'object' ? f.name : f;
-              if (name) html += itemRow('🍽️', name, '');
-            });
+
+          // Food
+          var foods = (day.food || []).map(function(f) { return typeof f === 'object' ? f.name : f; }).filter(Boolean);
+          if (foods.length) {
+            html += mzDivider('Eat');
+            html += '<div style="font-size:12px;color:#5a5448;line-height:1.8;">' + foods.map(escP).join('&nbsp;&nbsp;·&nbsp;&nbsp;') + '</div>';
           }
+
           html += '</div>';
         });
         html += '</div>';
@@ -6846,13 +6906,37 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       html += '</div>';
 
-      var blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+      var printCss = '<style>' + fontImport + '@page{margin:0}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.pdf-day{break-inside:avoid}}body{margin:0;background:#f4f1ea}<' + '/style>';
+      var fullHtml = '<!DOCTYPE html><html><head><meta charset="utf-8">' + printCss + '</head><bo' + 'dy>' + html + '</bo' + 'dy></html>';
+      var blob = new Blob([fullHtml], {type: 'text/html;charset=utf-8'});
       var blobUrl = URL.createObjectURL(blob);
       var printWin = window.open(blobUrl, '_blank');
       if (printWin) {
         printWin.onload = function() {
-          printWin.print();
-          setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+          var imgs = printWin.document.images;
+          var total = imgs.length;
+          if (total === 0) {
+            printWin.print();
+            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+            return;
+          }
+          var loaded = 0;
+          var done = false;
+          function tryPrint() {
+            if (done) return;
+            done = true;
+            printWin.print();
+            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
+          }
+          for (var i = 0; i < total; i++) {
+            if (imgs[i].complete) { loaded++; }
+            else {
+              imgs[i].addEventListener('load', function() { loaded++; if (loaded >= total) tryPrint(); });
+              imgs[i].addEventListener('error', function() { loaded++; if (loaded >= total) tryPrint(); });
+            }
+          }
+          if (loaded >= total) tryPrint();
+          setTimeout(tryPrint, 8000);
         };
       }
     }
@@ -9815,7 +9899,9 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
 
     function saveCityMarker(name) {
       var id = name.replace(/ /g,'-');
-      citySettings[name] = { emoji: document.getElementById('city-emoji-'+id).value, color: document.getElementById('city-color-'+id).value };
+      var rawEmoji = document.getElementById('city-emoji-'+id).value;
+      var safeEmoji = rawEmoji.replace(/\uFFFD/g, '').trim() || '📍';
+      citySettings[name] = { emoji: safeEmoji, color: document.getElementById('city-color-'+id).value };
       cityMarkerObjs.forEach(function(obj) { if (obj.city.name === name) { obj.marker.content = buildCityMarkerEl(name); } });
       cityMarkerObjs.forEach(function(obj) { if (obj.city.name === name) { obj.marker.content = buildCityMarkerEl(name); } });
       saveToStorage();
@@ -10076,6 +10162,16 @@ var pinDelay = Math.floor(Math.random() * 150);
         }
       });
       document.getElementById('mob-all-days-chip').style.display = 'block';
+      var dayPins = activityMarkers.filter(function(m) { return m.dayIndex === dayIndex; });
+      if (dayPins.length === 0) return;
+      if (dayPins.length === 1) {
+        map.panTo(dayPins[0].position);
+        map.setZoom(14);
+        return;
+      }
+      var bounds = new google.maps.LatLngBounds();
+      dayPins.forEach(function(m) { bounds.extend(m.position); });
+      map.fitBounds(bounds, { top: 80, bottom: 120, left: 40, right: 40 });
     }
     function undimAllMapPins() {
       activityMarkers.forEach(function(m) {
@@ -10120,6 +10216,17 @@ var pinDelay = Math.floor(Math.random() * 150);
         }
       });
       document.getElementById('mob-pill-center').addEventListener('click', function() {
+        dimMapPinsToDay(mobPillIndex);
+        document.getElementById('mob-all-days-chip').style.display = 'none';
+        var dayPins = activityMarkers.filter(function(m) { return m.dayIndex === mobPillIndex; });
+        if (dayPins.length === 1) {
+          map.panTo(dayPins[0].position);
+          map.setZoom(14);
+        } else if (dayPins.length > 1) {
+          var bounds = new google.maps.LatLngBounds();
+          dayPins.forEach(function(m) { bounds.extend(m.position); });
+          map.fitBounds(bounds, { top: 80, bottom: 120, left: 40, right: 40 });
+        }
         toggleMobDaySummary();
       });
     }
@@ -10179,7 +10286,16 @@ var pinDelay = Math.floor(Math.random() * 150);
       }
       if (day.transport.length) {
         chips += divider('Transport');
-        day.transport.forEach(function(t) { chips += '<div class="mob-day-summary-chip">✈️ ' + (t.from||'') + (t.to ? ' → ' + t.to : '') + (t.flightNum ? ' · ' + t.flightNum : '') + '</div>'; });
+        day.transport.forEach(function(t) {
+          (t.legs || []).forEach(function(leg) {
+            var from = (leg.from && leg.from.city) ? leg.from.city : (t.from || '');
+            var to = (leg.to && leg.to.city) ? leg.to.city : (t.to || '');
+            var detail = from + (to ? ' → ' + to : '');
+            if (leg.flightNum) detail += ' · ' + leg.flightNum;
+            if (leg.depart) detail += ' · ' + leg.depart;
+            chips += '<div class="mob-day-summary-chip">✈️ ' + detail + '</div>';
+          });
+        });
       }
       if (day.activities.length) {
         chips += divider('Activities');
@@ -10224,6 +10340,9 @@ var pinDelay = Math.floor(Math.random() * 150);
 
   function closeMobDaySummary() {
       document.getElementById('mob-day-summary').classList.remove('open');
+      var summary = document.getElementById('mob-day-summary');
+      var isDimmed = activityMarkers.some(function(m) { return m.marker && m.marker.children[0] && m.marker.children[0].classList.contains('map-pin-dimmed'); });
+      if (isDimmed) { document.getElementById('mob-all-days-chip').style.display = 'block'; }
     }
 
     var mobSummarySwipeInited = false;
@@ -13556,9 +13675,9 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     </div>
     <div id="mob-day-summary-body"></div>
     <div style="display:flex;gap:6px;margin:0 16px 14px;">
-      <button onclick="closeMobDaySummary();selectSplitDay(mobPillIndex)" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">✏️ Edit</button>
-      <button id="mob-summary-maps-btn" onclick="openDaySummaryMaps()" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📍 Maps</button>
-      <button onclick="suggestRouteMobile(mobPillIndex)" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:8px 6px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✨ Route</button>
+      <button onclick="closeMobDaySummary();selectSplitDay(mobPillIndex)" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:6px 4px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">✏️ Edit</button>
+      <button id="mob-summary-maps-btn" onclick="openDaySummaryMaps()" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:6px 4px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📍 Maps</button>
+      <button onclick="suggestRouteMobile(mobPillIndex)" style="flex:1;font-family:inherit;font-size:11px;font-weight:700;padding:6px 4px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✨ Route</button>
     </div>
     <div id="mob-summary-route-card" style="display:none;margin:0 16px 14px;background:var(--sand);border-radius:var(--radius-sm);border:1px solid var(--sand-dark);overflow:hidden;">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 6px;">
