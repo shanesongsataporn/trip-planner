@@ -6768,12 +6768,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '</div>';
       }
 
-      function mzPhotoCard(name, photo, big) {
+      function mzPhotoCard(name, photo, big, caption) {
         var h = big ? '200px' : '140px';
         var fs = big ? '18px' : '16px';
         return '<div>' +
           '<img src="' + photo + '" style="width:100%;height:' + h + ';object-fit:cover;display:block;" />' +
           '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:' + fs + ';font-weight:600;margin-top:9px;line-height:1.1;color:#2b2b28;">' + escP(name) + '</div>' +
+          (caption ? '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:11px;font-style:italic;color:#a89f8d;margin-top:3px;line-height:1.4;">' + escP(caption) + '</div>' : '') +
         '</div>';
       }
 
@@ -6880,20 +6881,38 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           // Activities — split into photo cards + text-only list
           var acts = (day.activities || []).map(function(a) {
             var name = typeof a === 'object' ? a.name : a;
-            return { name: name, photo: getActPhoto(a) };
+            var notes = (typeof a === 'object' && a.notes) ? a.notes : '';
+            return { name: name, photo: getActPhoto(a), notes: notes };
           }).filter(function(x) { return x.name; });
           var withPhoto = acts.filter(function(x) { return x.photo && x.photo !== heroPhotoUrl; });
           var noPhoto = acts.filter(function(x) { return !x.photo || x.photo === heroPhotoUrl; });
 
           if (withPhoto.length) {
-            // First photo big (full width), rest in 2-col grid
-            html += mzPhotoCard(withPhoto[0].name, withPhoto[0].photo, true);
-            if (withPhoto.length > 1) {
-              html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">';
-              for (var wi = 1; wi < withPhoto.length; wi++) {
-                html += mzPhotoCard(withPhoto[wi].name, withPhoto[wi].photo, false);
-              }
+            if (withPhoto.length === 1) {
+              // Single photo — full width
+              html += mzPhotoCard(withPhoto[0].name, withPhoto[0].photo, true, withPhoto[0].notes);
+            } else if (withPhoto.length === 2) {
+              // Two photos — side by side, no hero
+              html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">';
+              html += mzPhotoCard(withPhoto[0].name, withPhoto[0].photo, false, withPhoto[0].notes);
+              html += mzPhotoCard(withPhoto[1].name, withPhoto[1].photo, false, withPhoto[1].notes);
               html += '</div>';
+            } else {
+              // 3+ photos — hero full width, then 2-col grid, orphaned last goes full width
+              html += mzPhotoCard(withPhoto[0].name, withPhoto[0].photo, true, withPhoto[0].notes);
+              var remaining = withPhoto.slice(1);
+              var pairCount = Math.floor(remaining.length / 2) * 2;
+              if (pairCount > 0) {
+                html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px;">';
+                for (var wi = 0; wi < pairCount; wi++) {
+                  html += mzPhotoCard(remaining[wi].name, remaining[wi].photo, false, remaining[wi].notes);
+                }
+                html += '</div>';
+              }
+              if (remaining.length % 2 !== 0) {
+                var last = remaining[remaining.length - 1];
+                html += '<div style="margin-top:18px;">' + mzPhotoCard(last.name, last.photo, true, last.notes) + '</div>';
+              }
             }
           }
 
