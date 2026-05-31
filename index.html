@@ -3465,14 +3465,15 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var weatherFloatDiv = '<div id="home-weather-float" style="display:none;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius);padding:16px;margin:0 0 8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);"></div>';
       var tilesHtml = ''; // built after daysHtml below
 
-      // ---- Long-press on grid to enter edit mode ----
+      // ---- Long-press on any category grid to enter edit mode ----
       setTimeout(function() {
-        var grid = document.getElementById('home-sortable-grid');
-        if (!grid) return;
+        var grids = ['action','build','navigate'].map(function(cat) {
+          return document.getElementById('home-sortable-grid-' + cat);
+        }).filter(Boolean);
+        if (!grids.length) return;
         var pressTimer;
         var startX, startY;
         function startPress(x, y) {
-          if (grid.classList.contains('is-editing')) return;
           startX = x; startY = y;
           pressTimer = setTimeout(function() {
             enterHomeTileEdit();
@@ -3486,24 +3487,25 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           }
           clearTimeout(pressTimer);
         }
-        grid.style.userSelect = 'none';
-        grid.style.webkitUserSelect = 'none';
-        grid.style.touchAction = 'none';
-        grid.addEventListener('contextmenu', function(e) { e.preventDefault(); }, { passive: false });
-        grid.addEventListener('touchstart', function(e) {
-          var t = e.touches[0];
-          startPress(t.clientX, t.clientY);
-        }, { passive: false });
-        grid.addEventListener('touchend', function(e) {
-          clearTimeout(pressTimer);
-        }, { passive: true });
-        grid.addEventListener('touchmove', function(e) {
-          var t = e.touches[0];
-          cancelPress(t.clientX, t.clientY);
-        }, { passive: false });
-        grid.addEventListener('mousedown', function(e) { startPress(e.clientX, e.clientY); });
-        grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
-        grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
+        grids.forEach(function(grid) {
+          grid.style.userSelect = 'none';
+          grid.style.webkitUserSelect = 'none';
+          grid.addEventListener('contextmenu', function(e) { e.preventDefault(); }, { passive: false });
+          grid.addEventListener('touchstart', function(e) {
+            var t = e.touches[0];
+            startPress(t.clientX, t.clientY);
+          }, { passive: false });
+          grid.addEventListener('touchend', function(e) {
+            clearTimeout(pressTimer);
+          }, { passive: true });
+          grid.addEventListener('touchmove', function(e) {
+            var t = e.touches[0];
+            cancelPress(t.clientX, t.clientY);
+          }, { passive: false });
+          grid.addEventListener('mousedown', function(e) { startPress(e.clientX, e.clientY); });
+          grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
+          grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
+        });
       }, 100);
       // gaps bar
       var gapsHtml = '';
@@ -3815,16 +3817,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function enterHomeTileEdit() {
-      var grid = document.getElementById('home-sortable-grid');
       var tray = document.getElementById('home-tile-tray');
       var trayGrid = document.getElementById('home-tile-tray-grid');
       var btn = document.getElementById('home-edit-btn');
-      if (!grid) return;
 
-      grid.classList.add('is-editing');
       if (btn) { btn.textContent = '✓ Done'; btn.classList.add('active'); }
-
-      // (wiggle + remove badges now added per-section inside Sortable init below)
 
       // Render tray
       var cfg = loadHomeTileConfig();
@@ -3837,7 +3834,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         else { homeTileSortable.destroy(); }
         homeTileSortable = null;
       }
-      var catOrder = ['status', 'action', 'build', 'navigate'];
+      var catOrder = ['action', 'build', 'navigate'];
       homeTileSortable = catOrder.map(function(cat) {
         var grid = document.getElementById('home-sortable-grid-' + cat);
         if (!grid) return null;
@@ -3892,16 +3889,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         document.body.appendChild(pill);
       }
 
-      // Fix delete tap on mobile — use touchend directly on badges
-      grid.querySelectorAll('.home-tile-remove-btn').forEach(function(btn) {
-        btn.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          var id = btn.getAttribute('data-tile-id');
-          if (id) { hideHomeTile(id); }
-        }, { passive: false });
-      });
-    }
+      }
 
     function exitHomeTileEdit() {
       var tray = document.getElementById('home-tile-tray');
