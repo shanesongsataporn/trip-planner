@@ -3422,14 +3422,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // ---- Floating edit button (fixed, outside grid) ----
       var editBtnHtml = '<button class="home-edit-trigger" id="home-edit-btn" onclick="toggleHomeTileEdit()">✏️ Edit</button>';
 
-      // ---- Locked row 1: countdown (always visible) ----
+      // ---- Locked row 1: countdown + weather side by side ----
       var row1Html =
-        '<div class="home-tile-row home-tile-row-2" style="margin-bottom:10px;">' +
-          '<div class="home-tile home-tile-cat-status home-tile-countdown" onclick="showWeatherFloat()">' +
+        '<div style="display:grid;grid-template-columns:3fr 2fr;gap:6px;margin-bottom:6px;">' +
+          '<div class="home-tile home-tile-countdown" onclick="editDatesTile()">' +
             '<div class="home-tile-emoji">🛫</div>' +
             '<div class="home-tile-label">Countdown</div>' +
             '<div class="home-tile-value">' + countdownVal + '</div>' +
             '<div class="home-tile-sub">' + status.sub + '</div>' +
+          '</div>' +
+          '<div class="home-tile home-tile-cat-status" data-tile-id="weather" onclick="showWeatherFloat()">' +
+            '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
+            '<div class="home-tile-label">Weather · ' + (nextCity ? nextCity.day.city.split('>').pop().trim() : '') + '</div>' +
+            '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
+            '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
           '</div>' +
         '</div>';
 
@@ -3456,8 +3462,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<div class="home-tile-tray-grid" id="home-tile-tray-grid"></div>' +
       '</div>';
 
-      var weatherFloatDiv = '<div id="home-weather-float" style="display:none;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius);padding:16px;margin:0 0 16px;box-shadow:0 2px 12px rgba(0,0,0,0.08);"></div>';
-      var tilesHtml = '<div class="home-tiles">' + row1Html + weatherFloatDiv + sectionsHtml + trayHtml + '</div>';
+      var weatherFloatDiv = '<div id="home-weather-float" style="display:none;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius);padding:16px;margin:0 0 8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);"></div>';
+      var tilesHtml = '<div class="home-tiles">' + row1Html + weatherFloatDiv + daysHtml + sectionsHtml + trayHtml + '</div>';
 
       // ---- Long-press on grid to enter edit mode ----
       setTimeout(function() {
@@ -3658,7 +3664,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       el.style.display = 'block';
-      el.innerHTML = tilesHtml + gapsHtml + expandBarHtml + daysHtml;
+      el.innerHTML = tilesHtml + gapsHtml + expandBarHtml;
 
       // fetch weather async and update tile — silent fail if offline/VPN
       try {
