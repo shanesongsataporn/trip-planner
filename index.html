@@ -459,6 +459,10 @@
     .de-add-cat-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
     .de-add-confirm { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px; }
     .de-add-cancel { width: 100%; background: transparent; color: rgba(255,255,255,0.4); border: none; padding: 10px; font-size: 13px; cursor: pointer; margin-top: 4px; }
+    #de-item-sheet { position:fixed; bottom:0; left:0; right:0; background:var(--card-bg,#1e1e2e); border-radius:18px 18px 0 0; padding:20px 16px 36px; z-index:1100; transform:translateY(100%); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1); max-height:85vh; overflow-y:auto; }
+    #de-item-sheet.open { transform:translateY(0); }
+    .de-res-btn { flex:1; padding:8px 4px; font-size:12px; font-family:inherit; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.5); cursor:pointer; text-align:center; }
+    .de-res-btn.active { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.4); color:#fff; font-weight:600; }
     .de-empty { font-size: 12px; color: rgba(255,255,255,0.25); font-style: italic; padding: 8px 0 12px; }
     .de-add-btn { display: block; width: 100%; text-align: left; font-family: inherit; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.35); background: none; border: none; padding: 10px 0 16px; cursor: pointer; letter-spacing: 0.02em; }
     .de-add-btn:hover { color: rgba(255,255,255,0.6); }
@@ -1532,6 +1536,28 @@ gmp-advanced-marker.map-pin-active {
     </div>
     <button class="de-add-confirm" onclick="confirmDeAdd()">Add to Day</button>
     <button class="de-add-cancel" onclick="closeDeAddSheet()">Cancel</button>
+  </div>
+
+  <div id="de-item-sheet">
+    <div class="de-add-sheet-title" id="de-item-sheet-title">Edit</div>
+    <input class="de-add-input" id="de-item-name" type="text" placeholder="Name">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+      <label style="font-size:12px;color:rgba(255,255,255,0.5);min-width:40px;">Time</label>
+      <input id="de-item-time" type="time" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--ink);padding:8px 10px;font-size:14px;font-family:inherit;">
+      <button onclick="document.getElementById('de-item-time').value=''" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;">✕</button>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:6px;">Reservation</div>
+      <div style="display:flex;gap:6px;">
+        <button class="de-res-btn active" data-res="" onclick="deSelectRes(this)">None</button>
+        <button class="de-res-btn" data-res="booked" onclick="deSelectRes(this)">✅ Booked</button>
+        <button class="de-res-btn" data-res="needed" onclick="deSelectRes(this)">🔴 Need to book</button>
+      </div>
+    </div>
+    <textarea class="de-add-input" id="de-item-note" rows="2" placeholder="Note (optional)" style="resize:none;"></textarea>
+    <div id="de-item-links" style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;"></div>
+    <button class="de-add-confirm" onclick="saveDeItemSheet()">Save</button>
+    <button class="de-add-cancel" onclick="closeDeItemSheet()">Cancel</button>
   </div>
 
   <div id="accom-add-overlay" onclick="closeAddStaySheet()"></div>
@@ -8666,6 +8692,123 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (confirmBtn) confirmBtn.textContent = 'Add to Day';
     }
 
+    function showDeItemSheet(section, i) {
+      var day = deCurrentDay;
+      if (!day) return;
+      var sheet = document.getElementById('de-item-sheet');
+      if (!sheet) return;
+      sheet.dataset.section = section;
+      sheet.dataset.index = i;
+
+      // Collapse any inline expand first
+      if (deExpandedCard) {
+        var prevCard = document.getElementById(deExpandedCard);
+        var prevExpandId = deExpandedCard.replace('de-card-', 'de-expand-');
+        var prevExpand = document.getElementById(prevExpandId);
+        if (prevCard) prevCard.classList.remove('de-row--expanded');
+        if (prevExpand) { prevExpand.classList.remove('open'); prevExpand.innerHTML = ''; }
+        deExpandedCard = null;
+      }
+
+      var name = '', time = '', reserved = '', note = '', link = '', mapsQuery = '';
+      if (section === 'acts') {
+        var act = (typeof day.activities[i] === 'object') ? day.activities[i] : { name: day.activities[i] };
+        name = act.name || '';
+        time = act.time || '';
+        reserved = act.reserved || '';
+        var noteKey = act.uid ? ('act_' + act.uid) : String(i);
+        note = (day.cardNotes && day.cardNotes[noteKey]) || '';
+        link = act.link || '';
+        mapsQuery = encodeURIComponent(name + (day.city ? ' ' + day.city : ''));
+      } else if (section === 'food') {
+        var f = (typeof day.food[i] === 'object') ? day.food[i] : { name: day.food[i] };
+        name = f.name || '';
+        time = f.time || '';
+        // map old boolean fields to new reserved string
+        reserved = f.reserved || (f.reservationBooked ? 'booked' : (f.reservationRequired ? 'needed' : ''));
+        note = f.notes || '';
+        link = f.link || '';
+        mapsQuery = encodeURIComponent(name + (day.city ? ' ' + day.city : ''));
+      }
+
+      document.getElementById('de-item-sheet-title').textContent = section === 'acts' ? 'Edit Activity' : 'Edit Food & Drink';
+      document.getElementById('de-item-name').value = name;
+      document.getElementById('de-item-time').value = time;
+      document.getElementById('de-item-note').value = note;
+
+      // Set reservation toggle
+      document.querySelectorAll('.de-res-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.res === reserved);
+      });
+
+      // Links row
+      var linksEl = document.getElementById('de-item-links');
+      var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
+      var directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + mapsQuery;
+      linksEl.innerHTML =
+        '<a class="de-row-expand-btn" href="' + mapsUrl + '" target="_blank">🗺 Maps</a>' +
+        '<a class="de-row-expand-btn" href="' + directionsUrl + '" target="_blank">🧭 Directions</a>' +
+        (link ? '<a class="de-row-expand-btn" href="' + escHtml(link) + '" target="_blank">🔗 Link</a>' : '');
+
+      sheet.classList.add('open');
+    }
+
+    function deSelectRes(btn) {
+      document.querySelectorAll('.de-res-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    }
+
+    function saveDeItemSheet() {
+      var sheet = document.getElementById('de-item-sheet');
+      if (!sheet) return;
+      var section = sheet.dataset.section;
+      var i = parseInt(sheet.dataset.index, 10);
+      var day = deCurrentDay;
+      if (!day) return;
+
+      var name = document.getElementById('de-item-name').value.trim();
+      var time = document.getElementById('de-item-time').value || '';
+      var note = document.getElementById('de-item-note').value.trim();
+      var activeRes = document.querySelector('.de-res-btn.active');
+      var reserved = activeRes ? activeRes.dataset.res : '';
+
+      if (section === 'acts') {
+        if (!day.activities[i]) return;
+        if (typeof day.activities[i] !== 'object') {
+          day.activities[i] = { name: day.activities[i], uid: generateUid() };
+        }
+        var act = day.activities[i];
+        if (name) act.name = name;
+        act.time = time;
+        act.reserved = reserved || null;
+        var noteKey = act.uid ? ('act_' + act.uid) : String(i);
+        if (!day.cardNotes) day.cardNotes = {};
+        if (note) { day.cardNotes[noteKey] = note; } else { delete day.cardNotes[noteKey]; }
+      } else if (section === 'food') {
+        normaliseFood(day);
+        if (!day.food[i]) return;
+        var f = day.food[i];
+        if (name) f.name = name;
+        f.time = time;
+        f.reserved = reserved || null;
+        f.notes = note;
+        // keep old booleans in sync for any legacy readers
+        f.reservationBooked = (reserved === 'booked');
+        f.reservationRequired = (reserved === 'needed' || reserved === 'booked');
+      }
+
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      closeDeItemSheet();
+      selectSplitDay(deCurrentIndex);
+    }
+
+    function closeDeItemSheet() {
+      var sheet = document.getElementById('de-item-sheet');
+      if (sheet) sheet.classList.remove('open');
+    }
+
     function deDeleteRowItem(section, i) {
       if (!deCurrentDay || !deCurrentDay.id) return;
       var day = deCurrentDay;
@@ -9029,16 +9172,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var catObj = activityCategories[cat] || activityCategories['default'];
           var noteKey = 'act_' + uid;
           var note = (day.cardNotes && day.cardNotes[noteKey]) || '';
-          actRows += '<div class="de-row" id="de-card-act-' + i + '" onclick="deToggleCard(\'acts\',' + i + ')">' +
+          var actTime = (typeof a === 'object' && a.time) ? (function(t){ var p=t.split(':'); var h=parseInt(p[0],10); var m=p[1]; var ampm=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ampm; })(a.time) : '';
+          var actRes = (typeof a === 'object') ? (a.reserved || '') : '';
+          var actResBadge = actRes === 'booked' ? '<span style="font-size:11px;margin-left:4px;">✅</span>' : actRes === 'needed' ? '<span style="font-size:11px;margin-left:4px;">🔴</span>' : '';
+          var actMeta = actTime ? actTime : (note ? note : cat);
+          var actMetaStyle = (!actTime && note) ? 'color:var(--accent);font-style:italic;' : '';
+          actRows += '<div class="de-row" id="de-card-act-' + i + '" onclick="showDeItemSheet(\'acts\',' + i + ')">' +
             '<span class="de-row-handle">⠿</span>' +
             '<span class="de-row-emoji">' + catObj.emoji + '</span>' +
             '<div class="de-row-body">' +
-              '<div class="de-row-name">' + escHtml(name) + '</div>' +
-              (note ? '<div class="de-row-meta" style="color:var(--accent);font-style:italic;">' + escHtml(note) + '</div>' : '<div class="de-row-meta">' + escHtml(cat) + '</div>') +
+              '<div class="de-row-name">' + escHtml(name) + actResBadge + '</div>' +
+              '<div class="de-row-meta" style="' + actMetaStyle + '">' + escHtml(actMeta) + '</div>' +
             '</div>' +
             '<span class="de-row-chevron">›</span>' +
-          '</div>' +
-          '<div class="de-row-expand-body" id="de-expand-act-' + i + '"></div>';
+          '</div>';
         });
       } else {
         actRows = '<div class="de-empty">No activities added</div>';
@@ -9051,16 +9198,19 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var fname = typeof f === 'string' ? f : (f.name || 'Unnamed');
           var booked = f.reservationBooked ? '✅ Booked' : (f.reservationRequired ? '⚠️ Needs booking' : '');
           var fnote = (f.notes) || '';
-          foodRows += '<div class="de-row" id="de-card-food-' + i + '" onclick="deToggleCard(\'food\',' + i + ')">' +
+          var foodReserved = f.reserved || (f.reservationBooked ? 'booked' : (f.reservationRequired ? 'needed' : ''));
+          var foodTime = f.time ? (function(t){ var p=t.split(':'); var h=parseInt(p[0],10); var m=p[1]; var ampm=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ampm; })(f.time) : '';
+          var foodResBadge = foodReserved === 'booked' ? '<span style="font-size:11px;margin-left:4px;">✅</span>' : foodReserved === 'needed' ? '<span style="font-size:11px;margin-left:4px;">🔴</span>' : '';
+          var foodMeta = foodTime ? foodTime : (foodReserved === 'booked' ? 'Booked' : foodReserved === 'needed' ? 'Need to book' : (fnote || 'Food & drink'));
+          foodRows += '<div class="de-row" id="de-card-food-' + i + '" onclick="showDeItemSheet(\'food\',' + i + ')">' +
             '<span class="de-row-handle">⠿</span>' +
             '<span class="de-row-emoji">🍽️</span>' +
             '<div class="de-row-body">' +
-              '<div class="de-row-name">' + escHtml(fname) + '</div>' +
-              '<div class="de-row-meta">' + escHtml(booked || fnote || 'Food & drink') + '</div>' +
+              '<div class="de-row-name">' + escHtml(fname) + foodResBadge + '</div>' +
+              '<div class="de-row-meta">' + escHtml(foodMeta) + '</div>' +
             '</div>' +
             '<span class="de-row-chevron">›</span>' +
-          '</div>' +
-          '<div class="de-row-expand-body" id="de-expand-food-' + i + '"></div>';
+          '</div>';
         });
       } else {
         foodRows = '<div class="de-empty">No food added</div>';
