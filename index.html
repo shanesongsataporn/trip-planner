@@ -14008,6 +14008,15 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       });
     }
 
+    // ===== SERVICE WORKER REGISTRATION =====
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/trip-planner/sw.js', { scope: '/trip-planner/' })
+          .then(function(reg) { console.log('[SW] Registered:', reg.scope); })
+          .catch(function(e) { console.warn('[SW] Registration failed:', e); });
+      });
+    }
+
     // ===== BACKUP / RESTORE / SANDBOX (console-only) =====
     // Layer 1 of the cascade refactor backup protocol. See CASCADE-REFACTOR-HANDOFF.md.
     function verifyBackup(backupId) {
