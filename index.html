@@ -8772,6 +8772,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }).join('');
       if (!splitMap) {
         splitMap = new google.maps.Map(document.getElementById('split-map'), { center: { lat: 15.5, lng: 100.5 }, zoom: 6, mapTypeId: 'roadmap', disableDefaultUI: false, mapId: 'DEMO_MAP_ID', gestureHandling: 'greedy' });
+        var splitMapEl = document.getElementById('split-map');
+        splitMap.addListener('zoom_changed', function() {
+          if (splitMap.getZoom() >= 12) { splitMapEl.classList.add('map-zoom-labels-on'); }
+          else { splitMapEl.classList.remove('map-zoom-labels-on'); }
+        });
       } else { google.maps.event.trigger(splitMap, 'resize'); }
       initSplitDivider();
       setTimeout(function() {
