@@ -3233,16 +3233,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '<div class="home-visa-travellers">' + visaDots + '</div>' +
               '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
             '</div>';
-          case 'lists':
-            var listsArr = currentTrip.lists || [];
-            var listsCount = listsArr.length;
-            var listsPlaces = listsArr.reduce(function(sum, l) { return sum + (l.items ? l.items.length : 0); }, 0);
-            return '<div class="home-tile" data-tile-id="lists" onclick="setView(\'lists\')">' +
-              '<div class="home-tile-emoji">📋</div>' +
-              '<div class="home-tile-label">Lists</div>' +
-              '<div class="home-tile-value accent" style="font-size:18px;">' + listsPlaces + ' places</div>' +
-              '<div class="home-tile-sub">' + listsCount + ' list' + (listsCount !== 1 ? 's' : '') + '</div>' +
-            '</div>';
           case 'accommodation':
             var accomStays = [];
             currentTrip.days.forEach(function(day) { normaliseAccom(day); if (day.accommodation[0] && day.accommodation[0].name) accomStays.push(day.accommodation[0]); });
@@ -3776,7 +3766,18 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         }
       });
       grid.style.touchAction = 'pan-y';
-      grid.style.touchAction = 'pan-y';
+
+      // Inject floating Done pill
+      var existingDone = document.getElementById('home-edit-done-pill');
+      if (!existingDone) {
+        var pill = document.createElement('div');
+        pill.id = 'home-edit-done-pill';
+        pill.textContent = '✓ Done';
+        pill.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:15px;font-weight:600;padding:12px 32px;border-radius:999px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);cursor:pointer;';
+        pill.onclick = function() { exitHomeTileEdit(); };
+        pill.addEventListener('touchend', function(e) { e.preventDefault(); exitHomeTileEdit(); }, { passive: false });
+        document.body.appendChild(pill);
+      }
 
       // Fix delete tap on mobile — use touchend directly on badges
       grid.querySelectorAll('.home-tile-remove-btn').forEach(function(btn) {
@@ -3797,6 +3798,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       grid.classList.remove('is-editing');
       if (btn) { btn.textContent = '✏️ Edit'; btn.classList.remove('active'); }
+
+      // Remove floating Done pill
+      var pill = document.getElementById('home-edit-done-pill');
+      if (pill) pill.remove();
       if (tray) { tray.style.display = 'none'; }
 
       grid.querySelectorAll('.home-tile').forEach(function(tile) {
@@ -7569,7 +7574,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var inlineSortableInstances = {};
     var homeTileSortable = null;
 
-    var HOME_TILE_DEFAULTS = ['dates','weather','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','lists','dayeditor','route'];
+    var HOME_TILE_DEFAULTS = ['dates','weather','visa','accommodation','food','budget','map','structure','itinerary','cards','discovery','transport','dayeditor','route'];
     var HOME_TILE_META = {
       dates:          { emoji: '📅', label: 'Dates' },
       weather:        { emoji: '🌤️', label: 'Weather' },
@@ -7584,7 +7589,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       discovery:      { emoji: '🔍', label: 'Discovery' },
       transport:      { emoji: '✈️', label: 'Transport' },
       accommodation:  { emoji: '🏨', label: 'Accommodation' },
-      lists:          { emoji: '📋', label: 'Lists' },
       dayeditor:      { emoji: '✏️', label: 'Day Editor' },
       route:          { emoji: '🗺️', label: 'Route' }
     };
@@ -7601,7 +7605,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       cards:          'navigate',
       discovery:      'navigate',
       transport:      'navigate',
-      lists:          'navigate',
       structure:      'build',
       dayeditor:      'build',
       route:          'build'
@@ -7633,6 +7636,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             if (cfg.order.indexOf('route') === -1 && cfg.hidden.indexOf('route') === -1) {
               cfg.order.push('route');
             }
+            // Self-heal: remove legacy lists tile
+            cfg.order = cfg.order.filter(function(id) { return id !== 'lists'; });
+            cfg.hidden = cfg.hidden.filter(function(id) { return id !== 'lists'; });
             return cfg;
           }
         }
