@@ -371,12 +371,16 @@
     .drag-handle:active { cursor: grabbing; opacity: 0.8; }
     .drag-handle span { display: block; width: 14px; height: 1.5px; background: var(--ink-muted); border-radius: 1px; }
 
+    #mob-day-strip { display: none !important; }
+
     /* ===== SPLIT VIEW ===== */
    #view-split { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; z-index: 1; }
     #view-split.active { display: block; }
     #split-map { position: absolute; top: 0; left: 0; right: 0; height: 40%; overflow: hidden; }
     #split-divider { position: absolute; left: 0; right: 0; height: 10px; background: var(--sand-dark); cursor: row-resize; touch-action: none; display: flex; align-items: center; justify-content: center; z-index: 10; }
     #split-divider::after { content: ''; width: 36px; height: 3px; border-radius: 999px; background: var(--ink-muted); opacity: 0.4; }
+    #split-day-strip { position: absolute; left: 0; right: 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; display: flex; gap: 6px; padding: 8px 12px; background: var(--bg); border-bottom: 0.5px solid var(--sand-dark); z-index: 5; flex-shrink: 0; }
+    #split-day-strip::-webkit-scrollbar { display: none; }
     #split-list { position: absolute; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--white); border-top: 1px solid var(--sand-dark); scrollbar-width: thin; }
     .split-day-item { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); cursor: pointer; transition: background 0.15s; }
     .split-day-item:hover { background: rgba(255,255,255,0.04); }
@@ -928,6 +932,17 @@
 
       /* Hide old day strip */
       #mob-day-strip { display: none !important; }
+
+      /* Split view day strip */
+      #split-day-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 8px 12px; background: var(--bg); border-bottom: 0.5px solid var(--sand-dark); flex-shrink: 0; }
+      #split-day-strip::-webkit-scrollbar { display: none; }
+      .split-day-chip { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 12px; border-radius: 8px; min-width: 54px; cursor: pointer; border-bottom: 3px solid transparent; transition: background 0.15s; }
+      .split-day-chip.active { background: var(--sand); }
+      .split-day-chip.transit { opacity: 0.5; }
+      .split-day-chip-num { font-size: 10px; font-weight: 700; color: var(--ink-muted); line-height: 1; margin-bottom: 4px; }
+      .split-day-chip.active .split-day-chip-num { color: var(--ink); }
+      .split-day-chip-date { font-size: 11px; font-weight: 500; color: var(--ink-muted); line-height: 1; }
+      .split-day-chip.active .split-day-chip-date { color: var(--ink); }
       #tl { display: none !important; }
 
       /* Panel as bottom sheet - 40% height */
@@ -1376,6 +1391,7 @@ gmp-advanced-marker.map-pin-active {
     <div id="split-map"></div>
     <div id="split-divider"></div>
     <div id="split-drag-overlay"></div>
+    <div id="split-day-strip"></div>
     <div id="split-list"></div>
 <button id="split-fit-btn" onclick="fitSplitPins()" style="display:none;position:absolute;top:10px;right:10px;z-index:10;font-family:inherit;font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;border:none;background:rgba(0,0,0,0.6);color:#fff;cursor:pointer;backdrop-filter:blur(4px);">⊙ Show day</button>    <div id="split-float-card">
       <button id="split-float-card-close" onclick="closeSplitFloatCard()">x</button>
@@ -2473,6 +2489,43 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     // ===== MOBILE DAY STRIP =====
+    function buildSplitDayStrip(activeIndex) {
+      var strip = document.getElementById('split-day-strip');
+      if (!strip) return;
+      strip.innerHTML = '';
+      currentTrip.days.forEach(function(day, i) {
+        var cs = (citySettings && citySettings[day.city]) || {};
+        var colour = cs.color || '#aaa';
+        var isTransit = isTransitDay(day);
+        var chip = document.createElement('div');
+        chip.className = 'split-day-chip' + (isTransit ? ' transit' : '') + (i === activeIndex ? ' active' : '');
+        chip.style.borderBottomColor = colour;
+        chip.innerHTML =
+          '<div class="split-day-chip-num">Day ' + (i + 1) + '</div>' +
+          '<div class="split-day-chip-date">' + getDayDate(day, currentTrip).split(' ').slice(1).join(' ') + '</div>';
+        chip.addEventListener('click', function() { selectSplitDay(i); });
+        strip.appendChild(chip);
+      });
+      var activeChip = strip.children[activeIndex];
+      if (activeChip) { activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }
+      var savedPos = parseFloat(localStorage.getItem('split_divider_pos'));
+      var pct = (!isNaN(savedPos) && savedPos >= 20 && savedPos <= 70) ? savedPos : 40;
+      var containerEl = document.getElementById('view-split');
+      var mapPaneEl = document.getElementById('split-map');
+      var dividerEl = document.getElementById('split-divider');
+      var listPaneEl = document.getElementById('split-list');
+      if (containerEl && mapPaneEl && dividerEl && listPaneEl) {
+        var containerH = containerEl.getBoundingClientRect().height;
+        var mapH = Math.round(containerH * pct / 100);
+        var dividerH = 10;
+        var stripH = strip.getBoundingClientRect().height || 52;
+        var listTop = mapH + dividerH + stripH;
+        strip.style.top = (mapH + dividerH) + 'px';
+        listPaneEl.style.top = listTop + 'px';
+        listPaneEl.style.height = (containerH - listTop) + 'px';
+      }
+    }
+
     function rebuildMobStrip() {
       var strip = document.getElementById('mob-day-strip');
       strip.innerHTML = '';
@@ -8158,10 +8211,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       function applyDividerPct(newPct) {
         var containerH = container.getBoundingClientRect().height;
         var mapH = Math.round(containerH * newPct / 100);
-        var listTop = mapH + 10;
+        var dividerH = 10;
+        var stripEl = document.getElementById('split-day-strip');
+        var stripH = stripEl ? stripEl.getBoundingClientRect().height : 0;
+        var listTop = mapH + dividerH + stripH;
         var listH = containerH - listTop;
         mapPane.style.height = mapH + 'px';
         divider.style.top = mapH + 'px';
+        if (stripEl) { stripEl.style.top = (mapH + dividerH) + 'px'; }
         listPane.style.top = listTop + 'px';
         listPane.style.height = listH + 'px';
         listPane.style.bottom = '';
@@ -9057,6 +9114,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // Init Sortable on each section
       deCurrentDay = day;
       deCurrentIndex = index;
+      buildSplitDayStrip(index);
       ['accom','acts','food'].forEach(function(section) {
         var el = document.getElementById('de-sort-' + section);
         if (!el || el.children.length < 2) return;
