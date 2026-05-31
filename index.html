@@ -3432,7 +3432,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<div class="home-tile-sub">' + status.sub + '</div>' +
           '</div>' +
           '<div class="home-tile home-tile-cat-status" data-tile-id="weather" onclick="showWeatherFloat()">' +
-            '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
+            '<div class="home-tile-emoji" id="home-weather-emoji" style="font-size:28px;">⏳</div>' +
             '<div class="home-tile-label">Weather · ' + (nextCity ? nextCity.day.city.split('>').pop().trim() : '') + '</div>' +
             '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
             '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
@@ -3463,7 +3463,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       '</div>';
 
       var weatherFloatDiv = '<div id="home-weather-float" style="display:none;background:var(--white);border:1px solid var(--sand-dark);border-radius:var(--radius);padding:16px;margin:0 0 8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);"></div>';
-      var tilesHtml = '<div class="home-tiles">' + row1Html + weatherFloatDiv + daysHtml + sectionsHtml + trayHtml + '</div>';
+      var tilesHtml = ''; // built after daysHtml below
 
       // ---- Long-press on grid to enter edit mode ----
       setTimeout(function() {
@@ -3664,6 +3664,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       el.style.display = 'block';
+      tilesHtml = '<div class="home-tiles">' + row1Html + weatherFloatDiv + daysHtml + sectionsHtml + trayHtml + '</div>';
       el.innerHTML = tilesHtml + gapsHtml + expandBarHtml;
 
       // fetch weather async and update tile — silent fail if offline/VPN
@@ -7740,7 +7741,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     };
 
     var HOME_CAT_DEFAULTS = {
-      status:   ['dates', 'weather'],
       action:   ['visa', 'accommodation', 'food', 'budget'],
       build:    ['structure', 'dayeditor', 'route'],
       navigate: ['map', 'itinerary', 'cards', 'discovery', 'transport']
@@ -7759,6 +7759,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var cfg = JSON.parse(raw);
           // New per-category format
           if (cfg.categories && cfg.hidden) {
+            // Self-heal: remove legacy status category
+            delete cfg.categories.status;
             // Self-heal: ensure all default tiles exist somewhere
             var allPlaced = [];
             Object.keys(cfg.categories).forEach(function(cat) { allPlaced = allPlaced.concat(cfg.categories[cat]); });
