@@ -5889,7 +5889,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           // Draggable section — activities + food
           var actRows = '';
           if (day.activities && day.activities.length) {
-            day.activities.forEach(function(act) {
+            day.activities.filter(function(a) { return a != null; }).forEach(function(act) {
               var isDone = !!(day.done && day.done['act_' + act.uid]);
               var isSelected = !!planSelected[act.uid];
               if (planSelectMode) {
