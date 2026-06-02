@@ -3492,7 +3492,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           if (x !== undefined && startX !== undefined) {
             var dx = Math.abs(x - startX);
             var dy = Math.abs(y - startY);
-            if (dx > 8 || dy > 8) { clearTimeout(pressTimer); return; }
+            if (dx > 20 || dy > 20) { clearTimeout(pressTimer); return; }
           }
           clearTimeout(pressTimer);
         }
