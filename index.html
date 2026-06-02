@@ -3475,7 +3475,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var tilesHtml = ''; // built after daysHtml below
 
       // ---- Long-press on any category grid to enter edit mode ----
-      function initHomeLongPress() {
+      window.initHomeLongPress = function initHomeLongPress() {
         // Strip any previously-attached listeners by clone-replacing each grid node.
         // Grids persist across re-renders, so addEventListener calls accumulate
         // unless we reset the node first. Clone carries DOM but not listeners.
@@ -3522,7 +3522,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
           grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
         });
-      }
+      };
       setTimeout(initHomeLongPress, 100);
       // gaps bar
       var gapsHtml = '';
@@ -4101,6 +4101,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     // ===== VIEW SWITCHING =====
     function setView(view) {
       closeDeItemSheet();
+      if (document.getElementById('home-edit-done-pill')) { exitHomeTileEdit(); }
       if (!__suppressHistoryPush) { pushHistoryState(view); }
       currentView = view;
       var pill = document.getElementById('mob-day-pill');
