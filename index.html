@@ -1442,10 +1442,7 @@ gmp-advanced-marker.map-pin-active {
     <div id="struct-inner">
       <div id="struct-top-bar">
         <button class="struct-history-btn" onclick="showStructHistory()">🕐 History</button>
-        <div style="display:flex;gap:8px;margin-left:auto;">
-          <button class="struct-expand-btn" onclick="expandAllPlanDays()">Expand all</button>
-          <button class="struct-expand-btn" onclick="collapseAllPlanDays()">Collapse all</button>
-        </div>
+        <span id="plan-expand-all-btn" onclick="togglePlanAllDays()" style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;margin-left:auto;">Expand all</span>
       </div>
       <div id="struct-city-list"></div>
       <div id="plan-select-bar">
@@ -6037,6 +6034,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (planExpandedDays[dayId]) initPlanActivitySortables();
     }
 
+    function togglePlanAllDays() {
+      var anyCollapsed = currentTrip.days.some(function(d) { return !planExpandedDays[d.id]; });
+      currentTrip.days.forEach(function(d) {
+        planExpandedDays[d.id] = anyCollapsed;
+        var row = document.querySelector('.struct-day-row[data-day-id="' + d.id + '"]');
+        var content = document.querySelector('.plan-day-content[data-day-id="' + d.id + '"]');
+        if (row) row.classList.toggle('expanded', anyCollapsed);
+        if (content) content.classList.toggle('open', anyCollapsed);
+      });
+      if (anyCollapsed) initPlanActivitySortables();
+      var btn = document.getElementById('plan-expand-all-btn');
+      if (btn) { btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all'; }
+    }
+
     function planDeleteActivity(e, dayId, di, uid, type) {
       if (e && e.stopPropagation) e.stopPropagation();
       var day = currentTrip.days.find(function(d) { return d.id === dayId; });
@@ -6136,16 +6147,6 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           }
         });
       });
-    }
-
-    function expandAllPlanDays() {
-      (currentTrip.days || []).forEach(function(day) { planExpandedDays[day.id] = true; });
-      renderPlanView();
-    }
-
-    function collapseAllPlanDays() {
-      planExpandedDays = {};
-      renderPlanView();
     }
 
     function planToggleDone(uid, di, type, e) {
@@ -6651,7 +6652,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       var summaryHtml = '<div style="background:var(--white);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
         '<div style="flex:1;">' +
-          '<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">Activities & Food</div>' +
+          '<div style="margin-bottom:4px;">' +
+            '<div style="font-size:13px;font-weight:800;color:var(--ink);letter-spacing:-0.01em;">Activities & Food</div>' +
+          '</div>' +
           '<div style="font-size:12px;color:var(--ink-muted);">' + bookedRes + ' of ' + totalRes + ' reservations booked</div>' +
         '</div>' +
         (totalRes > 0 ? '<div style="display:flex;gap:8px;">' +
@@ -6834,12 +6837,23 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '</div>';
       }).filter(Boolean).join('');
 
-      el.innerHTML = summaryHtml + alertHtml + (daysHtml || '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No activities or food added yet.</div>');
+      var expandBarHtml = '<div style="display:flex;justify-content:flex-end;padding:4px 2px 10px;">' +
+        '<span id="food-expand-all-btn" onclick="toggleFoodAllDays()" style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;">Expand all</span>' +
+      '</div>';
+      el.innerHTML = summaryHtml + alertHtml + expandBarHtml + (daysHtml || '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No activities or food added yet.</div>');
     }
 
     function toggleFoodDay(id) {
       var el = document.getElementById(id);
       if (el) { el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+    }
+
+    function toggleFoodAllDays() {
+      var els = document.querySelectorAll('[id^="food-day-"]');
+      var anyCollapsed = Array.prototype.some.call(els, function(el) { return el.style.display === 'none'; });
+      els.forEach(function(el) { el.style.display = anyCollapsed ? 'block' : 'none'; });
+      var btn = document.getElementById('food-expand-all-btn');
+      if (btn) { btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all'; }
     }
 
     function toggleFoodBooked(dayIndex, foodIndex) {
