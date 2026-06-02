@@ -3475,7 +3475,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var tilesHtml = ''; // built after daysHtml below
 
       // ---- Long-press on any category grid to enter edit mode ----
-      setTimeout(function() {
+      function initHomeLongPress() {
         var grids = ['action','build','navigate'].map(function(cat) {
           return document.getElementById('home-sortable-grid-' + cat);
         }).filter(Boolean);
@@ -3515,7 +3515,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
           grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
         });
-      }, 100);
+      }
+      setTimeout(initHomeLongPress, 100);
       // gaps bar
       var gapsHtml = '';
 
@@ -3944,6 +3945,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           subEl.textContent = 'Today in ' + nextCity.day.city.split('>').pop().trim();
         }
       });
+
+      // Re-attach long-press listeners to fresh grid elements
+      setTimeout(initHomeLongPress, 100);
     }
 
     function hideHomeTile(id) {
