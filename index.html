@@ -3892,7 +3892,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var pill = document.createElement('div');
         pill.id = 'home-edit-done-pill';
         pill.textContent = '✓ Done';
-        pill.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:15px;font-weight:600;padding:12px 32px;border-radius:999px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);cursor:pointer;';
+        pill.style.cssText = 'position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:rgba(56,178,172,1);color:#fff;font-size:15px;font-weight:600;padding:12px 32px;border-radius:999px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);cursor:pointer;';
         pill.onclick = function() { exitHomeTileEdit(); };
         pill.addEventListener('touchend', function(e) { e.preventDefault(); exitHomeTileEdit(); }, { passive: false });
         document.body.appendChild(pill);
