@@ -3481,6 +3481,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           pressTimer = setTimeout(function() {
             if (moved) return;
             if (navigator.vibrate) { try { navigator.vibrate(30); } catch(e) {} }
+            document.addEventListener('click', function suppressClick(e) {
+              e.stopPropagation();
+              e.preventDefault();
+              document.removeEventListener('click', suppressClick, true);
+            }, true);
             enterHomeTileEdit();
           }, 600);
         }
