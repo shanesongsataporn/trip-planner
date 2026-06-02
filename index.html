@@ -552,10 +552,16 @@
     /* ===== ROUTE VIEW ===== */
     #view-route { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 50; scrollbar-width: thin; }
     #route-inner { max-width: 680px; margin: 0 auto; padding: 0 0 120px; }
-    #route-top-bar { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--white); border-bottom: 1px solid var(--sand-dark); position: sticky; top: 0; z-index: 2; }
-    #route-back-btn { font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--accent); color: var(--accent); background: none; cursor: pointer; white-space: nowrap; }
-    #route-back-btn:active { background: var(--accent-light); }
-    #route-day-title { font-size: 15px; font-weight: 700; color: var(--ink); flex: 1; }
+    #route-top-bar { display: flex; flex-direction: column; background: var(--white); border-bottom: 1px solid var(--sand-dark); position: sticky; top: 0; z-index: 2; }
+    #route-day-strip-wrap { overflow-x: auto; scrollbar-width: none; padding: 10px 16px 0; }
+    #route-day-strip-wrap::-webkit-scrollbar { display: none; }
+    #route-day-strip { display: flex; gap: 8px; width: max-content; padding-bottom: 10px; }
+    .route-day-pill { font-family: inherit; display: inline-flex; flex-direction: column; align-items: center; padding: 7px 14px 9px; min-width: 58px; border: none; border-bottom: 2.5px solid transparent; background: none; cursor: pointer; }
+    .route-day-pill.active { border-bottom: 2.5px solid transparent !important; }
+    .route-pill-num { font-size: 10px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .route-pill-date { font-size: 12px; font-weight: 600; color: var(--ink-muted); line-height: 1; }
+    .route-day-pill.active .route-pill-date { color: inherit; }
+    #route-day-title { font-size: 14px; font-weight: 700; color: var(--ink); padding: 8px 16px 10px; }
     #route-body { padding: 16px 16px 40px; }
 
     /* ===== STRUCTURE VIEW ===== */
@@ -944,13 +950,12 @@
       /* Split view day strip */
       #split-day-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 8px 12px; background: var(--bg); border-bottom: 0.5px solid var(--sand-dark); flex-shrink: 0; }
       #split-day-strip::-webkit-scrollbar { display: none; }
-      .split-day-chip { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 12px; border-radius: 8px; min-width: 54px; cursor: pointer; border-bottom: 3px solid transparent; transition: background 0.15s; }
-      .split-day-chip.active { background: var(--sand); }
-      .split-day-chip.transit { opacity: 0.5; }
-      .split-day-chip-num { font-size: 10px; font-weight: 700; color: var(--ink-muted); line-height: 1; margin-bottom: 4px; }
-      .split-day-chip.active .split-day-chip-num { color: var(--ink); }
-      .split-day-chip-date { font-size: 11px; font-weight: 500; color: var(--ink-muted); line-height: 1; }
-      .split-day-chip.active .split-day-chip-date { color: var(--ink); }
+      .split-day-chip { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 14px 9px; border-radius: 0; min-width: 58px; cursor: pointer; border-bottom: 2.5px solid transparent; transition: background 0.15s; }
+      .split-day-chip.active { border-radius: 8px 8px 0 0; border-bottom: 2.5px solid transparent !important; }
+      .split-day-chip.transit { opacity: 0.45; }
+      .split-day-chip-num { font-size: 10px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+      .split-day-chip-date { font-size: 12px; font-weight: 600; color: var(--ink-muted); line-height: 1; }
+      .split-day-chip.active .split-day-chip-date { color: inherit; }
       #tl { display: none !important; }
 
       /* Panel as bottom sheet - 40% height */
@@ -1421,7 +1426,9 @@ gmp-advanced-marker.map-pin-active {
   <div id="view-route">
     <div id="route-inner">
       <div id="route-top-bar">
-        <button id="route-back-btn" onclick="history.back()">‹ Back</button>
+        <div id="route-day-strip-wrap">
+          <div id="route-day-strip"></div>
+        </div>
         <div id="route-day-title"></div>
       </div>
       <div id="route-body">
@@ -2529,12 +2536,23 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var cs = (citySettings && citySettings[day.city]) || {};
         var colour = cs.color || '#aaa';
         var isTransit = isTransitDay(day);
+        var isActive = i === activeIndex;
         var chip = document.createElement('div');
-        chip.className = 'split-day-chip' + (isTransit ? ' transit' : '') + (i === activeIndex ? ' active' : '');
-        chip.style.borderBottomColor = colour;
-        chip.innerHTML =
-          '<div class="split-day-chip-num">Day ' + (i + 1) + '</div>' +
-          '<div class="split-day-chip-date">' + getDayDate(day, currentTrip).split(' ').slice(1).join(' ') + '</div>';
+        chip.className = 'split-day-chip' + (isTransit ? ' transit' : '') + (isActive ? ' active' : '');
+        var dateShort = getDayDate(day, currentTrip).split(' ').slice(1).join(' ');
+        var transitMark = isTransit ? ' ✈' : '';
+        if (isActive) {
+          chip.style.background = colour;
+          chip.style.borderBottomColor = 'transparent';
+          chip.innerHTML =
+            '<div class="split-day-chip-num" style="color:rgba(0,0,0,0.5);">D' + (i + 1) + transitMark + '</div>' +
+            '<div class="split-day-chip-date" style="color:rgba(0,0,0,0.85);">' + dateShort + '</div>';
+        } else {
+          chip.style.borderBottomColor = colour;
+          chip.innerHTML =
+            '<div class="split-day-chip-num" style="color:' + colour + ';">D' + (i + 1) + transitMark + '</div>' +
+            '<div class="split-day-chip-date">' + dateShort + '</div>';
+        }
         chip.addEventListener('click', function() { selectSplitDay(i); });
         strip.appendChild(chip);
       });
@@ -4151,7 +4169,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       lastView = currentView === view ? lastView : currentView;
       var mobBackBtn = document.getElementById('mob-back-btn');
       if (mobBackBtn) {
-        mobBackBtn.style.display = 'block';
+        mobBackBtn.style.display = (view === 'home') ? 'none' : 'block';
       }
 
       document.querySelectorAll('.view-btn').forEach(function(btn) { btn.classList.remove('active'); });
@@ -4242,6 +4260,30 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       currentDayItem = day;
       var dateStr = getDayDate(day, currentTrip);
       titleEl.textContent = 'Day ' + (routeCurrentIndex + 1) + ' — ' + dateStr + ' · ' + (day.city || '');
+      var strip = document.getElementById('route-day-strip');
+      if (strip) {
+        strip.innerHTML = currentTrip.days.map(function(d, i) {
+          var cs = (citySettings && citySettings[d.city]) || {};
+          var colour = cs.color || '#aaa';
+          var isActive = i === routeCurrentIndex;
+          var isTransit = isTransitDay(d);
+          var dateShort = getDayDate(d, currentTrip).split(' ').slice(1).join(' ');
+          var transitMark = isTransit ? ' ✈' : '';
+          var dimStyle = isTransit ? 'opacity:0.45;' : '';
+          if (isActive) {
+            return '<button class="route-day-pill active" style="' + dimStyle + 'background:' + colour + ';border-color:transparent;border-radius:8px 8px 0 0;" onclick="routeCurrentIndex=' + i + ';renderRoutePage();">' +
+              '<div class="route-pill-num" style="color:rgba(0,0,0,0.5);">D' + (i + 1) + transitMark + '</div>' +
+              '<div class="route-pill-date" style="color:rgba(0,0,0,0.85);">' + dateShort + '</div>' +
+            '</button>';
+          }
+          return '<button class="route-day-pill" style="' + dimStyle + 'border-bottom:2.5px solid ' + colour + ';border-radius:0;" onclick="routeCurrentIndex=' + i + ';renderRoutePage();">' +
+            '<div class="route-pill-num" style="color:' + colour + ';">D' + (i + 1) + transitMark + '</div>' +
+            '<div class="route-pill-date">' + dateShort + '</div>' +
+          '</button>';
+        }).join('');
+        var activePill = strip.querySelector('.route-day-pill.active');
+        if (activePill) { activePill.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+      }
       var contentEl = document.getElementById('route-content');
       if (!contentEl) return;
       if (isTransitDay(day)) {
