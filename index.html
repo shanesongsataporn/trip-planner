@@ -6,10 +6,7 @@
   <title>Shane &amp; Cheryl&#39;s Trip Planner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -35,7 +32,7 @@
       --card-shadow-hover: 0 6px 24px rgba(0,0,0,0.55);
     }
 
-    html, body { height: 100%; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: var(--ink); overflow: hidden; background: var(--white); }
+    html, body { height: 100%; font-family: 'Outfit', system-ui, sans-serif; color: var(--ink); overflow: hidden; background: var(--white); }
 
     /* ===== DESKTOP HEADER ===== */
     #hdr {
@@ -827,7 +824,7 @@
     .home-tile-tray-emoji { font-size: 18px; }
     .home-tile-tray-label-text { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); text-align: center; }
     .home-sortable-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; touch-action: pan-y !important; }
-    .home-sortable-grid .home-tile { min-height: 90px; cursor: grab; }
+    .home-sortable-grid .home-tile { min-height: 100px; cursor: grab; }
     .home-sortable-grid .home-tile:active { cursor: grabbing; }
     #view-home { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     @media (max-width: 640px) { #view-home { top: 54px; bottom: 0; } }
@@ -837,7 +834,7 @@
     .home-tile-row { display: grid; gap: 10px; }
     .home-tile-row-2 { grid-template-columns: 2fr 1fr; }
     .home-tile-row-3 { grid-template-columns: 1fr 1fr 1fr; }
-    .home-tile { background: var(--white); border-radius: var(--radius); padding: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; min-height: 90px; display: flex; flex-direction: column; justify-content: space-between; }
+    .home-tile { background: var(--white); border-radius: var(--radius); padding: 16px; border: 1px solid var(--sand-dark); box-shadow: var(--card-shadow); cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; min-height: 110px; display: flex; flex-direction: column; justify-content: space-between; }
     .home-tile:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-1px); }
     .home-tile:active { transform: translateY(0); }
     .home-tile-cat-status   { border: 1.5px solid rgba(56, 178, 172, 0.5); }
@@ -849,8 +846,8 @@
     .home-cat-section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-light); }
     .home-cat-section-line { flex: 1; height: 1px; background: var(--sand-dark); }
     .home-cat-section-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-    .home-tile-emoji { font-size: 22px; margin-bottom: 6px; line-height: 1; }
-    .home-tile-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+    .home-tile-emoji { font-size: 20px; margin-bottom: 6px; line-height: 1; }
+    .home-tile-label { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin-bottom: 4px; }
     .home-tile-value { font-size: 20px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.1; }
     .home-tile-sub { font-size: 10px; color: var(--ink-muted); margin-top: 3px; font-weight: 500; }
     .home-tile-value.accent { color: var(--accent); }
@@ -3177,7 +3174,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           return '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;border:1px solid var(--sand-dark);">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">' +
               '<div style="width:10px;height:10px;border-radius:50%;background:' + dot + ';flex-shrink:0;"></div>' +
-              '<div style="font-size:14px;font-weight:800;color:var(--ink);flex:1;">' + (t.name || 'Traveller') + '</div>' +
+              '<div style="font-size:14px;font-weight:700;color:var(--ink);flex:1;">' + (t.name || 'Traveller') + '</div>' +
               '<button onclick="removeVisaTraveller(' + i + ')" style="font-family:inherit;font-size:10px;padding:2px 8px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">Remove</button>' +
             '</div>' +
             '<div style="margin-bottom:8px;"><div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;">Name</div>' +
@@ -3295,7 +3292,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           case 'weather':
             return '<div class="home-tile" data-tile-id="weather" onclick="showWeatherFloat()">' +
               '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
-              '<div class="home-tile-value" style="font-size:14px;font-weight:800;">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Weather</div>' +
               '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:13px;">--°</div>' +
               '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
             '</div>';
@@ -3322,9 +3319,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               : '<div style="font-size:11px;color:var(--ink-muted);">Tap to add</div>';
             return '<div class="home-tile" data-tile-id="visa" onclick="showVisaSheet()">' +
               '<div class="home-tile-emoji">🛂</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Visa & Entry</div>' +
-              '<div class="home-visa-travellers">' + visaDots + '</div>' +
-              '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Visa & Entry</div>' +
+              '<div class="home-tile-value ' + (visa.travellers.filter(function(t){ return t.visaStatus !== 'approved'; }).length === 0 ? 'accent' : 'warn') + '" style="font-size:13px;">' + (visa.travellers.filter(function(t){ return t.visaStatus !== 'approved'; }).length > 0 ? visa.travellers.filter(function(t){ return t.visaStatus !== 'approved'; }).length + ' to complete' : 'All sorted') + '</div>' +
             '</div>';
           case 'accommodation':
             var accomStays = [];
@@ -3335,18 +3331,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var accomVal = accomBooked < accomTotal ? (accomTotal - accomBooked) + ' unbooked' : accomBooked + ' booked';
             return '<div class="home-tile" data-tile-id="accommodation" onclick="setView(\'accommodation\')">' +
               '<div class="home-tile-emoji">🏨</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Stays</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Stays</div>' +
               '<div class="home-tile-value ' + accomColor + '" style="font-size:13px;">' + accomVal + '</div>' +
-              '<div class="home-tile-sub">' + accomBooked + ' of ' + accomTotal + ' nights booked</div>' +
             '</div>';
           case 'food':
             var foodColor = food.unbooked > 0 ? 'warn' : 'accent';
             var foodVal = food.unbooked > 0 ? food.unbooked + ' to book' : (food.booked > 0 ? food.booked + ' booked' : 'All good');
             return '<div class="home-tile" data-tile-id="food" onclick="setView(\'food\')">' +
               '<div class="home-tile-emoji">✅</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Activities & Food</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Eat & Do</div>' +
               '<div class="home-tile-value ' + foodColor + '" style="font-size:13px;">' + foodVal + '</div>' +
-              '<div class="home-tile-sub">' + (food.booked + food.unbooked) + ' requiring booking</div>' +
             '</div>';
           case 'budget':
             var budgetVal = budget.total > 0 ? budget.sym + Math.round(budget.total).toLocaleString() : 'Not set';
@@ -3359,45 +3353,45 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           case 'map':
             return '<div class="home-tile" data-tile-id="map" onclick="setView(\'map\')">' +
               '<div class="home-tile-emoji">🗺️</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Map</div>' +
-              '<div class="home-tile-sub">See where you\'re going</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Map</div>' +
+              '<div class="home-tile-sub">View the map</div>' +
             '</div>';
           case 'structure':
             return '<div class="home-tile" data-tile-id="structure" onclick="setView(\'structure\')">' +
               '<div class="home-tile-emoji">✏️</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Plan</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Plan</div>' +
               '<div class="home-tile-sub">Structure your trip</div>' +
             '</div>';
           case 'itinerary':
             return '<div class="home-tile" data-tile-id="itinerary" onclick="setView(\'itinerary\')">' +
               '<div class="home-tile-emoji">📋</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Itinerary</div>' +
-              '<div class="home-tile-sub">Day by day breakdown</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Itinerary</div>' +
+              '<div class="home-tile-sub">Full itinerary</div>' +
             '</div>';
           case 'cards':
             return '<div class="home-tile" data-tile-id="cards" onclick="setView(\'cards\')">' +
               '<div class="home-tile-emoji">🃏</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Cards</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Cards</div>' +
               '<div class="home-tile-sub">Visual itinerary</div>' +
             '</div>';
           case 'discovery':
             var wishlistCount = (discWishlist || []).length;
             return '<div class="home-tile" data-tile-id="discovery" onclick="setView(\'discovery\')">' +
               '<div class="home-tile-emoji">🔍</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Discovery</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Discovery</div>' +
               '<div class="home-tile-sub">' + (wishlistCount ? wishlistCount + ' saved' : 'Find places') + '</div>' +
             '</div>';
           case 'transport':
             var nfDisp2 = nextFlight ? getFlightDisplay(nextFlight.flight) : null;
             return '<div class="home-tile" data-tile-id="transport" onclick="setView(\'transport\')">' +
               '<div class="home-tile-emoji">✈️</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Transport</div>' +
-              '<div class="home-tile-sub">' + (nfDisp2 ? nfDisp2.from + ' → ' + nfDisp2.to + ' · ' + getDayDate(nextFlight.day, currentTrip) : 'No upcoming flights') + '</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Transport</div>' +
+              '<div class="home-tile-sub">' + (nfDisp2 ? 'Next: ' + getDayDate(nextFlight.day, currentTrip) : 'No upcoming flights') + '</div>' +
             '</div>';
           case 'dayeditor':
             return '<div class="home-tile" data-tile-id="dayeditor" onclick="selectSplitDay(' + Math.max(0, todayDayIndex) + ')">' +
               '<div class="home-tile-emoji">✏️</div>' +
-              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Day Editor</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Day Editor</div>' +
               '<div class="home-tile-sub">Edit any day</div>' +
             '</div>';
           case 'route':
@@ -3412,9 +3406,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var routeOnclick = routeDayIndex !== -1 ? 'openRoutePage(' + routeDayIndex + ')' : 'setView(\'map\')';
             return '<div class="home-tile" data-tile-id="route" onclick="' + routeOnclick + '">' +
               '<div class="home-tile-emoji">🗺️</div>' +
-              '<div class="home-tile-value" style="font-size:14px;font-weight:800;">Route</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:700;">Route</div>' +
               '<div class="home-tile-sub">Optimise your day</div>' +
-              '<div class="home-tile-sub">' + routeSub + '</div>' +
             '</div>';
           default: return '';
         }
@@ -3429,13 +3422,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<div style="display:grid;grid-template-columns:3fr 2fr;gap:6px;margin-bottom:6px;">' +
           '<div class="home-tile home-tile-countdown" onclick="editDatesTile()">' +
             '<div class="home-tile-emoji">🛫</div>' +
-            '<div class="home-tile-label">Countdown</div>' +
+            '<div class="home-tile-label" style="font-weight:800;">Countdown</div>' +
             '<div class="home-tile-value">' + countdownVal + '</div>' +
             '<div class="home-tile-sub">' + status.sub + '</div>' +
           '</div>' +
           '<div class="home-tile home-tile-cat-status" data-tile-id="weather" onclick="showWeatherFloat()">' +
             '<div class="home-tile-emoji" id="home-weather-emoji" style="font-size:28px;">⏳</div>' +
-            '<div class="home-tile-label">Weather · ' + (nextCity ? nextCity.day.city.split('>').pop().trim() : '') + '</div>' +
+            '<div class="home-tile-label" style="font-weight:800;">Weather</div>' +
             '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
             '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
           '</div>' +
@@ -11396,7 +11389,7 @@ var pinDelay = Math.floor(Math.random() * 150);
         '</div>' +
         stopsHtml +
         '<div style="background:var(--sand);border-radius:var(--radius-sm);padding:12px 14px;margin-top:10px;border:1px solid var(--sand-dark);">' +
-          '<div style="font-size:14px;font-weight:800;color:' + verdictColor + ';margin-bottom:6px;">' + verdict + ' · ' + totalH + 'h ' + totalM + 'm total</div>' +
+          '<div style="font-size:14px;font-weight:700;color:' + verdictColor + ';margin-bottom:6px;">' + verdict + ' · ' + totalH + 'h ' + totalM + 'm total</div>' +
           '<div style="font-size:11px;color:var(--ink-muted);">🚗 Travel: ' + Math.floor(totalTravelMins/60) + 'h ' + (totalTravelMins%60) + 'm (' + travelPct + '%) · 📍 Stops: ' + Math.floor(totalDwellMins/60) + 'h ' + (totalDwellMins%60) + 'm</div>' +
           travelWarning +
         '</div>' +
