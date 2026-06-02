@@ -810,8 +810,8 @@
       0%,100% { transform: rotate(-1.5deg); }
       50% { transform: rotate(1.5deg); }
     }
-    .home-tile-editing { animation: homeTileWiggle 0.3s infinite; overflow: visible !important; }
-.home-tile-remove-btn { position: absolute; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 14px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .home-tile-editing { animation: homeTileWiggle 0.3s infinite; overflow: visible !important; touch-action: none !important; }
+    .home-tile-remove-btn { position: absolute; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--danger); color: #fff; font-size: 14px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     .home-tile-add-btn { position: absolute; top: -8px; left: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 16px; font-weight: 900; border: 2px solid var(--white); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; line-height: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }    .home-sortable-drag { opacity: 1 !important; transform: scale(1.06) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important; z-index: 999 !important; cursor: grabbing !important; }
     .home-sortable-ghost { opacity: 0 !important; }    .home-edit-trigger { position: fixed; top: 64px; right: 16px; font-family: inherit; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; z-index: 20; box-shadow: var(--card-shadow); }
     @media (max-width: 640px) { .home-edit-trigger { top: 62px; } }
@@ -3473,40 +3473,43 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           return document.getElementById('home-sortable-grid-' + cat);
         }).filter(Boolean);
         if (!grids.length) return;
-        var pressTimer;
-        var startX, startY;
+        var pressTimer = null;
+        var startX, startY, moved;
         function startPress(x, y) {
-          startX = x; startY = y;
+          startX = x; startY = y; moved = false;
+          clearTimeout(pressTimer);
           pressTimer = setTimeout(function() {
+            if (moved) return;
+            if (navigator.vibrate) { try { navigator.vibrate(30); } catch(e) {} }
             enterHomeTileEdit();
           }, 600);
         }
-        function cancelPress(x, y) {
-          if (x !== undefined && startX !== undefined) {
-            var dx = Math.abs(x - startX);
-            var dy = Math.abs(y - startY);
-            if (dx > 20 || dy > 20) { clearTimeout(pressTimer); return; }
+        function moveCheck(x, y) {
+          if (startX === undefined) return;
+          if (Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10) {
+            moved = true;
+            clearTimeout(pressTimer);
           }
-          clearTimeout(pressTimer);
         }
+        function endPress() { clearTimeout(pressTimer); }
         grids.forEach(function(grid) {
           grid.style.userSelect = 'none';
           grid.style.webkitUserSelect = 'none';
+          grid.style.webkitTouchCallout = 'none';
           grid.addEventListener('contextmenu', function(e) { e.preventDefault(); }, { passive: false });
           grid.addEventListener('touchstart', function(e) {
             var t = e.touches[0];
             startPress(t.clientX, t.clientY);
-          }, { passive: false });
-          grid.addEventListener('touchend', function(e) {
-            clearTimeout(pressTimer);
           }, { passive: true });
           grid.addEventListener('touchmove', function(e) {
             var t = e.touches[0];
-            cancelPress(t.clientX, t.clientY);
-          }, { passive: false });
+            moveCheck(t.clientX, t.clientY);
+          }, { passive: true });
+          grid.addEventListener('touchend', endPress, { passive: true });
+          grid.addEventListener('touchcancel', endPress, { passive: true });
           grid.addEventListener('mousedown', function(e) { startPress(e.clientX, e.clientY); });
-          grid.addEventListener('mouseup', function() { clearTimeout(pressTimer); });
-          grid.addEventListener('mousemove', function(e) { cancelPress(e.clientX, e.clientY); });
+          grid.addEventListener('mousemove', function(e) { moveCheck(e.clientX, e.clientY); });
+          grid.addEventListener('mouseup', endPress);
         });
       };
       setTimeout(initHomeLongPress, 100);
@@ -3861,9 +3864,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           animation: 0,
           ghostClass: 'home-sortable-ghost',
           dragClass: 'home-sortable-drag',
-          delay: 200,
+          delay: 0,
           delayOnTouchOnly: true,
-          touchStartThreshold: 8,
+          touchStartThreshold: 5,
           filter: '.home-tile-remove-btn',
           preventOnFilter: false,
           onEnd: function() {
