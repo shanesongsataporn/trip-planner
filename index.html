@@ -9680,7 +9680,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       function bindSortable(id, arr, onEnd) {
         var el = document.getElementById(id);
-        if (el) { Sortable.create(el, { animation: 150, handle: '.drag-handle', onEnd: onEnd }); }
+        if (el) { Sortable.create(el, { animation: 150, handle: '.drag-handle', delay: 150, delayOnTouchOnly: true, touchStartThreshold: 3, onEnd: onEnd }); }
       }
 
       bindSortable('sortable-accom-overview', item.accommodation, function(evt) { var m = item.accommodation.splice(evt.oldIndex,1)[0]; item.accommodation.splice(evt.newIndex,0,m); saveToStorage(); refreshPanelTabs(item); });
