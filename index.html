@@ -3295,8 +3295,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           case 'weather':
             return '<div class="home-tile" data-tile-id="weather" onclick="showWeatherFloat()">' +
               '<div class="home-tile-emoji" id="home-weather-emoji">⏳</div>' +
-              '<div class="home-tile-label">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
-              '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:16px;">--°</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:800;">Weather · ' + nextCity.day.city.split('>').pop().trim() + '</div>' +
+              '<div class="home-tile-value" id="' + weatherTileId + '" style="font-size:13px;">--°</div>' +
               '<div class="home-tile-sub" id="home-weather-sub">Loading...</div>' +
             '</div>';
           case 'flight':
@@ -3322,7 +3322,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               : '<div style="font-size:11px;color:var(--ink-muted);">Tap to add</div>';
             return '<div class="home-tile" data-tile-id="visa" onclick="showVisaSheet()">' +
               '<div class="home-tile-emoji">🛂</div>' +
-              '<div class="home-tile-label">Visa & Entry</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Visa & Entry</div>' +
               '<div class="home-visa-travellers">' + visaDots + '</div>' +
               '<div class="home-tile-sub">' + getTripDestination() + (visa.travellers.length && visa.travellers[0].visaType ? ' · ' + visa.travellers[0].visaType : '') + '</div>' +
             '</div>';
@@ -3335,17 +3335,17 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var accomVal = accomBooked < accomTotal ? (accomTotal - accomBooked) + ' unbooked' : accomBooked + ' booked';
             return '<div class="home-tile" data-tile-id="accommodation" onclick="setView(\'accommodation\')">' +
               '<div class="home-tile-emoji">🏨</div>' +
-              '<div class="home-tile-label">Stays</div>' +
-              '<div class="home-tile-value ' + accomColor + '" style="font-size:18px;">' + accomVal + '</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Stays</div>' +
+              '<div class="home-tile-value ' + accomColor + '" style="font-size:13px;">' + accomVal + '</div>' +
               '<div class="home-tile-sub">' + accomBooked + ' of ' + accomTotal + ' nights booked</div>' +
             '</div>';
           case 'food':
             var foodColor = food.unbooked > 0 ? 'warn' : 'accent';
             var foodVal = food.unbooked > 0 ? food.unbooked + ' to book' : (food.booked > 0 ? food.booked + ' booked' : 'All good');
             return '<div class="home-tile" data-tile-id="food" onclick="setView(\'food\')">' +
-              '<div class="home-tile-emoji">🍜</div>' +
-              '<div class="home-tile-label">Reservations</div>' +
-              '<div class="home-tile-value ' + foodColor + '">' + foodVal + '</div>' +
+              '<div class="home-tile-emoji">✅</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Activities & Food</div>' +
+              '<div class="home-tile-value ' + foodColor + '" style="font-size:13px;">' + foodVal + '</div>' +
               '<div class="home-tile-sub">' + (food.booked + food.unbooked) + ' requiring booking</div>' +
             '</div>';
           case 'budget':
@@ -3359,52 +3359,45 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           case 'map':
             return '<div class="home-tile" data-tile-id="map" onclick="setView(\'map\')">' +
               '<div class="home-tile-emoji">🗺️</div>' +
-              '<div class="home-tile-label">Map</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Map</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Map</div>' +
               '<div class="home-tile-sub">See where you\'re going</div>' +
             '</div>';
           case 'structure':
             return '<div class="home-tile" data-tile-id="structure" onclick="setView(\'structure\')">' +
               '<div class="home-tile-emoji">✏️</div>' +
-              '<div class="home-tile-label">Plan</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Plan</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Plan</div>' +
               '<div class="home-tile-sub">Structure your trip</div>' +
             '</div>';
           case 'itinerary':
             return '<div class="home-tile" data-tile-id="itinerary" onclick="setView(\'itinerary\')">' +
               '<div class="home-tile-emoji">📋</div>' +
-              '<div class="home-tile-label">Itinerary</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Itinerary</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Itinerary</div>' +
               '<div class="home-tile-sub">Day by day breakdown</div>' +
             '</div>';
           case 'cards':
             return '<div class="home-tile" data-tile-id="cards" onclick="setView(\'cards\')">' +
               '<div class="home-tile-emoji">🃏</div>' +
-              '<div class="home-tile-label">Cards</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Cards</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Cards</div>' +
               '<div class="home-tile-sub">Visual itinerary</div>' +
             '</div>';
           case 'discovery':
             var wishlistCount = (discWishlist || []).length;
             return '<div class="home-tile" data-tile-id="discovery" onclick="setView(\'discovery\')">' +
               '<div class="home-tile-emoji">🔍</div>' +
-              '<div class="home-tile-label">Discovery</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Discovery</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Discovery</div>' +
               '<div class="home-tile-sub">' + (wishlistCount ? wishlistCount + ' saved' : 'Find places') + '</div>' +
             '</div>';
           case 'transport':
             var nfDisp2 = nextFlight ? getFlightDisplay(nextFlight.flight) : null;
             return '<div class="home-tile" data-tile-id="transport" onclick="setView(\'transport\')">' +
               '<div class="home-tile-emoji">✈️</div>' +
-              '<div class="home-tile-label">Transport</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Transport</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Transport</div>' +
               '<div class="home-tile-sub">' + (nfDisp2 ? nfDisp2.from + ' → ' + nfDisp2.to + ' · ' + getDayDate(nextFlight.day, currentTrip) : 'No upcoming flights') + '</div>' +
             '</div>';
           case 'dayeditor':
             return '<div class="home-tile" data-tile-id="dayeditor" onclick="selectSplitDay(' + Math.max(0, todayDayIndex) + ')">' +
               '<div class="home-tile-emoji">✏️</div>' +
-              '<div class="home-tile-label">Day Editor</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Day Editor</div>' +
+              '<div class="home-tile-value" style="font-size:16px;font-weight:800;">Day Editor</div>' +
               '<div class="home-tile-sub">Edit any day</div>' +
             '</div>';
           case 'route':
@@ -3419,8 +3412,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var routeOnclick = routeDayIndex !== -1 ? 'openRoutePage(' + routeDayIndex + ')' : 'setView(\'map\')';
             return '<div class="home-tile" data-tile-id="route" onclick="' + routeOnclick + '">' +
               '<div class="home-tile-emoji">🗺️</div>' +
-              '<div class="home-tile-label">Route</div>' +
-              '<div class="home-tile-value" style="font-size:14px;">Route</div>' +
+              '<div class="home-tile-value" style="font-size:14px;font-weight:800;">Route</div>' +
+              '<div class="home-tile-sub">Optimise your day</div>' +
               '<div class="home-tile-sub">' + routeSub + '</div>' +
             '</div>';
           default: return '';
@@ -6588,10 +6581,18 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var el = document.getElementById('view-food');
       if (!el) return;
 
-      // count reservation stats
+      // count reservation stats — activities via .reserved, food via booleans
       var totalRes = 0, bookedRes = 0, needsBooking = [];
-      currentTrip.days.forEach(function(day) {
+      currentTrip.days.forEach(function(day, di) {
         normaliseFood(day);
+        day.activities.forEach(function(act) {
+          if (!act || typeof act !== 'object') return;
+          if (act.reserved === 'needed' || act.reserved === 'booked') {
+            totalRes++;
+            if (act.reserved === 'booked') { bookedRes++; }
+            else { needsBooking.push({ name: act.name, day: day.day, date: getDayDate(day, currentTrip), city: day.city }); }
+          }
+        });
         day.food.forEach(function(f) {
           if (f.reservationRequired) {
             totalRes++;
@@ -6603,7 +6604,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       var summaryHtml = '<div style="background:var(--white);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;border:1px solid var(--sand-dark);box-shadow:var(--card-shadow);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">' +
         '<div style="flex:1;">' +
-          '<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">Reservation Tracker</div>' +
+          '<div style="font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-0.01em;">Activities & Food</div>' +
           '<div style="font-size:12px;color:var(--ink-muted);">' + bookedRes + ' of ' + totalRes + ' reservations booked</div>' +
         '</div>' +
         (totalRes > 0 ? '<div style="display:flex;gap:8px;">' +
@@ -6630,7 +6631,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       var daysHtml = currentTrip.days.map(function(day, di) {
         normaliseFood(day);
-        if (!day.food.length) return '';
+        if (!day.food.length && !day.activities.length) return '';
         var dayId = 'food-day-' + di;
         var foodRows = day.food.map(function(f, fi) {
           var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(f.name + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
@@ -6695,8 +6696,78 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '</div>';
         }).join('');
 
-        var dayHasUnbooked = day.food.some(function(f) { return f.reservationRequired && !f.reservationBooked; });
-        var dayHasBooked = day.food.some(function(f) { return f.reservationRequired && f.reservationBooked; });
+        var activityRows = day.activities.map(function(act, ai) {
+          if (!act || typeof act !== 'object') return '';
+          var actName = act.name || '';
+          var actCat = (day.activityCategories && day.activityCategories[ai]) || 'default';
+          var catObj = activityCategories[actCat] || activityCategories['default'];
+          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(actName + ' ' + day.city.split('>').pop().trim() + ' ' + getTripDestination());
+          var editId = 'act-edit-' + di + '-' + ai;
+          var resBadge = act.reserved === 'booked'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;background:var(--accent-light);color:var(--accent);border:1px solid var(--accent);">✅ Booked</span>'
+            : act.reserved === 'needed'
+              ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;background:#fff0f0;color:#C0392B;border:1px solid #E05555;">⚠️ Book</span>'
+              : '';
+          var catOptions = Object.keys(activityCategories).map(function(c) {
+            return '<option value="' + c + '"' + (actCat === c ? ' selected' : '') + '>' + activityCategories[c].emoji + ' ' + c + '</option>';
+          }).join('');
+          return '<div style="border-bottom:1px solid var(--sand-dark);">' +
+            '<div style="padding:12px 18px;display:flex;align-items:flex-start;gap:10px;">' +
+              '<span style="font-size:18px;flex-shrink:0;padding-top:1px;">' + catObj.emoji + '</span>' +
+              '<div style="flex:1;min-width:0;">' +
+                '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:3px;">' +
+                  '<span style="font-size:13px;font-weight:700;color:var(--ink);">' + actName + '</span>' +
+                  resBadge +
+                '</div>' +
+                (act.notes ? '<div style="font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:2px;">' + act.notes + '</div>' : '') +
+                (act.link ? '<a href="' + act.link + '" target="_blank" style="text-decoration:none;"><button class="kbtn" style="margin-bottom:4px;">🔗 Socials</button></a>' : '') +
+                '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' +
+                  '<a href="' + mapsUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn">📍 Maps</button></a>' +
+                  (act.reserved === 'needed' && act.bookingUrl ? '<a href="' + act.bookingUrl + '" target="_blank" style="text-decoration:none;"><button class="kbtn" style="border-color:#E67E22;color:#E67E22;">🔖 Book now</button></a>' : '') +
+                  '<button class="kbtn" onclick="toggleFoodEditRow(\'' + editId + '\')">✏️ Edit</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div id="' + editId + '" style="display:none;padding:12px 18px 16px 48px;background:var(--sand);border-top:1px solid var(--sand-dark);">' +
+              '<div style="margin-bottom:10px;">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Name</div>' +
+                '<input class="inline-edit" style="font-size:13px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + actName.replace(/"/g,'&quot;') + '" placeholder="Activity name" onchange="updateActivityFieldDirect(' + di + ',' + ai + ',\'name\',this.value)" onblur="updateActivityFieldDirect(' + di + ',' + ai + ',\'name\',this.value)">' +
+              '</div>' +
+              '<div style="margin-bottom:10px;">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Category</div>' +
+                '<select class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);cursor:pointer;" onchange="updateActivityFieldDirect(' + di + ',' + ai + ',\'cat\',this.value)">' + catOptions + '</select>' +
+              '</div>' +
+              '<div style="margin-bottom:10px;">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Socials</div>' +
+                '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (act.link||'').replace(/"/g,'&quot;') + '" placeholder="Instagram, TikTok, website..." onchange="updateActivityFieldDirect(' + di + ',' + ai + ',\'link\',this.value)" onblur="updateActivityFieldDirect(' + di + ',' + ai + ',\'link\',this.value)">' +
+              '</div>' +
+              '<div style="margin-bottom:10px;">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Booking URL</div>' +
+                '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (act.bookingUrl||'').replace(/"/g,'&quot;') + '" placeholder="e.g. https://..." onchange="updateActivityFieldDirect(' + di + ',' + ai + ',\'bookingUrl\',this.value)" onblur="updateActivityFieldDirect(' + di + ',' + ai + ',\'bookingUrl\',this.value)">' +
+              '</div>' +
+              '<div style="margin-bottom:10px;">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px;">Reservation</div>' +
+                '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+                  '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-light);cursor:pointer;">' +
+                    '<input type="checkbox" ' + (act.reserved === 'needed' || act.reserved === 'booked' ? 'checked' : '') + ' onchange="setActivityReserved(' + di + ',' + ai + ',this.checked,false)" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;"> Required' +
+                  '</label>' +
+                  '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-light);cursor:pointer;">' +
+                    '<input type="checkbox" ' + (act.reserved === 'booked' ? 'checked' : '') + ' onchange="setActivityReserved(' + di + ',' + ai + ',true,this.checked)" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;"> Booked' +
+                  '</label>' +
+                '</div>' +
+              '</div>' +
+              '<div style="margin-bottom:12px;">' +
+                '<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px;">Notes</div>' +
+                '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (act.notes||'').replace(/"/g,'&quot;') + '" placeholder="Any notes..." onchange="updateActivityFieldDirect(' + di + ',' + ai + ',\'notes\',this.value)" onblur="updateActivityFieldDirect(' + di + ',' + ai + ',\'notes\',this.value)">' +
+              '</div>' +
+              '<button onclick="deleteActivityDirect(' + di + ',' + ai + ')" style="font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">🗑 Delete</button>' +
+              '<button onclick="saveActivityAndKeepOpen(\'' + editId + '\')" style="margin-left:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✓ Save</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+
+        var dayHasUnbooked = day.food.some(function(f) { return f.reservationRequired && !f.reservationBooked; }) || day.activities.some(function(a) { return a && a.reserved === 'needed'; });
+        var dayHasBooked = !dayHasUnbooked && (day.food.some(function(f) { return f.reservationRequired && f.reservationBooked; }) || day.activities.some(function(a) { return a && a.reserved === 'booked'; }));
         var dayBadge = dayHasUnbooked
           ? '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:#fff0f0;color:#C0392B;border:1px solid #E05555;white-space:nowrap;">⚠️ Book</span>'
           : dayHasBooked
@@ -6707,16 +6778,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<span style="font-size:18px;">' + getCityEmoji(day.city) + '</span>' +
             '<div style="flex:1;">' +
               '<div style="font-size:13px;font-weight:700;color:var(--ink);">Day ' + day.day + ' · ' + day.city + '</div>' +
-              '<div style="font-size:11px;color:var(--ink-muted);">' + getDayDate(day, currentTrip) + ' · ' + day.food.length + ' place' + (day.food.length !== 1 ? 's' : '') + '</div>' +
+              '<div style="font-size:11px;color:var(--ink-muted);">' + getDayDate(day, currentTrip) + ' · ' + (day.activities.length + day.food.length) + ' place' + ((day.activities.length + day.food.length) !== 1 ? 's' : '') + '</div>' +
             '</div>' +
             dayBadge +
             '<span style="font-size:12px;color:var(--ink-muted);margin-left:6px;">▾</span>' +
           '</div>' +
-          '<div id="' + dayId + '" style="display:none;">' + foodRows + '</div>' +
+          '<div id="' + dayId + '" style="display:none;">' + activityRows + foodRows + '</div>' +
         '</div>';
       }).filter(Boolean).join('');
 
-      el.innerHTML = summaryHtml + alertHtml + (daysHtml || '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No food added yet — open any day and add restaurants.</div>');
+      el.innerHTML = summaryHtml + alertHtml + (daysHtml || '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No activities or food added yet.</div>');
     }
 
     function toggleFoodDay(id) {
@@ -6767,6 +6838,61 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var dayEl = document.getElementById(dayId);
         if (dayEl) { dayEl.style.display = 'block'; }
       }, 50);
+    }
+
+    function updateActivityFieldDirect(di, ai, field, value) {
+      var day = currentTrip.days[di];
+      if (!day || !day.activities || !day.activities[ai]) return;
+      var act = day.activities[ai];
+      if (typeof act === 'string') { act = { name: act, uid: 'act_' + di + '_' + ai }; day.activities[ai] = act; }
+      if (field === 'cat') {
+        if (!day.activityCategories) day.activityCategories = [];
+        day.activityCategories[ai] = value;
+      } else {
+        act[field] = value;
+      }
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+    }
+
+    function deleteActivityDirect(di, ai) {
+      var day = currentTrip.days[di];
+      if (!day || !day.activities || !day.activities[ai]) return;
+      var act = day.activities[ai];
+      var uid = (typeof act === 'object' && act.uid) ? act.uid : null;
+      if (uid) {
+        var k = 'act_' + uid;
+        if (day.done) delete day.done[k];
+        if (day.costs) delete day.costs[k];
+        if (day.cardNotes) delete day.cardNotes[k];
+      }
+      day.activities.splice(ai, 1);
+      if (day.activityCategories) day.activityCategories.splice(ai, 1);
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      renderFood();
+    }
+
+    function saveActivityAndKeepOpen(editId) {
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 2000);
+      saveToStorage();
+      renderFood();
+      setTimeout(function() {
+        var el = document.getElementById(editId);
+        if (el) { el.style.display = 'block'; }
+        var parts = editId.replace('act-edit-', '').split('-');
+        var dayEl = document.getElementById('food-day-' + parts[0]);
+        if (dayEl) { dayEl.style.display = 'block'; }
+      }, 50);
+    }
+
+    function setActivityReserved(di, ai, required, booked) {
+      var val = required ? (booked ? 'booked' : 'needed') : null;
+      updateActivityFieldDirect(di, ai, 'reserved', val);
+      renderFood();
     }
 
     function renderBudget() {
@@ -7719,7 +7845,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       dates:          { emoji: '📅', label: 'Dates' },
       weather:        { emoji: '🌤️', label: 'Weather' },
       visa:           { emoji: '🛂', label: 'Visa & Entry' },
-      food:           { emoji: '🍜', label: 'Reservations' },
+      food:           { emoji: '🍜', label: 'Activities & Food' },
       budget:         { emoji: '💰', label: 'Budget' },
       map:            { emoji: '🗺️', label: 'Map' },
       structure:      { emoji: '✏️', label: 'Plan' },
