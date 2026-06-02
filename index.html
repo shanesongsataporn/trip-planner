@@ -3476,6 +3476,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       // ---- Long-press on any category grid to enter edit mode ----
       function initHomeLongPress() {
+        // Strip any previously-attached listeners by clone-replacing each grid node.
+        // Grids persist across re-renders, so addEventListener calls accumulate
+        // unless we reset the node first. Clone carries DOM but not listeners.
+        ['action','build','navigate'].forEach(function(cat) {
+          var g = document.getElementById('home-sortable-grid-' + cat);
+          if (g && g.parentNode) { g.parentNode.replaceChild(g.cloneNode(true), g); }
+        });
         var grids = ['action','build','navigate'].map(function(cat) {
           return document.getElementById('home-sortable-grid-' + cat);
         }).filter(Boolean);
@@ -3486,7 +3493,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           startX = x; startY = y;
           pressTimer = setTimeout(function() {
             enterHomeTileEdit();
-          }, 800);
+          }, 600);
         }
         function cancelPress(x, y) {
           if (x !== undefined && startX !== undefined) {
