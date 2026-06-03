@@ -6811,7 +6811,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                 '<input class="inline-edit" style="font-size:12px;color:var(--ink);width:100%;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);padding:6px 8px;background:var(--white);" value="' + (act.notes||'').replace(/"/g,'&quot;') + '" placeholder="Any notes..." onchange="updateActivityFieldDirect(' + di + ',' + ai + ',\'notes\',this.value)" onblur="updateActivityFieldDirect(' + di + ',' + ai + ',\'notes\',this.value)">' +
               '</div>' +
               '<button onclick="deleteActivityDirect(' + di + ',' + ai + ')" style="font-family:inherit;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">🗑 Delete</button>' +
-              '<button onclick="saveActivityAndKeepOpen(\'' + editId + '\')" style="margin-left:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">✓ Save</button>' +
+              '<button onclick="saveActivityAndKeepOpen(\'' + editId + '\')" style="margin-left:8px;font-family:inherit;font-size:11px;font-weight:700;padding:4px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:#fff;cursor:pointer;">Save</button>' +
             '</div>' +
           '</div>';
         }).join('');
@@ -6947,6 +6947,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var parts = editId.replace('act-edit-', '').split('-');
         var dayEl = document.getElementById('food-day-' + parts[0]);
         if (dayEl) { dayEl.style.display = 'block'; }
+        var btn = el ? el.querySelector('button[onclick^="saveActivityAndKeepOpen"]') : null;
+        if (btn) { btn.textContent = '✓ Saved'; btn.disabled = true; }
       }, 50);
     }
 
