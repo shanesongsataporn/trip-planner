@@ -901,6 +901,9 @@
     .home-flight-card { background: var(--accent-light); border-radius: var(--radius-sm); padding: 10px 14px; border: 1px solid var(--accent); margin-bottom: 4px; }
     .home-flight-route { font-size: 14px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 2px; }
     .home-flight-detail { font-size: 11px; color: var(--ink-muted); }
+    .home-confirm-badge { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--accent); background: var(--accent-light); border: 1px solid var(--accent); border-radius: 4px; padding: 2px 7px; }
+    .home-detail-action { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--ink-muted); text-decoration: none; }
+    .home-detail-action:hover { color: var(--accent); }
     .home-day-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--sand-dark); flex-wrap: wrap; }
     .home-action-btn { font-family: inherit; font-size: 11px; font-weight: 700; padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink-muted); cursor: pointer; transition: all 0.15s; }
     .home-action-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
@@ -3559,9 +3562,21 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
         if (flights.length) {
           var fc = flights.map(function(f) {
+            var fd = getFlightDisplay(f);
+            var airportQuery = encodeURIComponent((fd.to || '') + ' Airport');
+            var directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + airportQuery;
             return '<div class="home-flight-card">' +
-              '<div class="home-flight-route">✈️ ' + (f.from||'') + ' → ' + (f.to||'') + '</div>' +
-              '<div class="home-flight-detail">' + (f.carrier||'') + (f.flightNum?' · '+f.flightNum:'') + (f.depart?' · Departs '+f.depart:'') + (f.arrive?' · Arrives '+f.arrive:'') + (f.notes?'<br>'+f.notes:'') + '</div>' +
+              '<div class="home-flight-route">✈️ ' + fd.from + ' → ' + fd.to + '</div>' +
+              '<div class="home-flight-detail">' +
+                (fd.carrier || '') +
+                (fd.flightNum ? ' · ' + fd.flightNum : '') +
+                (fd.depart ? ' · Departs ' + fd.depart : '') +
+                (fd.arrive ? ' · Arrives ' + fd.arrive : '') +
+              '</div>' +
+              (fd.confirmationCode ? '<div class="home-confirm-badge">📋 ' + fd.confirmationCode + '</div>' : '') +
+              '<div style="margin-top:8px;">' +
+                '<a href="' + directionsUrl + '" target="_blank" class="home-detail-action">📍 Directions to ' + (fd.to || '') + ' Airport</a>' +
+              '</div>' +
             '</div>';
           }).join('');
           bodyParts.push('<div class="home-section-label">Flight</div>' + fc);
@@ -3569,9 +3584,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
         if (day.accommodation.length) {
           var ah = day.accommodation.map(function(a, i) {
-            var detailId = 'home-accom-detail-' + i;
-            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent((a.name||'') + ' ' + day.city.split('>').pop().trim());
             var aDetailId = 'home-accom-detail-' + di + '-' + i;
+            var mapsUrl = a.link || ('https://www.google.com/maps/search/' + encodeURIComponent((a.name||'') + ' ' + day.city.split('>').pop().trim()));
+            var isCheckin = a.checkinDayId && a.checkinDayId === day.id;
+            var isCheckout = a.checkoutDayId && a.checkoutDayId === day.id;
+            var checkinTime = a.checkinTime ? a.checkinTime.replace(/^(\d+):(\d+)$/, function(m, h, min) { var hr = parseInt(h); return (hr % 12 || 12) + ':' + min + (hr < 12 ? ' AM' : ' PM'); }) : '';
+            var checkoutTime = a.checkoutTime ? a.checkoutTime.replace(/^(\d+):(\d+)$/, function(m, h, min) { var hr = parseInt(h); return (hr % 12 || 12) + ':' + min + (hr < 12 ? ' AM' : ' PM'); }) : '';
             return '<div style="border-bottom:1px solid var(--sand-dark);font-size:12px;color:var(--ink-light);">' +
               '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;" onclick="toggleItinItem(\'' + aDetailId + '\')">' +
                 '<span>🏨</span>' +
@@ -3580,7 +3598,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               '</div>' +
               '<div id="' + aDetailId + '" style="display:none;margin:0 0 8px 0;background:var(--sand);border-radius:8px;padding:10px 12px;">' +
                 (a.notes ? '<div style="font-size:12px;color:var(--ink-light);font-style:italic;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--sand-dark);">' + a.notes + '</div>' : '') +
-                '<a href="' + mapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--accent);text-decoration:none;">📍 Open in Maps</a>' +
+                (isCheckin && checkinTime ? '<div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px;">🕐 Check in from ' + checkinTime + '</div>' : '') +
+                (isCheckout && checkoutTime ? '<div style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:6px;">🕐 Check out by ' + checkoutTime + '</div>' : '') +
+                (isCheckin && a.confirmationNumber ? '<span class="home-confirm-badge">📋 ' + a.confirmationNumber + '</span>' : '') +
+                '<div style="margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;">' +
+                  '<a href="' + mapsUrl + '" target="_blank" class="home-detail-action">📍 Open in Maps</a>' +
+                  '<a href="https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(a.name || '') + '&destination_place_id=' + encodeURIComponent((a.link||'').replace('https://www.google.com/maps/place/?q=place_id:','')) + '" target="_blank" class="home-detail-action">🧭 Directions</a>' +
+                '</div>' +
               '</div>' +
             '</div>';
           }).join('');
@@ -10020,7 +10044,13 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
             notes: s.notes || '',
             price: s.price || '',
             link: s.link || '',
-            booked: !!s.booked
+            booked: !!s.booked,
+            id: s.id || '',
+            confirmationNumber: s.confirmationNumber || '',
+            checkinTime: s.checkinTime || '',
+            checkoutTime: s.checkoutTime || '',
+            checkinDayId: s.checkinDayId || '',
+            checkoutDayId: s.checkoutDayId || ''
           };
         });
       });
