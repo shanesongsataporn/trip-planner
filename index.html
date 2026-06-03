@@ -6843,7 +6843,15 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var expandBarHtml = '<div style="display:flex;justify-content:flex-end;padding:4px 2px 10px;">' +
         '<span id="food-expand-all-btn" onclick="toggleFoodAllDays()" style="font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;">Expand all</span>' +
       '</div>';
+      var openDayIds = [];
+      document.querySelectorAll('[id^="food-day-"]').forEach(function(d) {
+        if (d.style.display === 'block') openDayIds.push(d.id);
+      });
       el.innerHTML = summaryHtml + alertHtml + expandBarHtml + (daysHtml || '<div style="text-align:center;padding:40px 20px;color:var(--ink-muted);font-style:italic;">No activities or food added yet.</div>');
+      openDayIds.forEach(function(id) {
+        var d = document.getElementById(id);
+        if (d) d.style.display = 'block';
+      });
     }
 
     function toggleFoodDay(id) {
@@ -6916,7 +6924,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         act[field] = value;
       }
       deSuppressSync = true;
-      setTimeout(function() { deSuppressSync = false; }, 2000);
+      setTimeout(function() { deSuppressSync = false; }, 5000);
       saveToStorage();
     }
 
@@ -10114,24 +10122,24 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     };
 
     var activityCategories = {
-      "default":   { emoji: "📍", color: "#2D9E75" },
-      "temple":    { emoji: "🛕", color: "#9B59B6" },
-      "food":      { emoji: "🍜", color: "#E74C3C" },
-      "bars":      { emoji: "🍸", color: "#2980B9" },
-      "beach":     { emoji: "🏖️", color: "#3498DB" },
-      "nightlife": { emoji: "🌙", color: "#2C3E50" },
-      "shopping":  { emoji: "🛍️", color: "#E91E63" },
-      "dessert":   { emoji: "🍨", color: "#E67E22" },
-      "cafe":      { emoji: "☕", color: "#795548" },
-      "market":    { emoji: "🛒", color: "#F39C12" },
-      "nature":    { emoji: "🌿", color: "#27AE60" },
-      "island":    { emoji: "🏝️", color: "#00BCD4" },
-      "massage":   { emoji: "💆", color: "#8E44AD" },
-      "viewpoint": { emoji: "🌅", color: "#E74C3C" },
-      "culture":   { emoji: "🎭", color: "#D35400" },
-      "streetfood":{ emoji: "🌮", color: "#C0392B" },
-      "transport": { emoji: "🛺", color: "#7F8C8D" },
-      "adventure": { emoji: "🤿", color: "#1ABC9C" }
+      "default":    { emoji: "📍", color: "#2D9E75" },
+      "adventure":  { emoji: "🤿", color: "#1ABC9C" },
+      "bars":       { emoji: "🍸", color: "#2980B9" },
+      "beach":      { emoji: "🏖️", color: "#3498DB" },
+      "cafe":       { emoji: "☕", color: "#795548" },
+      "culture":    { emoji: "🎭", color: "#D35400" },
+      "dessert":    { emoji: "🍨", color: "#E67E22" },
+      "food":       { emoji: "🍜", color: "#E74C3C" },
+      "island":     { emoji: "🏝️", color: "#00BCD4" },
+      "market":     { emoji: "🛒", color: "#F39C12" },
+      "massage":    { emoji: "💆", color: "#8E44AD" },
+      "nature":     { emoji: "🌿", color: "#27AE60" },
+      "nightlife":  { emoji: "🌙", color: "#2C3E50" },
+      "shopping":   { emoji: "🛍️", color: "#E91E63" },
+      "streetfood": { emoji: "🌮", color: "#C0392B" },
+      "temple":     { emoji: "🛕", color: "#9B59B6" },
+      "transport":  { emoji: "🛺", color: "#7F8C8D" },
+      "viewpoint":  { emoji: "🌅", color: "#E74C3C" }
     };
 
     function getCityEmoji(cityName) {
@@ -14354,7 +14362,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (doc.exists) {
           var data = doc.data();
           if (data && data.data) {
-            if (deSuppressSync) { deSuppressSync = false; return; }
+            if (deSuppressSync) return;
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
             currentTrip = trips[currentTripKey];
