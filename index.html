@@ -2945,14 +2945,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       cities.forEach(function(city) {
         var coords = cityCoords[city];
         var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + coords.lat + '&longitude=' + coords.lng +
-          '&daily=weathercode,temperature_2m_max,temperature_2m_min' +
-          '&hourly=temperature_2m,precipitation_probability,weathercode,windspeed_10m,uv_index' +
-          '&timezone=auto&start_date=' + startDate + '&end_date=' + endDate;
+          '&daily=weather_code,temperature_2m_max,temperature_2m_min' +
+          '&hourly=temperature_2m,precipitation_probability,weather_code,windspeed_10m,uv_index' +
+          '&timezone=auto&forecast_days=16';
         fetch(url).then(function(r) { return r.json(); }).then(function(data) {
           var codeToEmoji = function(c) { return c <= 1 ? '☀️' : c <= 3 ? '⛅' : c <= 51 ? '🌥️' : c <= 67 ? '🌧️' : c <= 77 ? '❄️' : c <= 82 ? '🌦️' : '⛈️'; };
           var dates = data.daily && data.daily.time ? data.daily.time : [];
           dates.forEach(function(dateStr, i) {
-            var code = data.daily.weathercode[i] || 0;
+            var code = data.daily.weather_code[i] || 0;
             var max = Math.round(data.daily.temperature_2m_max[i]);
             var min = Math.round(data.daily.temperature_2m_min[i]);
             var emoji = codeToEmoji(code);
@@ -2967,7 +2967,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                   hours.push({
                     hour: h,
                     temp: Math.round(data.hourly.temperature_2m[idx]),
-                    emoji: codeToEmoji(data.hourly.weathercode[idx] || 0),
+                    emoji: codeToEmoji(data.hourly.weather_code[idx] || 0),
                     rain: data.hourly.precipitation_probability[idx] || 0,
                     wind: Math.round(data.hourly.windspeed_10m[idx] || 0),
                     uv: Math.round(data.hourly.uv_index[idx] || 0)
@@ -3007,7 +3007,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var floatEl = document.getElementById('home-weather-float');
       if (!floatEl) { return; }
       if (floatEl.style.display !== 'none') { floatEl.style.display = 'none'; return; }
-      if (tripWeatherCache && !Object.values(tripWeatherCache)[0].hours) { tripWeatherCache = null; }
+      if (tripWeatherCache && Object.values(tripWeatherCache).length && !Object.values(tripWeatherCache)[0].hours) { tripWeatherCache = null; }
       deSuppressSync = true;
       setTimeout(function() { deSuppressSync = false; }, 3000);
       floatEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--ink-muted);font-size:13px;">Loading forecast…</div>';
@@ -3061,16 +3061,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         floatEl.innerHTML =
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
             '<div style="font-size:12px;font-weight:700;color:var(--ink);">Trip Forecast</div>' +
-            '<button onclick="document.getElementById(\'home-weather-float\').style.display=\'none\';return false;" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-muted);padding:0;line-height:1;">✕</button>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              Object.keys(citySettings).filter(function(c){ return citySettings[c] && citySettings[c].color && c !== 'Sydney'; }).map(function(c) {
+                return '<div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--ink-muted);">' +
+                  '<div style="width:7px;height:7px;border-radius:50%;background:' + citySettings[c].color + ';"></div>' + c + '</div>';
+              }).join('') +
+              '<button onclick="document.getElementById(\'home-weather-float\').style.display=\'none\';return false;" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--ink-muted);padding:0;line-height:1;margin-left:4px;">✕</button>' +
+            '</div>' +
           '</div>' +
           '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;">' + cells + '</div>' +
-          '<div id="weather-hourly-panel" style="display:none;margin-top:10px;background:var(--sand);border-radius:10px;padding:12px;"></div>' +
-          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
-            Object.keys(citySettings).filter(function(c){ return citySettings[c] && citySettings[c].color && c !== 'Sydney'; }).map(function(c) {
-              return '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--ink-muted);">' +
-                '<div style="width:8px;height:8px;border-radius:50%;background:' + citySettings[c].color + ';"></div>' + c + '</div>';
-            }).join('') +
-          '</div>';
+          '<div id="weather-hourly-panel" style="display:none;margin-top:10px;background:var(--sand);border-radius:10px;padding:12px;"></div>';
         });
     }
 
