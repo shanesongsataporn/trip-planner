@@ -1549,6 +1549,9 @@ gmp-advanced-marker.map-pin-active {
   <div id="de-item-backdrop" onclick="closeDeItemSheet()" style="display:none;position:fixed;inset:0;z-index:299;background:transparent;"></div>
 <div id="de-item-sheet">
     <div class="de-add-sheet-title" id="de-item-sheet-title">Edit</div>
+    <div id="de-item-cat-wrap" style="display:none;margin-bottom:6px;">
+      <select id="de-item-cat" class="de-add-input" style="width:100%;cursor:pointer;"></select>
+    </div>
     <input class="de-add-input" id="de-item-name" type="text" placeholder="Name">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
       <label style="font-size:11px;color:rgba(255,255,255,0.4);min-width:34px;">Time</label>
@@ -6940,13 +6943,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       deSuppressSync = true;
       setTimeout(function() { deSuppressSync = false; }, 2000);
       saveToStorage();
-      renderFood();
       setTimeout(function() {
         var el = document.getElementById(editId);
-        if (el) { el.style.display = 'block'; }
-        var parts = editId.replace('act-edit-', '').split('-');
-        var dayEl = document.getElementById('food-day-' + parts[0]);
-        if (dayEl) { dayEl.style.display = 'block'; }
         var btn = el ? el.querySelector('button[onclick^="saveActivityAndKeepOpen"]') : null;
         if (btn) { btn.textContent = '✓ Saved'; btn.disabled = true; }
       }, 50);
@@ -8942,6 +8940,17 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('de-item-name').value = name;
       document.getElementById('de-item-time').value = time;
       document.getElementById('de-item-note').value = note;
+      var catWrap = document.getElementById('de-item-cat-wrap');
+      var catSelect = document.getElementById('de-item-cat');
+      if (section === 'acts') {
+        var currentCat = (day.activityCategories && day.activityCategories[i]) || 'default';
+        catSelect.innerHTML = Object.keys(activityCategories).map(function(c) {
+          return '<option value="' + c + '"' + (currentCat === c ? ' selected' : '') + '>' + activityCategories[c].emoji + ' ' + c + '</option>';
+        }).join('');
+        catWrap.style.display = 'block';
+      } else {
+        catWrap.style.display = 'none';
+      }
 
       // Set reservation toggle
       document.querySelectorAll('.de-res-btn').forEach(function(btn) {
@@ -8990,6 +8999,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (name) act.name = name;
         act.time = time;
         act.reserved = reserved || null;
+        var catSelectEl = document.getElementById('de-item-cat');
+        if (catSelectEl && catSelectEl.value) {
+          if (!day.activityCategories) day.activityCategories = [];
+          day.activityCategories[i] = catSelectEl.value;
+        }
         var noteKey = act.uid ? ('act_' + act.uid) : String(i);
         if (!day.cardNotes) day.cardNotes = {};
         if (note) { day.cardNotes[noteKey] = note; } else { delete day.cardNotes[noteKey]; }
@@ -10105,7 +10119,17 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       "beach":     { emoji: "🏖️", color: "#3498DB" },
       "nightlife": { emoji: "🌙", color: "#2C3E50" },
       "shopping":  { emoji: "🛍️", color: "#E91E63" },
-      "dessert":   { emoji: "🍨", color: "#E67E22" }
+      "dessert":   { emoji: "🍨", color: "#E67E22" },
+      "cafe":      { emoji: "☕", color: "#795548" },
+      "market":    { emoji: "🛒", color: "#F39C12" },
+      "nature":    { emoji: "🌿", color: "#27AE60" },
+      "island":    { emoji: "🏝️", color: "#00BCD4" },
+      "massage":   { emoji: "💆", color: "#8E44AD" },
+      "viewpoint": { emoji: "🌅", color: "#E74C3C" },
+      "culture":   { emoji: "🎭", color: "#D35400" },
+      "streetfood":{ emoji: "🌮", color: "#C0392B" },
+      "transport": { emoji: "🛺", color: "#7F8C8D" },
+      "adventure": { emoji: "🤿", color: "#1ABC9C" }
     };
 
     function getCityEmoji(cityName) {
