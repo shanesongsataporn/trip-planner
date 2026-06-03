@@ -1383,6 +1383,9 @@ gmp-advanced-marker.map-pin-active {
     <div id="loader-title" style="font-size:20px;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">Let's go, Shane & Cheryl!</div>
     <div id="loader-subtitle" style="font-size:13px;font-weight:600;color:#888888;letter-spacing:0.05em;">Spinning up your adventure...</div>
   </div>
+  <div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#b45309;color:#fff;font-size:13px;font-weight:600;text-align:center;padding:8px 16px;letter-spacing:0.01em;">
+    📵 You're offline — showing saved trip data
+  </div>
   <div id="map"></div>
   <div id="pdf-export" style="position:absolute;left:-9999px;top:0;width:680px;"></div>
   <div id="view-itinerary"></div>
@@ -14215,6 +14218,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         console.log('🧪 [TEST_MODE] saveToStorage() blocked — no Firestore/localStorage write');
         return;
       }
+      if (window.isOffline) {
+        showToast('You\'re offline — changes can\'t be saved right now');
+        return;
+      }
       // #46 — startDate drift guard. If startDate is wrong, abort save and alert loudly.
       if (currentTrip && currentTrip.startDate !== '2026-06-09') {
         console.error('🚨 [saveToStorage] ABORTED — startDate is "' + currentTrip.startDate + '" (expected 2026-06-09). Fix before saving.');
@@ -14278,10 +14285,54 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
           migrateTransportShape();
           migrateStripStayIndexFields();
           migrateDeleteDayDate();
+          // Save offline snapshot after all migrations complete
+          try {
+            localStorage.setItem('trip_offline_snapshot', JSON.stringify({
+              data: JSON.stringify(trips[currentTripKey]),
+              citySettings: JSON.stringify(citySettings),
+              cardPhotos: JSON.stringify(cardPhotos),
+              geocodeCache: JSON.stringify(geocodeCache)
+            }));
+          } catch(e) { console.warn('[offline] snapshot write failed:', e); }
+        }
+        if (window.isOffline) {
+          var banner = document.getElementById('offline-banner');
+          if (banner) { banner.style.display = 'block'; }
         }
         if (callback) { callback(); }
       }).catch(function(e) {
-        console.warn('Firestore load failed, using defaults:', e);
+        console.warn('Firestore load failed, trying offline snapshot:', e);
+        var snap = null;
+        try { snap = JSON.parse(localStorage.getItem('trip_offline_snapshot')); } catch(ex) {}
+        if (snap) {
+          try {
+            var parsed = JSON.parse(snap.data);
+            trips[currentTripKey] = parsed;
+            currentTrip = trips[currentTripKey];
+          } catch(ex) { console.warn('[offline] snapshot data unparseable:', ex); }
+          if (snap.citySettings) {
+            try {
+              var pc = JSON.parse(snap.citySettings);
+              Object.keys(pc).forEach(function(k) { citySettings[k] = pc[k]; });
+            } catch(ex) {}
+          }
+          if (snap.cardPhotos) {
+            try {
+              var rp = JSON.parse(snap.cardPhotos);
+              Object.keys(rp).forEach(function(k) { cardPhotos[k] = rp[k]; });
+            } catch(ex) {}
+          }
+          if (snap.geocodeCache) {
+            try {
+              var gc = JSON.parse(snap.geocodeCache);
+              Object.keys(gc).forEach(function(k) { geocodeCache[k] = gc[k]; });
+            } catch(ex) {}
+          }
+          window.isOffline = true;
+          console.log('[offline] loaded from snapshot successfully');
+        } else {
+          console.warn('[offline] no snapshot available — app may show empty data');
+        }
         var loader = document.getElementById('app-loader');
         if (loader) { loader.style.display = 'none'; }
         if (callback) { callback(); }
