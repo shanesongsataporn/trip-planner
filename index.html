@@ -8581,6 +8581,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var actRows = '';
       if (day.activities && day.activities.length) {
         day.activities.forEach(function(a, i) {
+          if (!a) return;
           var name = (typeof a === 'object') ? a.name : a;
           var uid = (typeof a === 'object' && a.uid) ? a.uid : ('act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
@@ -9391,6 +9392,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var actRows = '';
       if (day.activities && day.activities.length) {
         day.activities.forEach(function(a, i) {
+          if (!a) return;
           var name = (typeof a === 'object') ? a.name : a;
           var uid = (typeof a === 'object' && a.uid) ? a.uid : ('act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
@@ -11049,6 +11051,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       if (day.activities.length) {
         chips += divider('Activities');
         day.activities.forEach(function(a, i) {
+          if (!a) return;
           var name = (typeof a === 'object') ? a.name : a;
           var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + day.day + '_act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
@@ -14351,7 +14354,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         if (doc.exists) {
           var data = doc.data();
           if (data && data.data) {
-            if (deSuppressSync) return;
+            if (deSuppressSync) { deSuppressSync = false; return; }
             var parsed = JSON.parse(data.data);
             trips[currentTripKey] = parsed;
             currentTrip = trips[currentTripKey];
