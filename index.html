@@ -7235,12 +7235,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           : '<div class="itin-placeholder">No food planned — click Edit to add</div>';
         var transHtml = item.transport.length
           ? item.transport.map(function(t, i) {
-              var emoji = (t.type === 'flight' || (t.legs && t.legs.length)) ? '✈️' : '🚌';
-              var fd = (t.type === 'flight' || (t.legs && t.legs.length)) ? getFlightDisplay(t) : null;
-              var route = fd && fd.from && fd.to ? fd.from + ' → ' + fd.to : (t.from||'') + (t.to ? ' → '+t.to : '');
-              var meta = fd ? [fd.carrier, fd.flightNum, fd.depart, fd.arrive].filter(Boolean).join(' · ') : '';
-              var conf = fd && fd.confirmationCode ? ' · Conf: ' + fd.confirmationCode : '';
-              var label = route + (meta ? ' · ' + meta : '') + conf;
+              var isFlight = (t.type === 'flight' || (t.legs && t.legs.length));
+              var emoji = isFlight ? '✈️' : '🚌';
+              var fd = isFlight ? getFlightDisplay(t) : null;
+              if (fd) {
+                var route = fd.from && fd.to ? fd.from + ' → ' + fd.to : '';
+                var flightId = [fd.carrier, fd.flightNum].filter(Boolean).join(' ');
+                var times = [fd.depart, fd.arrive].filter(Boolean).join(' → ');
+                var conf = fd.confirmationCode ? 'Conf: ' + fd.confirmationCode : '';
+                var lines = [route, flightId, times, conf].filter(Boolean).map(function(l) {
+                  return '<div>' + l + '</div>';
+                }).join('');
+                return '<div class="itin-item" style="align-items:flex-start;"><span style="margin-top:2px;">' + emoji + '</span><div style="font-size:13px;line-height:1.6;">' + lines + '</div></div>';
+              }
+              var label = (t.from||'') + (t.to ? ' → '+t.to : '');
               return '<div class="itin-item"><span>' + emoji + '</span><span>' + label + '</span></div>';
             }).join('')
           : '<div class="itin-placeholder">No transport — click Edit to add</div>';
