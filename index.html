@@ -3738,7 +3738,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       // fetch weather async and update tile — silent fail if offline/VPN
       try {
-        fetchHomeWeather(nextCity.day.lat, nextCity.day.lng, function(w) {
+        var _cityCoords = { 'Bangkok': [13.7563, 100.5018], 'Chiang Rai': [19.9105, 99.8406], 'Koh Samui': [9.5120, 100.0136], 'Sydney': [-33.8688, 151.2093] };
+        var _cityName = nextCity.day.city ? nextCity.day.city.split('>').pop().trim() : '';
+        var _coords = _cityCoords[_cityName] || [13.7563, 100.5018];
+        fetchHomeWeather(_coords[0], _coords[1], function(w) {
           var emojiEl = document.getElementById('home-weather-emoji');
           var valEl = document.getElementById(weatherTileId);
           var subEl = document.getElementById('home-weather-sub');
