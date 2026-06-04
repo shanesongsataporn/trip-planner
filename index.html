@@ -1320,10 +1320,12 @@ gmp-advanced-marker.map-pin-active {
   <div id="mob-view-menu">
     <div class="menu-section">
       <button class="menu-item" onclick="setView('home');toggleMenu('mob-view-menu')">🏠 Home</button>
+      <button class="menu-item" onclick="setView('day-editor');toggleMenu('mob-view-menu')">✏️ Day Editor</button>
       <button class="menu-item" onclick="setView('structure');toggleMenu('mob-view-menu')">✏️ Plan</button>
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
-      <button class="menu-item" onclick="setView('itinerary');toggleMenu('mob-view-menu')">📋 Itinerary</button>
       <button class="menu-item" onclick="setView('cards');toggleMenu('mob-view-menu')">🃏 Cards</button>
+      <button class="menu-item" onclick="setView('itinerary');toggleMenu('mob-view-menu')">📋 Itinerary</button>
+      <button class="menu-item" onclick="setView('food');toggleMenu('mob-view-menu')">🍜 Eat & Do</button>
       <button class="menu-item" onclick="setView('transport');toggleMenu('mob-view-menu')">✈️ Transport</button>
     </div>
   </div>
@@ -1333,6 +1335,7 @@ gmp-advanced-marker.map-pin-active {
     <div class="menu-section">
       <div class="menu-section-label">Tools</div>
       <button class="menu-item" onclick="setView('discovery');toggleMenu('mob-hamburger-menu')">🔍 Discovery</button>
+      <button class="menu-item" onclick="setView('route');toggleMenu('mob-hamburger-menu')">🗺️ Route</button>
       <button class="menu-item" onclick="setView('food');toggleMenu('mob-hamburger-menu')">🍽️ Food Planner</button>
       <button class="menu-item" onclick="setView('budget');toggleMenu('mob-hamburger-menu')">💰 Budget Tracker</button>
       <button class="menu-item" onclick="showCitySettingsModal();toggleMenu('mob-hamburger-menu')">🏙️ City Settings</button>
