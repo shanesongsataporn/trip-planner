@@ -1548,6 +1548,9 @@ gmp-advanced-marker.map-pin-active {
         <option value="dessert">🍨 Dessert</option>
       </select>
     </div>
+    <div id="de-add-res-row" style="margin-bottom:10px;">
+      <button id="de-add-res-btn" onclick="deToggleAddRes()" style="font-family:inherit;font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;border:none;cursor:pointer;background:var(--sand-dark);color:var(--ink-muted);">🔔 Reservation needed?</button>
+    </div>
     <button class="de-add-confirm" onclick="confirmDeAdd()">Add to Day</button>
     <button class="de-add-cancel" onclick="closeDeAddSheet()">Cancel</button>
   </div>
@@ -7221,6 +7224,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           : '<div class="itin-placeholder">No accommodation — click Edit to add</div>';
         var actHtml = item.activities.length
           ? item.activities.map(function(a, i) {
+              if (!a) return '';
               var name = (typeof a === 'object') ? a.name : a;
               var cat = (item.activityCategories && item.activityCategories[i]) || 'default';
               return makeItinItem((activityCategories[cat]||activityCategories['default']).emoji, name, item.day-1, 'act', i);
@@ -7231,8 +7235,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           : '<div class="itin-placeholder">No food planned — click Edit to add</div>';
         var transHtml = item.transport.length
           ? item.transport.map(function(t, i) {
-              var label = (t.from||'') + (t.to ? ' → '+t.to : '') + (t.flightNum ? ' ('+t.flightNum+')' : '');
-              return '<div class="itin-item"><span>✈️</span>' + label + '</div>';
+              var emoji = (t.type === 'flight' || (t.legs && t.legs.length)) ? '✈️' : '🚌';
+              var fd = (t.type === 'flight' || (t.legs && t.legs.length)) ? getFlightDisplay(t) : null;
+              var route = fd && fd.from && fd.to ? fd.from + ' → ' + fd.to : (t.from||'') + (t.to ? ' → '+t.to : '');
+              var meta = fd ? [fd.carrier, fd.flightNum, fd.depart, fd.arrive].filter(Boolean).join(' · ') : '';
+              var conf = fd && fd.confirmationCode ? ' · Conf: ' + fd.confirmationCode : '';
+              var label = route + (meta ? ' · ' + meta : '') + conf;
+              return '<div class="itin-item"><span>' + emoji + '</span><span>' + label + '</span></div>';
             }).join('')
           : '<div class="itin-placeholder">No transport — click Edit to add</div>';
 
@@ -8904,6 +8913,15 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('de-add-manual-toggle').textContent = 'or add manually';
       document.getElementById('de-add-note').value = '';
       document.getElementById('de-add-cat-row').style.display = section === 'acts' ? 'block' : 'none';
+      if (section === 'acts') {
+        var addCatSelect = document.getElementById('de-add-cat-select');
+        if (addCatSelect) {
+          addCatSelect.innerHTML = Object.keys(activityCategories).map(function(c) {
+            return '<option value="' + c + '">' + activityCategories[c].emoji + ' ' + c + '</option>';
+          }).join('');
+          addCatSelect.value = 'default';
+        }
+      }
       sheet.dataset.selectedCat = 'default';
       document.querySelectorAll('.de-add-cat-chip').forEach(function(el) { el.classList.remove('active'); });
       var defaultChip = document.querySelector('.de-add-cat-chip[data-cat="default"]');
@@ -8931,6 +8949,18 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (sheet) sheet.classList.remove('open');
       var confirmBtn = document.querySelector('.de-add-confirm');
       if (confirmBtn) confirmBtn.textContent = 'Add to Day';
+      var resBtn = document.getElementById('de-add-res-btn');
+      if (resBtn) { resBtn.dataset.active = '0'; resBtn.style.background = 'var(--sand-dark)'; resBtn.style.color = 'var(--ink-muted)'; resBtn.textContent = '🔔 Reservation needed?'; }
+    }
+
+    function deToggleAddRes() {
+      var btn = document.getElementById('de-add-res-btn');
+      if (!btn) return;
+      var active = btn.dataset.active === '1';
+      btn.dataset.active = active ? '0' : '1';
+      btn.style.background = active ? 'var(--sand-dark)' : '#3D1A1A';
+      btn.style.color = active ? 'var(--ink-muted)' : '#E05555';
+      btn.textContent = active ? '🔔 Reservation needed?' : '🔴 Reservation needed';
     }
 
     function showDeItemSheet(section, i) {
@@ -9196,7 +9226,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // Add mode — create new item
       var linkVal = (document.getElementById('de-add-link') || {}).value || '';
       if (section === 'acts') {
+        var resBtn = document.getElementById('de-add-res-btn');
+        var resVal = (resBtn && resBtn.dataset.active === '1') ? 'needed' : null;
         var newAct = { name: name, uid: generateUid(), link: linkVal || '' };
+        if (resVal) newAct.reserved = resVal;
         deCurrentDay.activities.push(newAct);
         if (!deCurrentDay.activityCategories) deCurrentDay.activityCategories = [];
         deCurrentDay.activityCategories.push(cat);

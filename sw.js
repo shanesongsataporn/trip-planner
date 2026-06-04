@@ -1,8 +1,17 @@
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'trip-planner-' + VERSION;
 
 self.addEventListener('install', function(e) {
-  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(function(cache) {
+      return cache.addAll([
+        '/trip-planner/',
+        '/trip-planner/index.html'
+      ]);
+    }).then(function() {
+      return self.skipWaiting();
+    })
+  );
 });
 
 self.addEventListener('activate', function(e) {
