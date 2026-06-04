@@ -3013,6 +3013,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var floatEl = document.getElementById('home-weather-float');
       if (!floatEl) { return; }
       if (floatEl.style.display !== 'none') { floatEl.style.display = 'none'; return; }
+      pushHistoryState('sheet', { sheet: 'weather' });
       if (tripWeatherCache && Object.values(tripWeatherCache).length && !Object.values(tripWeatherCache)[0].hours) { tripWeatherCache = null; }
       deSuppressSync = true;
       setTimeout(function() { deSuppressSync = false; }, 3000);
@@ -4245,6 +4246,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           else if (st.sheet === 'lists') { closeAddToListSheet(); }
           else if (st.sheet === 'photo') { closePhotoPicker(); }
           else if (st.sheet === 'discovery') { closeAddToTripSheet(); }
+          else if (st.sheet === 'de-add') { closeDeAddSheet(); }
+          else if (st.sheet === 'de-item') { closeDeItemSheet(); }
+          else if (st.sheet === 'weather') { var _wf = document.getElementById('home-weather-float'); if (_wf) { _wf.style.display = 'none'; } }
+          else if (st.sheet === 'mob-summary') { closeMobDaySummary(); }
+          else if (st.sheet === 'mob-pin') { closeMobPinSheet(); }
+          else if (st.sheet === 'bulk-move') { closePlanBulkMoveSheet(); }
         } else if (st && st.view) {
           __suppressHistoryPush = true;
           if (st.view === 'route' && typeof st.routeIndex === 'number') {
@@ -5833,6 +5840,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!count) return;
       var sheet = document.getElementById('plan-bulk-move-sheet');
       if (!sheet) return;
+      pushHistoryState('sheet', { sheet: 'bulk-move' });
       // Build day list
       var days = currentTrip.days || [];
       var html = '<div class="pbm-header"><span class="pbm-title">Move ' + count + ' item' + (count > 1 ? 's' : '') + ' to…</span><button class="pbm-close" onclick="closePlanBulkMoveSheet()">✕</button></div>';
@@ -8913,6 +8921,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function showDeAddSheet(section) {
       var sheet = document.getElementById('de-add-sheet');
       if (!sheet) return;
+      pushHistoryState('sheet', { sheet: 'de-add' });
       sheet.dataset.section = section;
       var title = section === 'acts' ? 'Add Activity' : section === 'accom' ? 'Add Accommodation' : 'Add Food & Drink';
       document.getElementById('de-add-sheet-title').textContent = title;
@@ -8975,6 +8984,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function showDeItemSheet(section, i) {
+      pushHistoryState('sheet', { sheet: 'de-item' });
       var day = deCurrentDay;
       if (!day) return;
       var sheet = document.getElementById('de-item-sheet');
@@ -11099,6 +11109,7 @@ var pinDelay = Math.floor(Math.random() * 150);
       closeMapFloatCard();
       var summary = document.getElementById('mob-day-summary');
       if (summary.classList.contains('open')) { closeMobDaySummary(); return; }
+      pushHistoryState('sheet', { sheet: 'mob-summary' });
       var day = currentTrip.days[mobPillIndex];
       if (!day) return;
       normaliseAccom(day); normaliseDayTransport(day);
@@ -11218,6 +11229,7 @@ var pinDelay = Math.floor(Math.random() * 150);
 
     function showMobPinSheet(name, photoUrl, note, mapsUrl, dayIndex, doneKey) {
       closeMobDaySummary();
+      pushHistoryState('sheet', { sheet: 'mob-pin' });
       var sheet = document.getElementById('mob-pin-sheet');
       var img = document.getElementById('mob-pin-sheet-img');
       document.getElementById('mob-pin-sheet-name').textContent = name;
