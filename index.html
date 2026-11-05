@@ -2318,6 +2318,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function showAddTripModal() {
       ['hamburger-menu','mob-hamburger-menu'].forEach(function(id) { document.getElementById(id).classList.remove('open'); });
+      alert('New trips are coming soon');
+      return;
       showModal('Add new trip',
         '<div class="modal-field"><label>Trip name</label><input type="text" id="new-trip-name" placeholder="e.g. Japan 2027"></div>' +
         '<div class="modal-field"><label>Start date</label><input type="text" id="new-trip-date" placeholder="e.g. Mon Jan 6"></div>' +
@@ -2478,18 +2480,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function switchTrip(key) {
-      if (!trips[key]) return;
-      currentTripKey = key; currentTrip = trips[key]; currentDayItem = null;
-      closeMobDaySummary();
-      clearActivityMarkers();
-      cityMarkerObjs.forEach(function(obj) { obj.marker.map = null; });
-      cityMarkerObjs = [];
-      rebuildTimeline(); rebuildMobStrip(); addCityMarkers();
-      updateMobTripLabel();
-      if (currentView === 'itinerary') { renderItinerary(); }
-      if (currentView === 'cards') { renderKanban(); }
-      if (currentView === 'split') { renderSplit(); }
-      if (currentView === 'budget') { renderBudget(); }
+      if (!key || key === currentTripKey) return;
+      try { localStorage.setItem('current_trip_key', key); } catch (e) {}
+      setTimeout(function() { location.reload(); }, 600);
     }
 
     // ===== TIMELINE (desktop) =====
@@ -14281,9 +14274,9 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         showToast('You\'re offline — changes can\'t be saved right now');
         return;
       }
-      // #46 — startDate drift guard. If startDate is wrong, abort save and alert loudly.
-      if (currentTrip && currentTrip.startDate !== '2026-06-09') {
-        console.error('🚨 [saveToStorage] ABORTED — startDate is "' + currentTrip.startDate + '" (expected 2026-06-09). Fix before saving.');
+      // #46 — startDate guard. Abort save if startDate is missing or not a valid YYYY-MM-DD date.
+      if (currentTrip && !/^\d{4}-\d{2}-\d{2}$/.test(currentTrip.startDate || '')) {
+        console.error('🚨 [saveToStorage] ABORTED — startDate is "' + currentTrip.startDate + '" (missing or not YYYY-MM-DD). Fix before saving.');
         return;
       }
       db.collection('trips').doc(currentTripKey).set({
