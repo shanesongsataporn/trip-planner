@@ -2353,7 +2353,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       { code: 'PHP', symbol: '₱', label: 'PHP ₱' },
       { code: 'CAD', symbol: '$', label: 'CAD $' },
       { code: 'CHF', symbol: 'Fr', label: 'CHF Fr' },
-      { code: 'AED', symbol: 'د.إ', label: 'AED د.إ' }
+      { code: 'AED', symbol: 'د.إ', label: 'AED د.إ' },
+      { code: 'TWD', symbol: 'NT$', label: 'TWD NT$' }
     ];
 
     function buildCurrencySelect(id, selectedCode, allowBlank) {
@@ -4209,6 +4210,107 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     // ===== ROUTE PAGE + HISTORY-AWARE NAVIGATION =====
+    function cityFlagFromCode(cc) {
+      cc = String(cc || '').toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) return '📍';
+      return String.fromCodePoint(0x1F1E6 + cc.charCodeAt(0) - 65) + String.fromCodePoint(0x1F1E6 + cc.charCodeAt(1) - 65);
+    }
+    var COUNTRY_CURRENCY = { TH: 'THB', TW: 'TWD', HK: 'HKD', AU: 'AUD', NZ: 'NZD', US: 'USD', CA: 'CAD', GB: 'GBP', JP: 'JPY', SG: 'SGD', CN: 'CNY', KR: 'KRW', VN: 'VND', MY: 'MYR', ID: 'IDR', PH: 'PHP', CH: 'CHF', AE: 'AED' };
+    ['AT','BE','HR','CY','EE','FI','FR','DE','GR','IE','IT','LV','LT','LU','MT','NL','PT','SK','SI','ES'].forEach(function(c) { COUNTRY_CURRENCY[c] = 'EUR'; });
+    function cityCurrencyFromCountry(cc) {
+      return COUNTRY_CURRENCY[String(cc || '').toUpperCase()] || '';
+    }
+    function lookupCityTimezone(lat, lng, cb) {
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng + '&daily=weather_code&forecast_days=1&timezone=auto';
+      fetch(url).then(function(r) { return r.json(); }).then(function(j) { cb((j && j.timezone) || ''); }).catch(function() { cb(''); });
+    }
+    function saveCityFromPlace(place, cb) {
+      var name = String((place && place.name) || '').trim();
+      if (!name || !place.geometry) { if (cb) cb(null); return; }
+      var existing = citySettings[name];
+      if (existing && typeof existing.lat === 'number' && existing.timezone) { if (cb) cb(name); return; }
+      var country = '', cc = '';
+      (place.address_components || []).forEach(function(c) {
+        if (c.types && c.types.indexOf('country') !== -1) { country = c.long_name; cc = c.short_name; }
+      });
+      var lat = place.geometry.location.lat();
+      var lng = place.geometry.location.lng();
+      var palette = ['#E67E22', '#9B59B6', '#2D9E75', '#3498DB', '#E74C3C', '#1ABC9C', '#F39C12', '#8E44AD'];
+      lookupCityTimezone(lat, lng, function(tz) {
+        var prev = citySettings[name] || {};
+        citySettings[name] = Object.assign({}, prev, {
+          emoji: prev.emoji || cityFlagFromCode(cc),
+          color: prev.color || palette[Object.keys(citySettings).length % palette.length],
+          code: prev.code || name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase(),
+          lat: lat,
+          lng: lng,
+          country: country || prev.country || '',
+          countryCode: cc || prev.countryCode || '',
+          timezone: tz || prev.timezone || '',
+          currency: prev.currency || cityCurrencyFromCountry(cc)
+        });
+        if (typeof addCityMarkers === 'function') { try { addCityMarkers(); } catch (e) {} }
+        deSuppressSync = true;
+        setTimeout(function() { deSuppressSync = false; }, 5000);
+        saveToStorage();
+        if (cb) cb(name);
+      });
+    }
+    function closeCityPicker() {
+      var ov = document.getElementById('city-picker-overlay');
+      var sh = document.getElementById('city-picker-sheet');
+      if (ov) ov.classList.remove('open');
+      if (sh) sh.classList.remove('open');
+    }
+    function openCityPicker(callback) {
+      window._cityPickerCb = callback || null;
+      if (!document.getElementById('city-picker-sheet')) {
+        var st = document.createElement('style');
+        st.textContent = '#city-picker-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:5400;}#city-picker-overlay.open{display:block;}#city-picker-sheet{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--white);border-radius:20px 20px 0 0;z-index:5500;padding:12px 20px 40px;max-height:80vh;overflow-y:auto;}#city-picker-sheet.open{display:block;}.pac-container{z-index:6000 !important;}';
+        document.head.appendChild(st);
+        var ov = document.createElement('div');
+        ov.id = 'city-picker-overlay';
+        ov.onclick = function() { closeCityPicker(); };
+        var sh = document.createElement('div');
+        sh.id = 'city-picker-sheet';
+        sh.innerHTML = '<div class="sheet-handle"></div>' +
+          '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;">Add a City</div>' +
+          '<input id="city-picker-input" type="text" placeholder="Search a city, e.g. Taipei" autocomplete="off" style="width:100%;font-family:inherit;font-size:14px;padding:12px;border:1px solid var(--sand-dark);border-radius:8px;background:var(--sand);color:var(--ink);outline:none;">' +
+          '<div id="city-picker-status" style="font-size:12px;color:var(--ink-muted);margin-top:10px;min-height:16px;"></div>' +
+          '<button class="accom-cancel-btn" onclick="closeCityPicker()">Cancel</button>';
+        document.body.appendChild(ov);
+        document.body.appendChild(sh);
+      }
+      var input = document.getElementById('city-picker-input');
+      var status = document.getElementById('city-picker-status');
+      input.value = '';
+      status.textContent = '';
+      if (!input._ac && window.google && google.maps && google.maps.places) {
+        input._ac = new google.maps.places.Autocomplete(input, {
+          types: ['(cities)'],
+          fields: ['name', 'geometry', 'address_components'],
+          componentRestrictions: null
+        });
+        input._ac.addListener('place_changed', function() {
+          var place = input._ac.getPlace();
+          if (!place || !place.geometry) return;
+          status.textContent = 'Looking up ' + place.name + '...';
+          saveCityFromPlace(place, function(name) {
+            var cb = window._cityPickerCb;
+            window._cityPickerCb = null;
+            closeCityPicker();
+            if (!name) { showToast('Could not save that city'); return; }
+            var info = getCityInfo(name);
+            showToast('Saved ' + name + ' — ' + (info.country || '?') + ' · ' + (info.currency || 'no currency') + ' · ' + (info.timezone || 'no time zone'));
+            if (cb) cb(name);
+          });
+        });
+      }
+      document.getElementById('city-picker-overlay').classList.add('open');
+      document.getElementById('city-picker-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'city-picker' });
+      setTimeout(function() { input.focus(); }, 300);
+    }
     var routeCurrentIndex = null;
     var __routeNavInited = false;
     var __suppressHistoryPush = false;
@@ -4231,6 +4333,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           else if (st.sheet === 'mob-summary') { closeMobDaySummary(); }
           else if (st.sheet === 'mob-pin') { closeMobPinSheet(); }
           else if (st.sheet === 'bulk-move') { closePlanBulkMoveSheet(); }
+          else if (st.sheet === 'city-picker') { closeCityPicker(); }
         } else if (st && st.view) {
           __suppressHistoryPush = true;
           if (st.view === 'route' && typeof st.routeIndex === 'number') {
