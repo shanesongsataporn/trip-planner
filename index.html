@@ -3253,8 +3253,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var today = new Date(); today.setHours(0,0,0,0);
 
       function parseDate(day) {
-        var p = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
-        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0); return d;
+        var d = new Date(getDayDateISO(day, currentTrip) + 'T00:00:00'); d.setHours(0,0,0,0); return d;
       }
 
       var todayDayIndex = -1;
