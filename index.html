@@ -1472,11 +1472,6 @@ gmp-advanced-marker.map-pin-active {
     <button onclick="undoStructAction()">Undo</button>
   </div>
 
-  <!-- Structure: undo toast -->
-  <div id="struct-toast">
-    <span id="struct-toast-label"></span>
-    <button onclick="undoStructAction()">↩ Undo</button>
-  </div>
   <!-- Structure: history sheet -->
   <div id="struct-history-overlay" onclick="closeStructHistory()"></div>
   <div id="struct-history-sheet">
@@ -2365,8 +2360,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       { code: 'AED', symbol: 'د.إ', label: 'AED د.إ' }
     ];
 
-    function buildCurrencySelect(id, selectedCode) {
+    function buildCurrencySelect(id, selectedCode, allowBlank) {
       return '<select id="' + id + '" style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid var(--sand-dark);border-radius:6px;background:var(--sand);color:var(--ink);">' +
+        (allowBlank ? '<option value=""' + (!selectedCode ? ' selected' : '') + '>— Don&rsquo;t change —</option>' : '') +
         currencyOptions.map(function(c) {
           return '<option value="' + c.code + '"' + (c.code === selectedCode ? ' selected' : '') + '>' + c.label + '</option>';
         }).join('') +
@@ -2386,7 +2382,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<div class="modal-field"><label>Trip year</label><input type="number" id="trip-year" value="' + (currentTrip.year || new Date().getFullYear()) + '" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Shift trip start date</label><input type="date" id="trip-shift-start" style="width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--sand-dark);border-radius:var(--radius-sm);background:var(--sand);color:var(--ink);outline:none;"></div>' +
         '<div class="modal-field"><label>Base currency (your home currency)</label>' + buildCurrencySelect('trip-base-currency', currentTrip.baseCurrency || 'AUD') + '</div>' +
-        '<div class="modal-field"><label>Set ALL days to currency</label>' + buildCurrencySelect('trip-bulk-currency', currentTrip.baseCurrency || 'AUD') + '<div style="font-size:10px;color:var(--ink-muted);margin-top:4px;">Overwrites currency on every day — useful for single-country trips</div></div>' +
+        '<div class="modal-field"><label>Set ALL days to currency</label>' + buildCurrencySelect('trip-bulk-currency', '', true) + '<div style="font-size:10px;color:var(--ink-muted);margin-top:4px;">Only pick a currency here to overwrite every day (single-country trips). Otherwise leave it alone.</div></div>' +
         ratesInfo +
         '<div style="margin-top:8px;"><button onclick="refreshRatesFromModal()" style="font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;">🔄 Refresh exchange rates</button></div>',
         function() {
@@ -2911,34 +2907,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function fetchTripWeather(callback) {
       if (tripWeatherCache) { callback(tripWeatherCache); return; }
-      var knownCityCoords = {
-        'Bangkok': { lat: 13.7563, lng: 100.5018 },
-        'Koh Samui': { lat: 9.5120, lng: 100.0136 },
-        'Chiang Rai': { lat: 19.9105, lng: 99.8406 }
-      };
       var cityCoords = {};
       currentTrip.days.forEach(function(day) {
-        var baseCity = day.city ? day.city.split('>').pop().trim() : null;
-        if (!baseCity || baseCity === 'Sydney') return;
-        if (!cityCoords[baseCity]) {
-          if (day.lat && day.lng && !cityCoords[baseCity]) {
-            cityCoords[baseCity] = { lat: day.lat, lng: day.lng };
-          } else if (knownCityCoords[baseCity]) {
-            cityCoords[baseCity] = knownCityCoords[baseCity];
-          }
+        var info = getCityInfo(day.city);
+        if (!info.name || info.noMarker) return;
+        if (!cityCoords[info.name] && info.lat !== null && info.lng !== null) {
+          cityCoords[info.name] = { lat: info.lat, lng: info.lng };
         }
       });
       var cities = Object.keys(cityCoords);
       if (!cities.length) { callback({}); return; }
-      var today = new Date();
-      var maxForecast = new Date(today); maxForecast.setDate(today.getDate() + 15);
-      var tripStart = new Date(getDayDateISO(currentTrip.days[0], currentTrip));
-      var tripEnd = new Date(getDayDateISO(currentTrip.days[currentTrip.days.length - 1], currentTrip));
-      var fetchStart = tripStart > today ? today : tripStart;
-      var fetchEnd = tripEnd < maxForecast ? tripEnd : maxForecast;
-      var pad = function(n) { return String(n).padStart(2,'0'); };
-      var startDate = fetchStart.getFullYear() + '-' + pad(fetchStart.getMonth()+1) + '-' + pad(fetchStart.getDate());
-      var endDate = fetchEnd.getFullYear() + '-' + pad(fetchEnd.getMonth()+1) + '-' + pad(fetchEnd.getDate());
       var remaining = cities.length;
       var result = {};
       cities.forEach(function(city) {
@@ -3021,11 +2999,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           var w = weatherByDate[dateStr];
           var cityColor = (citySettings[baseCity] && citySettings[baseCity].color) ? citySettings[baseCity].color : 'var(--accent)';
           var isToday = dateStr === todayStr;
-          var monthSeasons = { Jan:'Cool & dry', Feb:'Cool & dry', Mar:'Hot & dry', Apr:'Hot & dry', May:'Hot & humid', Jun:'Rainy season', Jul:'Rainy season', Aug:'Rainy season', Sep:'Rainy season', Oct:'Rains easing', Nov:'Cool & dry', Dec:'Cool & dry' };
-          var monthEmojis = { Jan:'☀️', Feb:'☀️', Mar:'🌤️', Apr:'🌤️', May:'🌦️', Jun:'🌧️', Jul:'🌧️', Aug:'🌧️', Sep:'🌧️', Oct:'🌦️', Nov:'☀️', Dec:'☀️' };
-          var monthKey = getDayDate(day, currentTrip).replace(/^[A-Za-z]+ /, '').split(' ')[0];
-          var emoji = w ? w.emoji : monthEmojis[monthKey] || '🌡️';
-          var temp = w ? (w.max + '°/' + w.min + '°') : (monthSeasons[monthKey] || 'Seasonal');
+          var emoji = w ? w.emoji : '🗓';
+          var temp = w ? (w.max + '°/' + w.min + '°') : 'No forecast yet';
           var displayDate = getDayDate(day, currentTrip).replace(/^[A-Za-z]+ /, ''); // "Jun 9"
           var cellId = 'weather-cell-' + i;
           var detailId = 'weather-detail-' + i;
@@ -3062,7 +3037,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
             '<div style="font-size:12px;font-weight:700;color:var(--ink);">Trip Forecast</div>' +
             '<div style="display:flex;align-items:center;gap:8px;">' +
-              Object.keys(citySettings).filter(function(c){ return citySettings[c] && citySettings[c].color && c !== 'Sydney'; }).map(function(c) {
+              Object.keys(citySettings).filter(function(c){ return citySettings[c] && citySettings[c].color && !citySettings[c].noMarker && currentTrip.days.some(function(d){ return getCityInfo(d.city).name === c; }); }).map(function(c) {
                 return '<div style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--ink-muted);">' +
                   '<div style="width:7px;height:7px;border-radius:50%;background:' + citySettings[c].color + ';"></div>' + c + '</div>';
               }).join('') +
@@ -3987,17 +3962,24 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       // Re-fetch weather in case tile was re-added
       var nextCity = getNextTripCity();
-      fetchHomeWeather(nextCity.day.lat, nextCity.day.lng, function(w) {
-        var emojiEl = document.getElementById('home-weather-emoji');
-        var valEl = document.getElementById('home-weather-tile-val');
-        var subEl = document.getElementById('home-weather-sub');
-        if (!emojiEl || !valEl) return;
-        if (w) {
-          emojiEl.textContent = w.emoji;
-          valEl.textContent = w.max + '°/' + w.min + '°';
-          subEl.textContent = 'Today in ' + nextCity.day.city.split('>').pop().trim();
-        }
-      });
+      var nextInfo = getCityInfo(nextCity.day.city);
+      var homeEmojiEl = document.getElementById('home-weather-emoji');
+      var homeValEl = document.getElementById('home-weather-tile-val');
+      var homeSubEl = document.getElementById('home-weather-sub');
+      if (nextInfo.lat === null || nextInfo.lng === null) {
+        if (homeEmojiEl) homeEmojiEl.textContent = '🗓';
+        if (homeValEl) homeValEl.textContent = '--';
+        if (homeSubEl) homeSubEl.textContent = 'No forecast yet';
+      } else {
+        fetchHomeWeather(nextInfo.lat, nextInfo.lng, function(w) {
+          if (!homeEmojiEl || !homeValEl) return;
+          if (w) {
+            homeEmojiEl.textContent = w.emoji;
+            homeValEl.textContent = w.max + '°/' + w.min + '°';
+            if (homeSubEl) homeSubEl.textContent = 'Today in ' + nextInfo.name;
+          }
+        });
+      }
 
       // Re-attach long-press listeners to fresh grid elements
       setTimeout(initHomeLongPress, 100);
@@ -6537,6 +6519,42 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       structToastTimer = setTimeout(function() {
         toast.classList.remove('visible');
       }, 8000);
+    }
+
+    function showToast(message) {
+      try {
+        var t = document.getElementById('plain-toast');
+        if (!t) {
+          t = document.createElement('div');
+          t.id = 'plain-toast';
+          t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);border-radius:var(--radius);padding:12px 18px;font-size:14px;font-weight:600;z-index:4000;max-width:88vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.25s;pointer-events:none;';
+          document.body.appendChild(t);
+        }
+        t.textContent = message;
+        t.style.opacity = '1';
+        if (window._plainToastTimer) clearTimeout(window._plainToastTimer);
+        window._plainToastTimer = setTimeout(function() { t.style.opacity = '0'; }, 3000);
+      } catch (e) { console.warn('showToast failed:', message); }
+    }
+
+    function getCityInfo(city) {
+      var key = String(city || '').split('>').pop().trim();
+      var c = (typeof citySettings !== 'undefined' && citySettings && citySettings[key]) || {};
+      return {
+        name: key,
+        lat: typeof c.lat === 'number' ? c.lat : null,
+        lng: typeof c.lng === 'number' ? c.lng : null,
+        country: c.country || '',
+        countryCode: c.countryCode || '',
+        timezone: c.timezone || '',
+        currency: c.currency || '',
+        noMarker: !!c.noMarker
+      };
+    }
+
+    function placeQuery(name, city) {
+      var info = getCityInfo(city);
+      return [name, info.name, info.country].filter(function(p) { return p; }).join(', ');
     }
 
     function undoStructAction() {
@@ -10707,9 +10725,10 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       var color = document.getElementById('city-edit-color').value;
       var noMarker = document.getElementById('city-edit-nomarker').checked;
       if (!newName) return;
+      var prevCity = citySettings[oldName] || citySettings[newName] || {};
       if (oldName !== newName) { delete citySettings[oldName]; }
-      citySettings[newName] = { emoji: emoji, color: color, code: code };
-      if (noMarker) { citySettings[newName].noMarker = true; }
+      citySettings[newName] = Object.assign({}, prevCity, { emoji: emoji, color: color, code: code });
+      if (noMarker) { citySettings[newName].noMarker = true; } else { delete citySettings[newName].noMarker; }
       saveToStorage();
       addCityMarkers();
       var list = document.getElementById('city-settings-list');
@@ -10743,7 +10762,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       var id = name.replace(/ /g,'-');
       var rawEmoji = document.getElementById('city-emoji-'+id).value;
       var safeEmoji = rawEmoji.replace(/\uFFFD/g, '').trim() || '📍';
-      citySettings[name] = { emoji: safeEmoji, color: document.getElementById('city-color-'+id).value };
+      citySettings[name] = Object.assign({}, citySettings[name] || {}, { emoji: safeEmoji, color: document.getElementById('city-color-'+id).value });
       cityMarkerObjs.forEach(function(obj) { if (obj.city.name === name) { obj.marker.content = buildCityMarkerEl(name); } });
       cityMarkerObjs.forEach(function(obj) { if (obj.city.name === name) { obj.marker.content = buildCityMarkerEl(name); } });
       saveToStorage();
