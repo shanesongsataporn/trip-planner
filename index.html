@@ -1703,12 +1703,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!currentTrip || !currentTrip.days) { return 0; }
       var today = new Date();
       today.setHours(0, 0, 0, 0);
-      var tripYear = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
-      var months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
       var tripDates = currentTrip.days.map(function(day) {
-        var parts = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
-        var month = months[parts[0]]; var date = parseInt(parts[1]);
-        var d = new Date(tripYear, month, date); d.setHours(0,0,0,0); return d;
+        var d = new Date(getDayDateISO(day, currentTrip) + 'T00:00:00'); d.setHours(0,0,0,0); return d;
       });
       var lastDate = tripDates[tripDates.length - 1];
       var twoDaysAfter = new Date(lastDate); twoDaysAfter.setDate(twoDaysAfter.getDate() + 2);
@@ -3081,12 +3077,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function getNextTripCity() {
       var today = new Date(); today.setHours(0,0,0,0);
-      var yr = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
       for (var i = 0; i < currentTrip.days.length; i++) {
         var day = currentTrip.days[i];
-        var p = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
-        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0);
+        var d = new Date(getDayDateISO(day, currentTrip) + 'T00:00:00'); d.setHours(0,0,0,0);
         if (d >= today) { return { day: day, index: i }; }
       }
       return { day: currentTrip.days[0], index: 0 };
@@ -3094,12 +3087,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function getNextFlight() {
       var today = new Date(); today.setHours(0,0,0,0);
-      var yr = currentTrip.startDate ? parseInt(currentTrip.startDate.split('-')[0]) : new Date().getFullYear();
-      var months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
       for (var i = 0; i < currentTrip.days.length; i++) {
         var day = currentTrip.days[i];
-        var p = getDayDate(day, currentTrip).replace(/^[A-Za-z]+\s/, '').split(' ');
-        var d = new Date(yr, months[p[0]], parseInt(p[1])); d.setHours(0,0,0,0);
+        var d = new Date(getDayDateISO(day, currentTrip) + 'T00:00:00'); d.setHours(0,0,0,0);
         if (d >= today && day.transport) {
           var flights = day.transport.filter(function(t) { return t.type === 'Flight'; });
           if (flights.length) { return { flight: flights[0], day: day }; }
@@ -6209,7 +6199,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
       var m = months[parts[0]], d = parseInt(parts[1]);
       if (isNaN(m) || isNaN(d)) return null;
-      return new Date(2026, m, d);
+      return new Date(tripYearFor(m), m, d);
     }
     function formatTripDate(dateObj) {
       if (!dateObj) return '';
@@ -6230,7 +6220,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
       var m = months[parts[0]]; var day = parseInt(parts[1]);
       if (isNaN(m) || isNaN(day)) return dateStr;
-      var d = new Date(2026, m, day);
+      var d = new Date(tripYearFor(m), m, day);
       return d.toLocaleDateString('en-AU', { month: 'short', day: 'numeric' });
     }
 
@@ -6246,7 +6236,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
       var m = months[parts[0]]; var day = parseInt(parts[1]);
       if (isNaN(m) || isNaN(day)) return dateStr;
-      var d = new Date(2026, m, day);
+      var d = new Date(tripYearFor(m), m, day);
       return d.toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' });
     }
 
@@ -6581,6 +6571,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         currency: cur ? cur.code : (currentTrip.baseCurrency || 'AUD'),
         currencySymbol: cur ? cur.symbol : (currentTrip.baseCurrencySymbol || '$')
       };
+    }
+
+    function tripYearFor(monthIdx) {
+      var sd = (currentTrip && currentTrip.startDate) || '';
+      var y = parseInt(sd.slice(0, 4), 10);
+      var startMonth = parseInt(sd.slice(5, 7), 10) - 1;
+      if (isNaN(y) || isNaN(startMonth)) return new Date().getFullYear();
+      return monthIdx < startMonth ? y + 1 : y;
     }
 
     function undoStructAction() {
