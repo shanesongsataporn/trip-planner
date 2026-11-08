@@ -6580,6 +6580,21 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       return { year: isNaN(y) ? now.getFullYear() : y, month: isNaN(m) ? now.getMonth() : m };
     }
 
+    function pruneCitySettings(savedKeys, dryRun) {
+      var used = {};
+      (currentTrip && currentTrip.days || []).forEach(function(d) {
+        String(d.city || '').split('>').forEach(function(p) { var n = p.trim(); if (n) used[n] = true; });
+      });
+      var removed = [];
+      Object.keys(citySettings).forEach(function(k) {
+        if (savedKeys.indexOf(k) === -1 && !used[k]) {
+          removed.push(k);
+          if (!dryRun) delete citySettings[k];
+        }
+      });
+      return removed;
+    }
+
     function tripYearFor(monthIdx) {
       var sd = (currentTrip && currentTrip.startDate) || '';
       var y = parseInt(sd.slice(0, 4), 10);
@@ -14354,6 +14369,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             try {
               var pc = JSON.parse(data.citySettings);
               Object.keys(pc).forEach(function(key) { citySettings[key] = pc[key]; });
+              pruneCitySettings(Object.keys(pc));
             } catch (e) {
               console.error('[loadFromStorage] citySettings unparseable — keeping defaults:', e.message);
             }
