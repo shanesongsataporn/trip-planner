@@ -4866,8 +4866,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var co = parseTripDate(stay.checkoutDate);
       window._accomAddCheckin = ci || null;
       window._accomAddCheckout = co || null;
-      window._accomCalYear = ci ? ci.getFullYear() : 2026;
-      window._accomCalMonth = ci ? ci.getMonth() : 5;
+      window._accomCalYear = ci ? ci.getFullYear() : tripStartYM().year;
+      window._accomCalMonth = ci ? ci.getMonth() : tripStartYM().month;
       window._accomAddPlaceName = '_edit_';
       document.getElementById('accom-add-body').innerHTML =
         '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px;">Change Dates</div>' +
@@ -4986,8 +4986,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function showAddStaySheet() {
       window._accomAddCheckin = null;
       window._accomAddCheckout = null;
-      window._accomCalYear = 2026;
-      window._accomCalMonth = 5;
+      window._accomCalYear = tripStartYM().year;
+      window._accomCalMonth = tripStartYM().month;
       window._accomAddPlaceId = null;
 
       document.getElementById('accom-add-body').innerHTML =
@@ -6571,6 +6571,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         currency: cur ? cur.code : (currentTrip.baseCurrency || 'AUD'),
         currencySymbol: cur ? cur.symbol : (currentTrip.baseCurrencySymbol || '$')
       };
+    }
+
+    function tripStartYM() {
+      var sd = (currentTrip && currentTrip.startDate) || '';
+      var y = parseInt(sd.slice(0, 4), 10);
+      var m = parseInt(sd.slice(5, 7), 10) - 1;
+      var now = new Date();
+      return { year: isNaN(y) ? now.getFullYear() : y, month: isNaN(m) ? now.getMonth() : m };
     }
 
     function tripYearFor(monthIdx) {
@@ -9310,12 +9318,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('split-list').innerHTML = currentTrip.days.map(function(item, index) {
         normaliseAccom(item); normaliseDayTransport(item);
         var now = new Date();
-        var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var todayStr = days[now.getDay()] + ' ' + months[now.getMonth()] + ' ' + now.getDate();
-        var isToday = item.date && item.date === todayStr;
+        var todayIso = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        var isToday = getDayDateISO(item, currentTrip) === todayIso;
         return '<div class="split-day-item" id="split-item-' + index + '" onclick="selectSplitDay(' + index + ')">' +
-          '<div class="split-day-num" style="display:flex;align-items:center;gap:6px;">Day ' + item.day + ' | ' + item.date +
+          '<div class="split-day-num" style="display:flex;align-items:center;gap:6px;">Day ' + (index + 1) + ' | ' + getDayDate(item, currentTrip) +
             (isToday ? '<span style="background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;letter-spacing:0.05em;">TODAY</span>' : '') +
           '</div>' +
           '<div class="split-day-city">' + item.city + '</div>' +
