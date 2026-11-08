@@ -2612,12 +2612,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function addDay() {
       document.getElementById('hamburger-menu').classList.remove('open');
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
-      var base = currentTrip.baseCurrency || 'AUD';
-      var baseSym = currentTrip.baseCurrencySymbol || '$';
+      var loc = newDayLocation(lastDay.city, lastDay);
+      var base = loc.currency;
+      var baseSym = loc.currencySymbol;
       _insertDayAt(currentTrip.days.length, {
-        city: lastDay.city.split('>').pop().trim(),
-        lat: lastDay.lat,
-        lng: lastDay.lng,
+        city: loc.city,
+        lat: loc.lat,
+        lng: loc.lng,
         note: '',
         accommodation: [],
         activities: [],
@@ -2653,15 +2654,21 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
       if (!inheritCity) inheritCity = (firstDay.city || '').split('>')[0].trim();
       var newDays = [];
+      var loc = newDayLocation(inheritCity, firstDay);
+      base = loc.currency;
+      baseSym = loc.currencySymbol;
       var cursor = new Date(firstDate.getTime());
       while (cursor.getTime() > targetDate.getTime()) {
         cursor.setDate(cursor.getDate() - 1);
         newDays.unshift({
           id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           day: 0,
-          city: inheritCity,
-          lat: firstDay.lat,
-          lng: firstDay.lng,
+          city: loc.city,
+          lat: loc.lat,
+          lng: loc.lng,
+          cardNotes: {},
+          costs: {},
+          done: {},
           note: '',
           accommodation: [],
           activities: [],
@@ -2678,7 +2685,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (addedCount > 0 && currentTrip.startDate) {
         var sd = new Date(currentTrip.startDate + 'T00:00:00');
         sd.setDate(sd.getDate() - addedCount);
-        currentTrip.startDate = sd.toISOString().slice(0, 10);
+        currentTrip.startDate = sd.getFullYear() + '-' + String(sd.getMonth() + 1).padStart(2, '0') + '-' + String(sd.getDate()).padStart(2, '0');
       }
       // Renumber day.day from 1
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
@@ -2714,6 +2721,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (c && c.indexOf('>') === -1) { inheritCity = c; break; }
       }
       if (!inheritCity) inheritCity = (lastDay.city || '').split('>').pop().trim();
+      var loc = newDayLocation(inheritCity, lastDay);
+      base = loc.currency;
+      baseSym = loc.currencySymbol;
       var cursor = new Date(lastDate.getTime());
       while (cursor.getTime() < targetDate.getTime()) {
         cursor.setDate(cursor.getDate() + 1);
@@ -2721,9 +2731,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         currentTrip.days.push({
           id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
           day: prev.day + 1,
-          city: inheritCity,
-          lat: prev.lat,
-          lng: prev.lng,
+          city: loc.city,
+          lat: loc.lat,
+          lng: loc.lng,
+          cardNotes: {},
+          costs: {},
+          done: {},
           note: '',
           accommodation: [],
           activities: [],
@@ -2740,14 +2753,13 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function addDayMob() {
       document.getElementById('mob-hamburger-menu').classList.remove('open');
       var lastDay = currentTrip.days[currentTrip.days.length - 1];
-      var base = currentTrip.baseCurrency || 'AUD';
-      var baseSym = currentTrip.baseCurrencySymbol || '$';
+      var loc = newDayLocation(lastDay.city, lastDay);
+      var base = loc.currency;
+      var baseSym = loc.currencySymbol;
       _insertDayAt(currentTrip.days.length, {
-        day: lastDay.day + 1,
-        date: 'New day',
-        city: lastDay.city.split('>').pop().trim(),
-        lat: lastDay.lat,
-        lng: lastDay.lng,
+        city: loc.city,
+        lat: loc.lat,
+        lng: loc.lng,
         note: '',
         accommodation: [],
         activities: [],
@@ -2767,7 +2779,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('hamburger-menu').classList.remove('open');
       if (currentTrip.days.length <= 1) { alert('Cannot delete the last day.'); return; }
       var opts = currentTrip.days.map(function(d, i) {
-        return '<option value="' + i + '">Day ' + d.day + ' — ' + d.city + ' (' + d.date + ')</option>';
+        return '<option value="' + i + '">Day ' + (i + 1) + ' — ' + d.city + ' (' + getDayDate(d, currentTrip) + ')</option>';
       }).join('');
       showModal('Remove a day',
         '<p style="font-size:13px;color:var(--ink-light);margin-bottom:10px;">Which day do you want to remove?</p>' +
@@ -2800,7 +2812,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       document.getElementById('mob-hamburger-menu').classList.remove('open');
       if (currentTrip.days.length <= 1) { alert('Cannot delete the last day.'); return; }
       var opts = currentTrip.days.map(function(d, i) {
-        return '<option value="' + i + '">Day ' + d.day + ' — ' + d.city + ' (' + d.date + ')</option>';
+        return '<option value="' + i + '">Day ' + (i + 1) + ' — ' + d.city + ' (' + getDayDate(d, currentTrip) + ')</option>';
       }).join('');
       showModal('Remove a day',
         '<p style="font-size:13px;color:var(--ink-light);margin-bottom:10px;">Which day do you want to remove?</p>' +
@@ -6391,12 +6403,14 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       }
 
       // Step 8 — no date field on new days. Date is derived from trip.startDate + index.
+      var loc = newDayLocation(city, days[lastIdx] || null);
       var newDay = {
         id: 'day_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
         day: 0, city: city,
-        lat: cs ? cs.lat : 0, lng: cs ? cs.lng : 0,
+        lat: loc.lat, lng: loc.lng,
         note: '', accommodation: [], activities: [], activityCategories: [],
-        activityLinks: [], food: [], transport: [], cardNotes: {}, costs: {}, done: {}
+        activityLinks: [], food: [], transport: [], cardNotes: {}, costs: {}, done: {},
+        currency: loc.currency, currencySymbol: loc.currencySymbol
       };
 
       pushStructHistory('Day added to ' + city);
@@ -6555,6 +6569,18 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function placeQuery(name, city) {
       var info = getCityInfo(city);
       return [name, info.name, info.country].filter(function(p) { return p; }).join(', ');
+    }
+
+    function newDayLocation(city, fallbackDay) {
+      var info = getCityInfo(city);
+      var cur = info.currency ? currencyOptions.find(function(c) { return c.code === info.currency; }) : null;
+      return {
+        city: info.name || city,
+        lat: info.lat !== null ? info.lat : (fallbackDay ? fallbackDay.lat : 0),
+        lng: info.lng !== null ? info.lng : (fallbackDay ? fallbackDay.lng : 0),
+        currency: cur ? cur.code : (currentTrip.baseCurrency || 'AUD'),
+        currencySymbol: cur ? cur.symbol : (currentTrip.baseCurrencySymbol || '$')
+      };
     }
 
     function undoStructAction() {
