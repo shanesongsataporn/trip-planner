@@ -3407,7 +3407,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '</div>';
           case 'accommodation':
             var accomStays = [];
-            currentTrip.days.forEach(function(day) { normaliseAccom(day); if (day.accommodation[0] && day.accommodation[0].name) accomStays.push(day.accommodation[0]); });
+            (currentTrip.stays || []).forEach(function(s) { if (s && s.name) accomStays.push(s); });
             var accomBooked = accomStays.filter(function(a) { return a.booked; }).length;
             var accomTotal = accomStays.length;
             var accomColor = accomBooked < accomTotal ? 'warn' : 'accent';
