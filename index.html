@@ -4543,7 +4543,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       h += '<input id="ntc-name" type="text" placeholder="Trip name, e.g. Thailand &amp; Taiwan 2026" value="' + ntcEsc(s.name) + '" oninput="window._ntc.name=this.value;ntcSaveDraft()" style="width:100%;font-family:inherit;font-size:14px;padding:12px;border:1px solid var(--sand-dark);border-radius:8px;background:var(--sand);color:var(--ink);outline:none;">';
       h += '<div class="ntc-label">Cities and dates</div>';
       if (!s.rows.length) { h += '<div class="ntc-hint">No cities yet. Tap Add city.</div>'; }
+      var gapsLeft = res.blocks.filter(function(b) { return b.type === 'tbd'; });
       s.rows.forEach(function(r, i) {
+        while (gapsLeft.length && r.start && gapsLeft[0].end < r.start) { h += ntcGapRow(gapsLeft.shift()); }
         var dates = r.start ? (r.end && r.end !== r.start ? ntcFmt(r.start) + ' → ' + ntcFmt(r.end) : ntcFmt(r.start) + ' (1 day)') : 'Tap to set dates';
         h += '<div class="ntc-row' + (res.badRows[i] ? ' bad' : '') + '">' +
           '<div class="ntc-row-main" onclick="ntcEditDates(' + i + ')"><div class="ntc-city">' + ntcEsc(r.city) + '</div><div class="ntc-dates">' + dates + '</div></div>' +
@@ -4569,6 +4571,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (foot) foot.innerHTML = '<button class="ntc-btn"' + (canCreate ? '' : ' disabled') + ' onclick="ntcCreate()">Create trip</button>';
       h += '<div style="text-align:center;margin:20px 0 8px;"><button class="ntc-link" onclick="ntcDiscard()">Discard draft</button></div>';
       body.innerHTML = h;
+    }
+    function ntcGapRow(b) {
+      var shown = ntcFmt(ntcAddDays(b.start, -1)) + ' → ' + ntcFmt(ntcAddDays(b.end, 1));
+      var range = b.start === b.end ? ntcFmt(b.start) : ntcFmt(b.start) + ' → ' + ntcFmt(b.end);
+      return '<div class="ntc-row" style="opacity:0.55;border-style:dashed;cursor:pointer;" data-s="' + b.start + '" data-e="' + b.end + '" onclick="ntcFillGap(this.dataset.s,this.dataset.e)"><div class="ntc-row-main"><div class="ntc-city">To be decided</div><div class="ntc-dates">' + shown + ' · tap to add a city</div></div></div>';
     }
     function ntcSaveDraft() {
       var s = window._ntc;
