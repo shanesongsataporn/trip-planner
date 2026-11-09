@@ -4551,8 +4551,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function mtCardHtml(x, isCont) {
       var e = x.e;
-      var chips = (e.cities || []).slice(0, 6).map(function(c) { return '<span class="mt-chip">' + ntcEsc(c) + '</span>'; }).join('');
-      var more = (e.cities || []).length - 6;
+      var _cs = (e.cities || []).filter(function(c) { try { return !getCityInfo(c).noMarker; } catch (err) { return true; } });
+      var chips = _cs.slice(0, 6).map(function(c) { return '<span class="mt-chip">' + ntcEsc(c) + '</span>'; }).join('');
+      var more = _cs.length - 6;
       if (more > 0) { chips += '<span class="mt-chip">+' + more + '</span>'; }
       return '<div class="mt-card' + (isCont ? ' cont' : '') + '" onclick="mtOpenTrip(\'' + x.key + '\')">' +
         '<div class="mt-name">' + ntcEsc(e.name || x.key) + (e.test ? '<span class="mt-tag">TEST</span>' : '') + '</div>' +
