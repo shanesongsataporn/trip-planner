@@ -9451,7 +9451,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       _allPlacesPhotos = [];
       _placesPhotoOffset = 0;
       _placesPhotoContext = { photoKey: photoKey, dayIndex: dayIndex, actIndex: actIndex, type: type };
-      var query = name + ' ' + city + ' Thailand';
+      var query = placeQuery(name, city);
       fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
         headers: {
@@ -11024,7 +11024,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!query) return;
       var city = currentDayItem.city.split('>').pop().trim();
       var service = new google.maps.places.PlacesService(map);
-      service.textSearch({ query: query + ' ' + city + ' ' + getTripDestination() }, function(results, status) {
+      service.textSearch({ query: placeQueryForDay(query, city) }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results.length) {
           var resultsEl = document.getElementById('search-results-' + type);
           resultsEl.innerHTML = ''; resultsEl.classList.add('open');
@@ -11914,7 +11914,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       tasks.forEach(function(task) {
         var service = new google.maps.places.PlacesService(splitMap);
         var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
-        var query = rawName + ' ' + item.city.split('>').pop().trim() + ' ' + getTripDestination();
+        var query = placeQueryForDay(rawName, item);
         var baseCity2 = item.city.split('>').pop().trim();
         var cs2 = (citySettings && citySettings[baseCity2]) || {};
         var cityColour2 = cs2.color || '#2D9E75';
@@ -12048,7 +12048,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       }
       var service = new google.maps.places.PlacesService(map);
       var rawName = task.name.split(' - ')[0].split(' for ')[0].split(' at ')[0].trim();
-      var query = rawName + ' ' + baseCity + ' ' + getTripDestination();
+      var query = placeQueryForDay(rawName, baseCity);
       service.findPlaceFromQuery({ query: query, fields: ['name', 'geometry', 'place_id'] }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK && results[0]) {
           var place = results[0];
@@ -12767,7 +12767,7 @@ var pinDelay = Math.floor(Math.random() * 150);
         runSegmentRoute(segments, segIndex + 1, results, item, stops, travelMode, onComplete);
         return;
       }
-      var city = item.city.split('>').pop().trim() + ' ' + getTripDestination();
+      var city = placeSuffix(item);
       var waypoints = seg.stops.map(function(s) {
         return { location: s.name + ' ' + city, stopover: true };
       });
@@ -12830,7 +12830,7 @@ var pinDelay = Math.floor(Math.random() * 150);
 
       var stops = getRouteStops(item);
       if (!stops.length) { return; }
-      var city = item.city.split('>').pop().trim() + ' ' + getTripDestination();
+      var city = placeSuffix(item);
 
       var resultsEl = document.getElementById('route-results');
       if (resultsEl) {
@@ -13520,7 +13520,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     function buildGoogleMapsUrl(item) {
       if (!item || !item.routeOrder) { return '#'; }
       var stops = getRouteStops(item);
-      var city = item.city.split('>').pop().trim() + ' ' + getTripDestination();
+      var city = placeSuffix(item);
       var startLoc = getRouteStartLocation(item);
       var ordered = item.routeOrder.map(function(i) { return stops[i]; }).filter(Boolean);
       if (!ordered.length) { return '#'; }
@@ -14181,7 +14181,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
     function openDaySummaryMaps() {
       var day = currentTrip.days[mobPillIndex];
       if (!day || !day.routeOrder || !day.routeOrder.length) {
-        var city = day ? day.city.split('>').pop().trim() + ' ' + getTripDestination() : getTripDestination();
+        var city = day ? (placeSuffix(day) || getTripDestination()) : getTripDestination();
         window.open('https://www.google.com/maps/search/' + encodeURIComponent(city), '_blank');
         return;
       }
@@ -14216,7 +14216,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
 
       var startTimeInput = document.getElementById('route-start-time');
       if (startTimeInput && startTimeInput.value) { day.routeStartTime = startTimeInput.value; }
-      var city = day.city.split('>').pop().trim() + ' ' + getTripDestination();
+      var city = placeSuffix(day);
       var startLoc = getRouteStartLocation(day);
       var defaultMode = day.routeDefaultMode || 'driving';
       var travelMode = google.maps.TravelMode.DRIVING;
