@@ -5744,6 +5744,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var city = o.city || '';
       if (!city) {
         for (var i = coIdx; i >= ciIdx; i--) {
+          var _ddq = currentTrip.days[i];
+          if (i === ciIdx && !city && _ddq && _ddq.city) { city = _ddq.city.split('>').pop().trim(); }
           var d2 = currentTrip.days[i];
           if (d2 && d2.city && d2.city.indexOf('>') === -1) { city = d2.city; break; }
           if (i === ciIdx && d2 && d2.city && !city) { city = d2.city.split('>').pop().trim(); }
@@ -6160,6 +6162,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       // City fallback: derive from a clean (non-transit) day in range, walking backwards
       if (!city) {
         for (var i = checkoutDayIndex; i >= checkinDayIndex; i--) {
+          var _ddc = currentTrip.days[i];
+          if (i === checkinDayIndex && !city && _ddc && _ddc.city) { city = _ddc.city.split('>').pop().trim(); }
           var d = currentTrip.days[i];
           if (d && d.city && d.city.indexOf('>') === -1) { city = d.city; break; }
           if (i === checkinDayIndex && d && d.city && !city) { city = d.city.split('>').pop().trim(); }
