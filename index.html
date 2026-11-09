@@ -8682,6 +8682,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function addItinAccom(dayIndex) {
+      showAddStaySheet(dayIndex, null, function() { refreshInlineEdit(dayIndex); refreshHomeInlineEdit(dayIndex); });
+      return;
       showModal('Add accommodation',
         '<div class="modal-field"><label>Name</label><input type="text" id="itin-accom-input" placeholder="e.g. Airbnb Bangkok"></div>',
         function() {
@@ -9203,6 +9205,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function addCalAccom(dayIndex) {
+      showAddStaySheet(dayIndex, null, function() { refreshInlineEdit(dayIndex); });
+      return;
       showModal('Add accommodation',
         '<div class="modal-field"><label>Name</label><input type="text" id="cal-accom-input" placeholder="e.g. Airbnb Bangkok"></div>',
         function() {
@@ -9959,6 +9963,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function showDeAddSheet(section) {
+      if (section === 'accom') { showAddStaySheet(deCurrentIndex, null, function() { selectSplitDay(deCurrentIndex); }); return; }
       var sheet = document.getElementById('de-add-sheet');
       if (!sheet) return;
       pushHistoryState('sheet', { sheet: 'de-add' });
@@ -10436,6 +10441,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function addSplitAccom(index) {
+      showAddStaySheet(index, null, function() { refreshInlineEdit(index); });
+      return;
       showModal('Add accommodation',
         '<div class="modal-field"><label>Name</label><input type="text" id="split-accom-input" placeholder="e.g. Airbnb Bangkok"></div>',
         function() {
@@ -14043,6 +14050,10 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             : document.getElementById('disc-link-input-' + _discAddIdx));
       var link = (linkInput ? linkInput.value.trim() : '') || (place.link || '');
       if (_discSelectedCat === 'stay') {
+        var _sd = _discSelectedDay;
+        closeAddToTripSheet();
+        showAddStaySheet(_sd, { name: name, link: link }, null);
+        return;
         normaliseAccom(day);
         day.accommodation.push({ name: name, notes: place.formatted_address || place.address || '', price: '', link: link });
       } else if (_discSelectedCat === 'food') {
