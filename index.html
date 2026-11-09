@@ -2554,6 +2554,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function switchTrip(key) {
       if (!key || key === currentTripKey) return;
       try { localStorage.setItem('current_trip_key', key); } catch (e) {}
+      try { sessionStorage.setItem('in_trip', '1'); } catch (e) {}
       setTimeout(function() { location.reload(); }, 600);
     }
 
