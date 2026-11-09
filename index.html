@@ -5813,6 +5813,43 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       renderAccommodation();
     }
 
+    function quickAddActivity(o) {
+      o = o || {};
+      function fail(m) { console.error('FAIL: quickAddActivity - ' + m); return false; }
+      if (!currentTrip || !Array.isArray(currentTrip.days)) return fail('no trip loaded');
+      var name = (o.name || '').trim();
+      if (!name) return fail('name is required');
+      var di = -1;
+      currentTrip.days.forEach(function(d, i) {
+        if (di === -1 && getDayDateISO(d, currentTrip) === o.date) { di = i; }
+      });
+      if (di === -1) return fail('date ' + o.date + ' is not a day in this trip');
+      var day = currentTrip.days[di];
+      if (!Array.isArray(day.activities)) day.activities = [];
+      if (!Array.isArray(day.activityCategories)) day.activityCategories = [];
+      var dupe = day.activities.some(function(a) {
+        var n = (a && typeof a === 'object') ? a.name : a;
+        return (n || '').trim().toLowerCase() === name.toLowerCase();
+      });
+      if (dupe) { console.log('PASS (skipped, already exists): ' + name + ' on ' + o.date); return true; }
+      var cat = o.category || 'default';
+      if (o.dryRun) { console.log('PASS (dry run, nothing saved): would add ' + name + ' | ' + o.date + ' | ' + cat + ' | city: ' + day.city); return true; }
+      var uid = (typeof generateUid === 'function') ? generateUid() : ('act_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+      while (day.activityCategories.length < day.activities.length) { day.activityCategories.push('default'); }
+      day.activities.push({ name: name, uid: uid, link: o.link || '' });
+      day.activityCategories.push(cat);
+      if (o.notes) {
+        if (!day.cardNotes) day.cardNotes = {};
+        day.cardNotes['act_' + uid] = o.notes;
+      }
+      if (day.routeOrder || day.routeLegs) { delete day.routeOrder; delete day.routeLegs; console.log('Route cleared on ' + o.date + ' - re-optimise when ready.'); }
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 5000);
+      saveToStorage();
+      console.log('PASS: added ' + name + ' | ' + o.date + ' | ' + cat + ' | city: ' + day.city);
+      return true;
+    }
+
     function quickAddStay(o) {
       o = o || {};
       function fail(m) { console.error('FAIL: quickAddStay - ' + m); return false; }
