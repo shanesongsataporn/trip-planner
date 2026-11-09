@@ -5908,7 +5908,43 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       saveToStorage();
     }
 
-    function showAddStaySheet() {
+    function showAddStaySheet(dayIndex, prefill, afterSave) {
+      _showAddStaySheetBase();
+      window._accomAddPlaceName = '';
+      window._accomAddPlaceUrl = '';
+      window._accomAddPlaceCity = '';
+      window._accomAfterSave = (typeof afterSave === 'function') ? afterSave : null;
+      window._accomJustSaved = false;
+      var input = document.getElementById('accom-place-search');
+      if (input) {
+        input.addEventListener('input', function() {
+          window._accomAddPlaceName = input.value.trim();
+          window._accomAddPlaceUrl = '';
+          updateAccomConfirmBtn();
+        });
+      }
+      if (typeof dayIndex === 'number' && currentTrip.days[dayIndex]) {
+        var p = getDayDateISO(currentTrip.days[dayIndex], currentTrip).split('-');
+        var ci = new Date(+p[0], +p[1] - 1, +p[2]);
+        var co = new Date(+p[0], +p[1] - 1, +p[2] + 1);
+        window._accomAddCheckin = ci;
+        window._accomAddCheckout = co;
+        window._accomCalYear = ci.getFullYear();
+        window._accomCalMonth = ci.getMonth();
+        var mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var lbl = document.getElementById('accom-cal-range-label');
+        if (lbl) { lbl.textContent = mn[ci.getMonth()] + ' ' + ci.getDate() + ' → ' + mn[co.getMonth()] + ' ' + co.getDate(); }
+        renderAccomCal();
+      }
+      if (prefill && prefill.name) {
+        window._accomAddPlaceName = prefill.name;
+        window._accomAddPlaceUrl = prefill.link || '';
+        if (input) { input.value = prefill.name; }
+      }
+      updateAccomConfirmBtn();
+    }
+
+    function _showAddStaySheetBase() {
       window._accomAddCheckin = null;
       window._accomAddCheckout = null;
       window._accomCalYear = tripStartYM().year;
@@ -6144,6 +6180,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         notes: ''
       };
       _setStayDayRefs(newStay, checkinDayIndex, checkoutDayIndex);
+      window._accomJustSaved = true;
       currentTrip.stays.push(newStay);
 
       syncStaysToDays();
@@ -6155,6 +6192,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function closeAddStaySheet() {
+      if (window._accomJustSaved) {
+        window._accomJustSaved = false;
+        var _afterCb = window._accomAfterSave;
+        window._accomAfterSave = null;
+        if (_afterCb) { setTimeout(_afterCb, 0); }
+      }
       document.getElementById('accom-add-overlay').classList.remove('open');
       document.getElementById('accom-add-sheet').classList.remove('open');
     }
