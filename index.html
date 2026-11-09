@@ -4468,6 +4468,133 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       pushHistoryState('sheet', { sheet: 'trip-creator' });
       ntcRender();
     }
+    function mtEnsureCss() {
+      if (document.getElementById('mt-style')) return;
+      var st = document.createElement('style');
+      st.id = 'mt-style';
+      st.textContent = '#mt-page{display:none;position:fixed;inset:0;z-index:5150;background:var(--white);overflow-y:auto;-webkit-overflow-scrolling:touch;}#mt-page.open{display:block;}#mt-inner{max-width:560px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));}.mt-title{font-size:22px;font-weight:800;color:var(--ink);}.mt-sub{font-size:13px;color:var(--ink-muted);margin:4px 0 18px;}.mt-label{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--ink-muted);margin:18px 0 8px;}.mt-card{border:1px solid var(--sand-dark);background:var(--sand);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;}.mt-card.cont{border-color:var(--accent);}.mt-name{font-size:15px;font-weight:800;color:var(--ink);}.mt-tag{font-size:10px;font-weight:700;color:var(--ink-muted);border:1px solid var(--sand-dark);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle;}.mt-dates{font-size:12px;color:var(--ink-muted);margin-top:2px;}.mt-count{font-size:12px;font-weight:700;color:var(--accent);margin-top:6px;}.mt-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}.mt-chip{font-size:11px;color:var(--ink);background:var(--white);border:1px solid var(--sand-dark);border-radius:10px;padding:2px 8px;}.mt-btn{width:100%;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:10px;border:none;cursor:pointer;margin-top:6px;background:var(--accent);color:#fff;}.mt-btn.sec{background:var(--sand);color:var(--ink);}.mt-empty{font-size:13px;color:var(--ink-muted);padding:12px 0;}';
+      document.head.appendChild(st);
+    }
+
+    function mtToday() {
+      var t = new Date();
+      return t.getFullYear() + '-' + ntcPad(t.getMonth() + 1) + '-' + ntcPad(t.getDate());
+    }
+
+    function mtDiff(a, b) {
+      var p = a.split('-'), q = b.split('-');
+      return Math.round((Date.UTC(+q[0], +q[1] - 1, +q[2]) - Date.UTC(+p[0], +p[1] - 1, +p[2])) / 86400000);
+    }
+
+    function mtFmt(iso) {
+      if (!iso) return '';
+      var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var p = iso.split('-');
+      return (+p[2]) + ' ' + m[+p[1] - 1] + ' ' + p[0];
+    }
+
+    function mtCountdown(e) {
+      if (!e || !e.start) return '';
+      var today = mtToday();
+      var en = e.end || e.start;
+      if (today < e.start) {
+        var n = mtDiff(today, e.start);
+        return n === 1 ? 'Starts tomorrow' : 'In ' + n + ' days';
+      }
+      if (today <= en) {
+        return 'Day ' + (mtDiff(e.start, today) + 1) + ' of ' + (mtDiff(e.start, en) + 1);
+      }
+      return 'Ended';
+    }
+
+    function openMyTrips(isBoot) {
+      mtEnsureCss();
+      var pg = document.getElementById('mt-page');
+      if (!pg) {
+        pg = document.createElement('div');
+        pg.id = 'mt-page';
+        pg.innerHTML = '<div id="mt-inner"></div>';
+        document.body.appendChild(pg);
+      }
+      if (!pg.classList.contains('open')) {
+        pg.classList.add('open');
+        window._mtPushed = !isBoot;
+        if (!isBoot) { pushHistoryState('sheet', { sheet: 'my-trips' }); }
+      }
+      mtRender();
+      mtLoadIndex();
+    }
+
+    function closeMyTrips() {
+      var pg = document.getElementById('mt-page');
+      if (pg) pg.classList.remove('open');
+      window._mtPushed = false;
+    }
+
+    function mtDismiss() {
+      if (window._mtPushed) { history.back(); } else { closeMyTrips(); }
+    }
+
+    function mtLoadIndex() {
+      if (window.isOffline || typeof db === 'undefined') return;
+      db.collection('trips').doc('trip_index').get().then(function(d) {
+        var x = d.exists ? d.data() : {};
+        var idx = {};
+        Object.keys(x).forEach(function(k) { try { idx[k] = JSON.parse(x[k]); } catch (err) {} });
+        window._tripIndex = idx;
+        var pg = document.getElementById('mt-page');
+        if (pg && pg.classList.contains('open')) { mtRender(); }
+      }).catch(function(err) { console.warn('[myTrips] index load failed:', err.message); });
+    }
+
+    function mtCardHtml(x, isCont) {
+      var e = x.e;
+      var chips = (e.cities || []).slice(0, 6).map(function(c) { return '<span class="mt-chip">' + ntcEsc(c) + '</span>'; }).join('');
+      var more = (e.cities || []).length - 6;
+      if (more > 0) { chips += '<span class="mt-chip">+' + more + '</span>'; }
+      return '<div class="mt-card' + (isCont ? ' cont' : '') + '" onclick="mtOpenTrip(\'' + x.key + '\')">' +
+        '<div class="mt-name">' + ntcEsc(e.name || x.key) + (e.test ? '<span class="mt-tag">TEST</span>' : '') + '</div>' +
+        '<div class="mt-dates">' + mtFmt(e.start) + ' – ' + mtFmt(e.end) + '</div>' +
+        '<div class="mt-count">' + mtCountdown(e) + '</div>' +
+        (chips ? '<div class="mt-chips">' + chips + '</div>' : '') +
+      '</div>';
+    }
+
+    function mtRender() {
+      var el = document.getElementById('mt-inner');
+      if (!el) return;
+      var list = getTripListForPicker();
+      var cont = null;
+      list.forEach(function(x) { if (!x.past && !x.e.test && !cont) cont = x; });
+      if (!cont) { list.forEach(function(x) { if (!x.past && !cont) cont = x; }); }
+      var rest = list.filter(function(x) { return x !== cont; });
+      var upcoming = rest.filter(function(x) { return !x.past; });
+      var past = rest.filter(function(x) { return x.past; });
+      var h = '<div class="mt-title">Your trips</div><div class="mt-sub">Pick one up, or start something new.</div>';
+      if (cont) { h += '<div class="mt-label">Continue</div>' + mtCardHtml(cont, true); }
+      if (upcoming.length) {
+        h += '<div class="mt-label">All trips</div>' + upcoming.map(function(x) { return mtCardHtml(x, false); }).join('');
+      }
+      if (!cont && !upcoming.length && !past.length) { h += '<div class="mt-empty">Nothing planned yet. Start one!</div>'; }
+      h += '<button class="mt-btn" onclick="openTripCreator()">＋ New trip</button>';
+      if (past.length) {
+        h += '<button class="mt-btn sec" onclick="mtTogglePast()">Past trips (' + past.length + ') ' + (window._mtPastOpen ? '▴' : '▾') + '</button>';
+        if (window._mtPastOpen) { h += '<div style="margin-top:10px;">' + past.map(function(x) { return mtCardHtml(x, false); }).join('') + '</div>'; }
+      }
+      el.innerHTML = h;
+    }
+
+    function mtTogglePast() {
+      window._mtPastOpen = !window._mtPastOpen;
+      mtRender();
+    }
+
+    function mtOpenTrip(key) {
+      try { sessionStorage.setItem('in_trip', '1'); } catch (e) {}
+      if (key === currentTripKey) { mtDismiss(); return; }
+      switchTrip(key);
+    }
+
     function closeTripCreator() {
       var ov = document.getElementById('ntc-overlay');
       var sh = document.getElementById('ntc-sheet');
@@ -4954,6 +5081,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (__routeNavInited) return;
       __routeNavInited = true;
       window.addEventListener('popstate', function(ev) {
+        var _mtp = document.getElementById('mt-page');
+        if (_mtp && _mtp.classList.contains('open') && window._mtPushed && !(ev.state && ev.state.sheet === 'my-trips')) { closeMyTrips(); }
         var st = ev.state;
         if (st && st.sheet) {
           // Close the sheet without pushing another history entry
@@ -4970,6 +5099,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           else if (st.sheet === 'bulk-move') { closePlanBulkMoveSheet(); }
           else if (st.sheet === 'city-picker') { closeCityPicker(); }
           else if (st.sheet === 'trip-creator') { closeTripCreator(); }
+          else if (st.sheet === 'my-trips') { }
         } else if (st && st.view) {
           __suppressHistoryPush = true;
           if (st.view === 'route' && typeof st.routeIndex === 'number') {
@@ -11362,6 +11492,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         document.getElementById('app-loader').style.display = 'none';
         initRouteNav();
         history.replaceState({ view: 'home' }, '', '');
+        try { if (!sessionStorage.getItem('in_trip')) { openMyTrips(true); } } catch (e) {}
         setView('home');
         var bounds = new google.maps.LatLngBounds();
         currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
