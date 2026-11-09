@@ -6440,7 +6440,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           _transportSheet.legs = [{ from: '', to: '', carrier: '', flightNum: '', depart: '', arrive: '', confirmationCode: '', dayIndex: di }];
         }
       } else {
-        _transportSheet.legs = [{ from: '', to: '', carrier: '', flightNum: '', depart: '', arrive: '', confirmationCode: '', dayIndex: di != null ? di : 0 }];
+        _transportSheet.legs = [{ from: '', to: '', carrier: '', flightNum: '', depart: '', arrive: '', confirmationCode: '', dayIndex: di != null ? di : '' }];
       }
 
       renderTransportSheet();
@@ -6457,8 +6457,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function renderTransportSheet() {
       var isMulti = _transportSheet.multiLeg;
       var isFlight = _transportSheet.type === 'Flight';
-      var dayOptions = currentTrip.days.map(function(d, i) {
-        return '<option value="' + i + '">' + 'Day ' + d.day + ' · ' + d.city + ' · ' + getDayDate(d, currentTrip) + '</option>';
+      var dayOptions = '<option value="">Choose a date…</option>' + currentTrip.days.map(function(d, i) {
+        return '<option value="' + i + '">' + getDayDate(d, currentTrip) + ' · Day ' + (i + 1) + ' · ' + d.city + '</option>';
       }).join('');
       if (isFlight) {
         var lastDay = currentTrip.days[currentTrip.days.length - 1];
@@ -6605,7 +6605,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         leg.confirmationCode = (document.getElementById('ts-code-' + i) || {}).value || leg.confirmationCode;
         leg.seat = (document.getElementById('ts-seat-' + i) || {}).value || leg.seat || '';
         var dayEl = document.getElementById('ts-day-' + i);
-        if (dayEl) leg.dayIndex = parseInt(dayEl.value, 10);
+        if (dayEl) leg.dayIndex = (dayEl.value === '') ? '' : parseInt(dayEl.value, 10);
       });
     }
 
@@ -6614,6 +6614,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var notes = (document.getElementById('ts-notes') || {}).value || '';
       var legs = _transportSheet.legs;
       if (!legs.length) { closeTransportSheet(); return; }
+      for (var _vi = 0; _vi < legs.length; _vi++) {
+        var _vd = legs[_vi].dayIndex;
+        if (_vd === '' || typeof _vd !== 'number' || isNaN(_vd)) { showToast('Choose a date for the flight first'); return; }
+        if (_vd >= currentTrip.days.length) { showToast('That day is not in your trip yet. Pick a trip day.'); return; }
+      }
 
       // Build unified shape — always legs[], never flat top-level fields
       var newEntry = {
@@ -11433,6 +11438,8 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
     // is tolerated for now — Step 6.5/6.6/7 will derive city properly).
     // Skips day 0 and the final day (structural transits we don't touch).
     function _refreshDayTransitState(dayIdx) {
+      var _d0 = currentTrip.days[dayIdx];
+      if (_d0 && !isTransitDay(_d0) && _d0._cityBeforeFlight !== undefined) { _d0.city = _d0._cityBeforeFlight; delete _d0._cityBeforeFlight; }
       var day = currentTrip.days[dayIdx];
       if (!day) return;
       if (isTransitDay(day)) {
@@ -11441,6 +11448,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
           var fromCity = firstFlight.legs[0].from && firstFlight.legs[0].from.city;
           var toCity = firstFlight.legs[firstFlight.legs.length - 1].to && firstFlight.legs[firstFlight.legs.length - 1].to.city;
           if (fromCity && toCity) {
+            if (day._cityBeforeFlight === undefined) { day._cityBeforeFlight = day.city; }
             day.city = fromCity + ' > ' + toCity;
           }
         }
