@@ -2556,6 +2556,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var c = dayCity(dayOrLabel);
       return c ? placeQuery(name, c) : name;
     }
+    function biasCenterFor(dayOrLabel) {
+      var c = cityCenter(dayOrLabel);
+      if (c) return c;
+      var f = tripFallbackCenter();
+      return { lat: f.lat, lng: f.lng };
+    }
     function cityCenter(dayOrLabel) {
       var c = dayCity(dayOrLabel);
       if (!c) return null;
@@ -5999,7 +6005,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function showAddStaySheet(dayIndex, prefill, afterSave) {
-      _showAddStaySheetBase();
+      window._accomBiasDay = (typeof dayIndex === 'number' && currentTrip.days[dayIndex]) ? currentTrip.days[dayIndex] : null; _showAddStaySheetBase();
       window._accomAddPlaceName = '';
       window._accomAddPlaceUrl = '';
       window._accomAddPlaceCity = '';
@@ -6065,7 +6071,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           componentRestrictions: null
         });
         if (currentTrip.days[0] && currentTrip.days[0].lat) {
-          var circle = new google.maps.Circle({ center: { lat: currentTrip.days[0].lat, lng: currentTrip.days[0].lng }, radius: 500000 });
+          var circle = new google.maps.Circle({ center: biasCenterFor(window._accomBiasDay), radius: 500000 });
           autocomplete.setBounds(circle.getBounds());
         }
         autocomplete.addListener('place_changed', function() {
@@ -6307,7 +6313,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       nameEl._editing = true;
       var currentName = nameEl.textContent;
       nameEl.innerHTML = '<input id="accom-inline-search-' + cardId + '" type="text" value="' + currentName + '" placeholder="Search hotel..." autocomplete="off" style="width:100%;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);border:none;border-bottom:2px solid var(--accent);background:transparent;outline:none;padding:2px 0;">';
-      var input = document.getElementById('accom-inline-search-' + cardId);
+      var input = document.getElementById('accom-inline-search-' + cardId); var _bsy = (currentTrip.stays || []).filter(function(s) { return s.id === stayId; })[0]; window._accomBiasDay = (_bsy && _bsy.city) ? _bsy.city : null;
       if (!input) return;
       input.focus();
       input.select();
@@ -6318,7 +6324,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           componentRestrictions: null
         });
         if (currentTrip.days[0] && currentTrip.days[0].lat) {
-          var circle = new google.maps.Circle({ center: { lat: currentTrip.days[0].lat, lng: currentTrip.days[0].lng }, radius: 500000 });
+          var circle = new google.maps.Circle({ center: biasCenterFor(window._accomBiasDay), radius: 500000 });
           autocomplete.setBounds(circle.getBounds());
         }
         autocomplete.addListener('place_changed', function() {
@@ -10092,8 +10098,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var input = document.getElementById('de-add-input');
         if (!input || !window.google) return;
         var opts = {};
-        if (deCurrentDay && deCurrentDay.lat && deCurrentDay.lng) {
-          opts.locationBias = { center: { lat: deCurrentDay.lat, lng: deCurrentDay.lng }, radius: 30000 };
+        if (deCurrentDay) {
+          var _dcc = cityCenter(deCurrentDay); if (_dcc) { opts.bounds = new google.maps.Circle({ center: _dcc, radius: 30000 }).getBounds(); }
         }
         var ac = new google.maps.places.Autocomplete(input, opts);
         ac.addListener('place_changed', function() {
@@ -13855,7 +13861,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         componentRestrictions: null
       });
       if (currentTrip.days[0].lat && currentTrip.days[0].lng) {
-        var circle = new google.maps.Circle({ center: { lat: currentTrip.days[0].lat, lng: currentTrip.days[0].lng }, radius: 200000 });
+        var _dmc = (discMap && discMap.getCenter) ? discMap.getCenter() : null; var circle = new google.maps.Circle({ center: _dmc ? { lat: _dmc.lat(), lng: _dmc.lng() } : biasCenterFor(null), radius: 200000 });
         autocomplete.setBounds(circle.getBounds());
       }
       autocomplete.addListener('place_changed', function() {
@@ -13970,7 +13976,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
 
       var service = new google.maps.places.PlacesService(discMap);
       var destination = getTripDestination();
-      service.textSearch({ query: query + ' ' + destination }, function(results, status) {
+      service.textSearch({ query: query, location: discMap.getCenter(), radius: 50000 }, function(results, status) {
         if (status !== google.maps.places.PlacesServiceStatus.OK || !results.length) {
           body.innerHTML = '<div style="padding:30px;text-align:center;color:var(--ink-muted);font-size:13px;">No results found. Try a different search.</div>';
           return;
