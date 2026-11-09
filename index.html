@@ -1302,7 +1302,7 @@ gmp-advanced-marker.map-pin-active {
     </div>
     <div class="menu-section">
       <div class="menu-section-label">Trips</div>
-      <button class="menu-item" onclick="showAddTripModal()">✈️ Add new trip</button>
+      <button class="menu-item" onclick="openTripCreator();toggleMenu('hamburger-menu')">✈️ Add new trip</button>
       <button class="menu-item" onclick="showRenameTripModal()">⚙️ Trip settings</button>
       <button class="menu-item" onclick="downloadTripBackup();toggleMenu('hamburger-menu')">📥 Download backup</button>
     </div>
@@ -2290,10 +2290,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function showMobTripSelector() {
       toggleMenu('mob-hamburger-menu');
-      var opts = Object.keys(trips).map(function(key) {
-        return '<option value="' + key + '"' + (key === currentTripKey ? ' selected' : '') + '>' + trips[key].name + '</option>';
+      var opts = getTripListForPicker().map(function(x) { var key = x.key; var label = tripPickerLabel(x);
+        return '<option value="' + key + '"' + (key === currentTripKey ? ' selected' : '') + '>' + ntcEsc(label) + '</option>';
       }).join('');
-      showModal('Select trip', '<div class="modal-field"><label>Trip</label><select id="mob-trip-sel" style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid var(--sand-dark);border-radius:6px;background:var(--sand);color:var(--ink);">' + opts + '</select></div>',
+      showModal('Select trip', '<div class="modal-field"><label>Trip</label><select id="mob-trip-sel" style="width:100%;font-family:inherit;font-size:13px;padding:8px;border:1px solid var(--sand-dark);border-radius:6px;background:var(--sand);color:var(--ink);">' + opts + '</select></div><div style="margin-top:10px;"><button onclick="deleteSelectedTestTrip()" style="font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:none;color:var(--danger);cursor:pointer;">🗑 Delete selected rehearsal trip</button></div>',
         function() { switchTrip(document.getElementById('mob-trip-sel').value); }
       );
     }
@@ -2441,7 +2441,86 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     // ===== TRIP SELECTOR =====
+    function tripIndexEntryFor(key, trip) {
+      var days = trip.days || [];
+      var start = trip.startDate || '';
+      var end = (start && days.length) ? ntcAddDays(start, days.length - 1) : start;
+      var cities = [];
+      days.forEach(function(d) {
+        String(d.city || '').split('>').forEach(function(p) {
+          var n = p.trim();
+          if (n && n !== 'To be decided' && cities.indexOf(n) === -1) cities.push(n);
+        });
+      });
+      return { name: trip.name || key, start: start, end: end, cities: cities, test: /_test$|^trip_test_/.test(key) };
+    }
+
+    function getTripListForPicker() {
+      var idx = window._tripIndex || {};
+      var list = Object.keys(idx).map(function(k) { return { key: k, e: idx[k] }; });
+      if (currentTrip && !idx[currentTripKey]) list.push({ key: currentTripKey, e: tripIndexEntryFor(currentTripKey, currentTrip) });
+      var t = new Date();
+      var today = t.getFullYear() + '-' + ntcPad(t.getMonth() + 1) + '-' + ntcPad(t.getDate());
+      list.forEach(function(x) { x.past = !!x.e.end && x.e.end < today; });
+      list.sort(function(a, b) {
+        if (a.past !== b.past) return a.past ? 1 : -1;
+        return (a.e.start || '') < (b.e.start || '') ? -1 : 1;
+      });
+      return list;
+    }
+
+    function tripPickerLabel(x) {
+      return (x.e.name || x.key) + (x.e.test ? ' (TEST)' : '') + (x.past ? ' (past)' : '');
+    }
+
+    function fillTripSelector() {
+      var sel = document.getElementById('tripSel');
+      if (!sel) return;
+      sel.innerHTML = '';
+      getTripListForPicker().forEach(function(x) {
+        var opt = document.createElement('option');
+        opt.value = x.key; opt.textContent = tripPickerLabel(x);
+        if (x.key === currentTripKey) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    function refreshTripIndexEntry() {
+      if (window.__TEST_MODE || window.isOffline || !currentTrip || !currentTripKey) return;
+      var e = tripIndexEntryFor(currentTripKey, currentTrip);
+      db.collection('trips').doc('trip_index').get().then(function(d) {
+        var x = d.exists ? d.data() : {};
+        window._tripIndex = {};
+        Object.keys(x).forEach(function(k) { try { window._tripIndex[k] = JSON.parse(x[k]); } catch (err) {} });
+        var old = window._tripIndex[currentTripKey];
+        var same = old && old.name === e.name && old.start === e.start && old.end === e.end && JSON.stringify(old.cities) === JSON.stringify(e.cities);
+        if (same) { fillTripSelector(); return; }
+        e.created = (old && old.created) ? old.created : Date.now();
+        window._tripIndex[currentTripKey] = e;
+        var o = {}; o[currentTripKey] = JSON.stringify(e);
+        return db.collection('trips').doc('trip_index').set(o, { merge: true }).then(fillTripSelector);
+      }).catch(function(err) { console.warn('[tripIndex] refresh failed:', err.message); fillTripSelector(); });
+    }
+
+    function deleteSelectedTestTrip() {
+      var sel = document.getElementById('mob-trip-sel');
+      if (!sel) return;
+      var key = sel.value;
+      if (!/^trip_test_/.test(key)) { showToast('Only rehearsal trips (trip_test_) can be deleted here'); return; }
+      if (key === currentTripKey) { showToast('Open a different trip first'); return; }
+      if (!confirm('Delete this rehearsal trip? This cannot be undone.')) return;
+      db.collection('trips').doc(key).delete().then(function() {
+        var o = {}; o[key] = firebase.firestore.FieldValue.delete();
+        return db.collection('trips').doc('trip_index').set(o, { merge: true });
+      }).then(function() {
+        if (window._tripIndex) delete window._tripIndex[key];
+        showToast('Deleted the rehearsal trip');
+        closeModal();
+      }).catch(function(err) { showToast('Could not delete: ' + err.message); });
+    }
+
     function populateTripSelector() {
+      refreshTripIndexEntry();
       var sel = document.getElementById('tripSel');
       if (sel) {
         sel.innerHTML = '';
