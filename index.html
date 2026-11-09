@@ -4556,6 +4556,60 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       return ok === total;
     }
 
+    function ntcCreateTrip(s) {
+      if (window._ntcBusy) return;
+      var name = String(s.name || '').trim();
+      var built = ntcBuildDays(s, 'AUD', '$');
+      if (built.error) { showToast(built.error); return; }
+      if (built.missing.length) { showToast('Tap 📍 on: ' + built.missing.join(', ') + ' first'); return; }
+      if (window.isOffline) { showToast('You\'re offline — can\'t create a trip right now'); return; }
+      var isTest = /_test$/.test(currentTripKey);
+      var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'trip';
+      var key = 'trip_' + (isTest ? 'test_' : '') + slug + '_' + Math.random().toString(36).slice(2, 6);
+      var cities = {};
+      built.days.forEach(function(d) {
+        String(d.city).split('>').forEach(function(p) {
+          var n = p.trim();
+          if (!n || n === 'To be decided') return;
+          var c = (s.cities && s.cities[n]) || citySettings[n];
+          if (c) cities[n] = Object.assign({}, c);
+        });
+      });
+      var first = built.dates[0];
+      var last = built.dates[built.dates.length - 1];
+      var trip = {
+        name: name, startDate: first, year: +first.slice(0, 4),
+        baseCurrency: 'AUD', baseCurrencySymbol: '$',
+        exchangeRates: currentTrip.exchangeRates || {}, ratesLastFetched: currentTrip.ratesLastFetched || 0,
+        destination: '', days: built.days, stays: [], lists: []
+      };
+      var entry = { name: name, start: first, end: last, cities: Object.keys(cities), test: isTest, created: Date.now() };
+      window._ntcBusy = true;
+      showToast('Creating trip...');
+      db.collection('trips').doc(key).set({
+        data: JSON.stringify(trip),
+        citySettings: JSON.stringify(cities),
+        cardPhotos: '{}',
+        geocodeCache: '{}',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: false }).then(function() {
+        var o = {}; o[key] = JSON.stringify(entry);
+        return db.collection('trips').doc('trip_index').set(o, { merge: true });
+      }).then(function() {
+        window._ntcBusy = false;
+        window._ntc = null;
+        try { localStorage.removeItem('ntc_draft'); } catch (e) {}
+        closeTripCreator();
+        console.log('PASS: created trip', key, built.days.length, 'days');
+        showToast('Created ' + name);
+        switchTrip(key);
+      }).catch(function(e) {
+        window._ntcBusy = false;
+        console.error('FAIL: create trip failed for ' + key + ':', e);
+        showToast('Could not create the trip: ' + e.message);
+      });
+    }
+
     function ntcCreate() {
       var s = window._ntc;
       if (!s) return;
