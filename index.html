@@ -10430,7 +10430,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         '<div id="split-detail-' + index + '" style="display:none;border-bottom:2px solid var(--sand-dark);"></div>';
       }).join('');
       if (!splitMap) {
-        splitMap = new google.maps.Map(document.getElementById('split-map'), { center: { lat: 15.5, lng: 100.5 }, zoom: 6, mapTypeId: 'roadmap', disableDefaultUI: false, mapId: 'DEMO_MAP_ID', gestureHandling: 'greedy' });
+        splitMap = new google.maps.Map(document.getElementById('split-map'), { center: { lat: tripFallbackCenter().lat, lng: tripFallbackCenter().lng }, zoom: tripFallbackCenter().zoom, mapTypeId: 'roadmap', disableDefaultUI: false, mapId: 'DEMO_MAP_ID', gestureHandling: 'greedy' });
         var splitMapEl = document.getElementById('split-map');
         splitMap.addListener('zoom_changed', function() {
           if (splitMap.getZoom() >= 12) { splitMapEl.classList.add('map-zoom-labels-on'); }
@@ -10583,7 +10583,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (el) { el.classList.add('active'); }
       var day = currentTrip.days[index];
       var map = splitMap || window.map;
-      if (map && day.lat && day.lng) { map.panTo({ lat: day.lat, lng: day.lng }); map.setZoom(12); }
+      var _sc = cityCenter(day); if (map && _sc) { map.panTo(_sc); map.setZoom(12); }
 
       // Build Day Editor content pane
       var cs = (citySettings && citySettings[day.city]) || {};
@@ -11681,7 +11681,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       loadCardPhotos();
       loadCardPhotosFromFirestore(function() {});
       map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 15.2, lng: 100.9 }, zoom: 6, mapTypeId: 'roadmap', mapId: 'DEMO_MAP_ID',
+        center: { lat: tripFallbackCenter().lat, lng: tripFallbackCenter().lng }, zoom: tripFallbackCenter().zoom, mapTypeId: 'roadmap', mapId: 'DEMO_MAP_ID',
         mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: true,
         gestureHandling: 'greedy'
       });
@@ -11717,7 +11717,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
         try { if (!sessionStorage.getItem('in_trip')) { openMyTrips(true); } } catch (e) {}
         setView('home');
         var bounds = new google.maps.LatLngBounds();
-        currentTrip.days.forEach(function(d) { if (d.lat && d.lng) { bounds.extend({ lat: d.lat, lng: d.lng }); } });
+        currentTrip.days.forEach(function(d) { var _c = cityCenter(d); var _i = getCityInfo(d.city); if (_c && !_i.noMarker) { bounds.extend(_c); } });
         if (!bounds.isEmpty()) { map.fitBounds(bounds, { top: 80, right: 80, bottom: isMobile() ? 180 : 420, left: 80 }); }
         syncStaysToDays();
         setupRealtimeSync();
@@ -12014,7 +12014,7 @@ item.activities.forEach(function(activity, index) { var name = (typeof activity 
       item.food.forEach(function(f, index) { tasks.push({ type: 'food', name: typeof f === 'string' ? f : f.name, index: index, catIndex: index }); });
       item.accommodation.forEach(function(a, index) { if (a.name) { tasks.push({ type: 'accommodation', name: a.name, index: index, catIndex: index }); } });
       var total = tasks.length, completed = 0;
-      if (total === 0) { map.panTo({ lat: item.lat, lng: item.lng }); map.setZoom(13); return; }
+      if (total === 0) { var _ac = cityCenter(item); if (_ac) { map.panTo(_ac); map.setZoom(13); } return; }
       tasks.forEach(function(task) { geocodeActivity(task, item, function() { completed++; if (completed === total && callback) { callback(); } }); });
     }
 
@@ -12251,7 +12251,7 @@ var pinDelay = Math.floor(Math.random() * 150);
         dayMarkers.forEach(function(obj) { if (obj.position) bounds.extend(obj.position); });
         if (!bounds.isEmpty()) { map.fitBounds(bounds, { padding: 60 }); }
       } else {
-        map.panTo({ lat: day.lat, lng: day.lng });
+        var _mc = cityCenter(day); if (_mc) { map.panTo(_mc); }
         map.setZoom(13);
       }
     }
@@ -13754,7 +13754,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       if (!body) return;
 
       if (!discMap) {
-        var center = { lat: currentTrip.days[0].lat || 13.7563, lng: currentTrip.days[0].lng || 100.5018 };
+        var center = { lat: tripFallbackCenter().lat, lng: tripFallbackCenter().lng };
         discMap = new google.maps.Map(document.getElementById('disc-map'), {
           center: center, zoom: 11, mapId: 'DEMO_MAP_ID',
           mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
