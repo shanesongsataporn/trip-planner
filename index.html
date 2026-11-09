@@ -6478,9 +6478,10 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var isArrivalDay = !legDay;
             var legDayLabel = isArrivalDay ? '✈️ Arrival day' : ('Day ' + legDay.day + ' · ' + (legDay.date||''));
             legDay = legDay || day;
+            legDayLabel = 'Day ' + (di + 1) + ' · ' + getDayDate(day, currentTrip);
             var legFromCity = (leg.from && leg.from.city) || '—';
             var legToCity = (leg.to && leg.to.city) || '—';
-            return (li > 0 ? '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><div style="width:1px;background:var(--sand-dark);flex:1;"></div><span style="font-size:10px;color:var(--ink-muted);white-space:nowrap;">Leg ' + (li+1) + ' · ' + legDayLabel + '</span><div style="width:1px;background:var(--sand-dark);flex:1;"></div></div>' : '<div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;">Leg 1 · ' + legDayLabel + '</div>') +
+            return (li > 0 ? '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;display:block;"><div style="width:1px;background:var(--sand-dark);flex:1;"></div><span style="font-size:10px;color:var(--ink-muted);white-space:nowrap;">Leg ' + (li+1) + ' · ' + legDayLabel + '</span><div style="width:1px;background:var(--sand-dark);flex:1;"></div></div>' : '<div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;">Leg 1 · ' + legDayLabel + '</div>') +
             '<div class="transport-view-detail"><strong>' + legFromCity + ' → ' + legToCity + '</strong>' + (leg.carrier||leg.flightNum ? ' · ' + (leg.carrier||'') + (leg.flightNum ? ' ' + leg.flightNum : '') : '') + '</div>' +
             (leg.depart || leg.arrive ? '<div class="transport-view-detail">🕐 ' + (leg.depart||'?') + ' → ' + (leg.arrive||'?') + '</div>' : '') +
             (leg.confirmationCode ? '<div class="transport-view-detail">🔖 ' + leg.confirmationCode + '</div>' : '') +
@@ -6604,7 +6605,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           ad.setDate(ad.getDate() + 1);
           arrivalDate = formatTripDate(ad);
         }
-        dayOptions += '<option value="' + currentTrip.days.length + '">✈️ Arrival day · ' + arrivalDate + '</option>';
+        if (false) dayOptions += '<option value="' + currentTrip.days.length + '">✈️ Arrival day · ' + arrivalDate + '</option>';
       }
 
       var types = [
@@ -6646,7 +6647,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             '<div class="ts-field"><label>Seat</label><input type="text" id="ts-seat-' + i + '" value="' + (leg.seat || '') + '" placeholder="e.g. 23A"></div>' +
           '</div>' +
           '<div class="ts-row">' +
-            '<div class="ts-field"><label>Day</label><select id="ts-day-' + i + '">' + dayOptions + '</select></div>' +
+            (i > 0 ? '<div class="ts-field"><label>Day</label><div style="font-size:13px;color:var(--ink-muted);padding:10px 0;">Same day as leg 1</div></div>' : '<div class="ts-field"><label>Day</label><select id="ts-day-' + i + '">' + dayOptions + '</select></div>') +
             '<div class="ts-field"></div>' +
           '</div>' +
         '</div>';
@@ -6749,6 +6750,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var notes = (document.getElementById('ts-notes') || {}).value || '';
       var legs = _transportSheet.legs;
       if (!legs.length) { closeTransportSheet(); return; }
+      legs.forEach(function(l) { l.dayIndex = legs[0].dayIndex; });
       for (var _vi = 0; _vi < legs.length; _vi++) {
         var _vd = legs[_vi].dayIndex;
         if (_vd === '' || typeof _vd !== 'number' || isNaN(_vd)) { showToast('Choose a date for the flight first'); return; }
