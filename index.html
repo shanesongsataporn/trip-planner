@@ -5746,6 +5746,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         for (var i = coIdx; i >= ciIdx; i--) {
           var d2 = currentTrip.days[i];
           if (d2 && d2.city && d2.city.indexOf('>') === -1) { city = d2.city; break; }
+          if (i === ciIdx && d2 && d2.city && !city) { city = d2.city.split('>').pop().trim(); }
         }
       }
       var newStay = {
@@ -6161,6 +6162,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         for (var i = checkoutDayIndex; i >= checkinDayIndex; i--) {
           var d = currentTrip.days[i];
           if (d && d.city && d.city.indexOf('>') === -1) { city = d.city; break; }
+          if (i === checkinDayIndex && d && d.city && !city) { city = d.city.split('>').pop().trim(); }
         }
       }
 
