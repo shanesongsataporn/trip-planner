@@ -1349,7 +1349,7 @@ gmp-advanced-marker.map-pin-active {
     <div class="menu-section">
       <div class="menu-section-label">Trip</div>
       <button class="menu-item" id="mob-trip-label" onclick="showMobTripSelector()">🗺 Thailand - May 2026</button>
-      <button class="menu-item" onclick="showAddTripModal();toggleMenu('mob-hamburger-menu')">✈️ Add new trip</button>
+      <button class="menu-item" onclick="openTripCreator();toggleMenu('mob-hamburger-menu')">✈️ Add new trip</button>
       <button class="menu-item" onclick="showRenameTripModal();toggleMenu('mob-hamburger-menu')">⚙️ Trip settings</button>
       <button class="menu-item" onclick="downloadTripBackup();toggleMenu('mob-hamburger-menu')">📥 Download backup</button>
     </div>
@@ -4262,6 +4262,372 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (ov) ov.classList.remove('open');
       if (sh) sh.classList.remove('open');
     }
+
+    /* ===== TRIP CREATOR: logic (8a) ===== */
+    var NTC_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function ntcPad(n) { return String(n).padStart(2, '0'); }
+    function ntcAddDays(iso, n) {
+      var p = iso.split('-');
+      var t = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2] + n));
+      return t.getUTCFullYear() + '-' + ntcPad(t.getUTCMonth() + 1) + '-' + ntcPad(t.getUTCDate());
+    }
+    function ntcFmt(iso) {
+      if (!iso) return '';
+      var p = iso.split('-');
+      return (+p[2]) + ' ' + NTC_MONTHS[+p[1] - 1];
+    }
+    function ntcFmtY(iso) { return iso ? ntcFmt(iso) + ' ' + iso.split('-')[0] : ''; }
+    function ntcEsc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function ntcBuildBlocks(rows) {
+      var res = { errors: [], badRows: {}, blocks: [], totalDays: 0, first: '', last: '' };
+      var good = [];
+      rows.forEach(function(r, i) {
+        if (!r.city) { res.errors.push('Row ' + (i + 1) + ' has no city'); res.badRows[i] = true; return; }
+        if (!r.start || !r.end) { res.errors.push(r.city + ' needs dates'); res.badRows[i] = true; return; }
+        if (r.end < r.start) { res.errors.push(r.city + ': end is before start'); res.badRows[i] = true; return; }
+        good.push({ city: r.city, start: r.start, end: r.end, idx: i });
+      });
+      if (!good.length) return res;
+      good.sort(function(a, b) {
+        if (a.start !== b.start) return a.start < b.start ? -1 : 1;
+        return a.end < b.end ? -1 : (a.end > b.end ? 1 : 0);
+      });
+      var maxEnd = good.reduce(function(m, r) { return r.end > m ? r.end : m; }, good[0].end);
+      var d = good[0].start;
+      var days = [];
+      var seen = {};
+      var guard = 0;
+      while (d <= maxEnd && guard++ < 800) {
+        var dd = d;
+        var cov = good.filter(function(r) { return r.start <= dd && dd <= r.end; });
+        var type, label;
+        if (cov.length === 0) { type = 'tbd'; label = 'To be decided'; }
+        else if (cov.length === 1) { type = 'city'; label = cov[0].city; }
+        else if (cov.length === 2 && cov[0].end === dd && cov[1].start === dd) { type = 'transit'; label = cov[0].city + ' > ' + cov[1].city; }
+        else {
+          type = 'bad'; label = '';
+          var names = cov.map(function(r) { return r.city; }).join(' and ');
+          if (!seen[names]) { seen[names] = true; res.errors.push(names + ' overlap (from ' + ntcFmt(dd) + ')'); }
+          cov.forEach(function(r) { res.badRows[r.idx] = true; });
+        }
+        days.push({ date: dd, type: type, label: label });
+        d = ntcAddDays(d, 1);
+      }
+      days.forEach(function(x) {
+        if (x.type === 'bad') return;
+        var last = res.blocks[res.blocks.length - 1];
+        if (last && last.type === x.type && last.label === x.label && ntcAddDays(last.end, 1) === x.date) {
+          last.end = x.date; last.days++;
+        } else {
+          res.blocks.push({ type: x.type, label: x.label, start: x.date, end: x.date, days: 1 });
+        }
+      });
+      res.totalDays = days.length;
+      res.first = good[0].start;
+      res.last = maxEnd;
+      return res;
+    }
+    function ntcAssert(cond, msg) { console.log((cond ? 'PASS: ' : 'FAIL: ') + msg); return !!cond; }
+    function ntcSampleRows() {
+      return [
+        { city: 'Sydney', start: '2026-11-23', end: '2026-11-23' },
+        { city: 'Bangkok', start: '2026-11-23', end: '2026-11-24' },
+        { city: 'Chiang Mai', start: '2026-11-24', end: '2026-12-01' },
+        { city: 'Taipei', start: '2026-12-01', end: '2026-12-07' },
+        { city: 'Pattaya', start: '2026-12-07', end: '2026-12-15' },
+        { city: 'Phuket', start: '2026-12-15', end: '2026-12-22' },
+        { city: 'Krabi', start: '2026-12-22', end: '2026-12-24' },
+        { city: 'Bangkok', start: '2026-12-24', end: '2027-01-01' },
+        { city: 'Sydney', start: '2027-01-01', end: '2027-01-01' }
+      ];
+    }
+    function test_ntc_blocks() {
+      var ok = 0, total = 0;
+      function a(c, m) { total++; if (ntcAssert(c, m)) ok++; }
+      var r1 = ntcBuildBlocks(ntcSampleRows());
+      a(r1.errors.length === 0, 'sample trip has no errors (got ' + r1.errors.length + ')');
+      a(r1.totalDays === 40, 'sample trip is 40 days (got ' + r1.totalDays + ')');
+      a(r1.blocks.length === 14, 'sample trip is 14 blocks (got ' + r1.blocks.length + ')');
+      a(r1.blocks[0].label === 'Sydney > Bangkok' && r1.blocks[0].days === 1, 'first block is Sydney > Bangkok, 1 day');
+      a(r1.blocks[13].label === 'Bangkok > Sydney', 'last block is Bangkok > Sydney');
+      var r2 = ntcBuildBlocks([{ city: 'A', start: '2026-12-01', end: '2026-12-05' }, { city: 'B', start: '2026-12-04', end: '2026-12-08' }]);
+      a(r2.errors.length === 1, 'two-day overlap is an error (got ' + r2.errors.length + ')');
+      var r3 = ntcBuildBlocks([{ city: 'A', start: '2026-12-01', end: '2026-12-03' }, { city: 'B', start: '2026-12-06', end: '2026-12-08' }]);
+      a(r3.errors.length === 0 && r3.blocks.length === 3 && r3.blocks[1].type === 'tbd' && r3.blocks[1].days === 2, 'gap becomes a 2-day To be decided block');
+      var r4 = ntcBuildBlocks([{ city: 'A', start: '2026-12-01', end: '2026-12-03' }, { city: 'B', start: '2026-12-03', end: '2026-12-05' }]);
+      a(r4.errors.length === 0 && r4.blocks.length === 3 && r4.blocks[1].type === 'transit', 'one-day overlap becomes a transit block, no error');
+      console.log('SUMMARY: ' + ok + '/' + total + ' ' + (ok === total ? 'PASS' : 'FAIL'));
+    }
+    /* ===== end trip creator logic ===== */
+
+    /* ===== TRIP CREATOR: screen (8a) ===== */
+    function openTripCreator() {
+      if (!document.getElementById('ntc-sheet')) {
+        var st = document.createElement('style');
+        st.textContent = '#ntc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:5200;}#ntc-overlay.open{display:block;}#ntc-sheet{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--white);border-radius:20px 20px 0 0;z-index:5300;padding:12px 20px 40px;max-height:92vh;overflow-y:auto;}#ntc-sheet.open{display:block;}.ntc-title{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:12px;}.ntc-label{font-size:11px;font-weight:700;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;}.ntc-hint{font-size:12px;color:var(--ink-muted);margin:6px 0;}.ntc-row{display:flex;align-items:center;gap:6px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--sand-dark);border-radius:10px;background:var(--sand);}.ntc-row.bad{border-color:#E74C3C;background:rgba(231,76,60,0.12);}.ntc-row-main{flex:1;cursor:pointer;}.ntc-city{font-size:14px;font-weight:700;color:var(--ink);}.ntc-dates{font-size:12px;color:var(--ink-muted);}.ntc-ic{background:none;border:none;font-size:16px;cursor:pointer;padding:6px;color:var(--ink);}.ntc-err{color:#E74C3C;font-size:12px;font-weight:600;margin:4px 0;}.ntc-blk{font-size:12px;color:var(--ink);padding:5px 0;border-bottom:1px solid var(--sand-dark);}.ntc-btn{width:100%;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:10px;border:none;cursor:pointer;margin-top:10px;background:var(--accent);color:#fff;}.ntc-btn.sec{background:var(--sand);color:var(--ink);}.ntc-btn:disabled{opacity:0.4;cursor:default;}#ntc-sheet{top:0;left:0;right:0;bottom:0;border-radius:0;padding:0;max-height:none;overflow:hidden;}#ntc-sheet.open{display:flex;flex-direction:column;}#ntc-head{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 8px 10px;border-bottom:1px solid var(--sand-dark);flex-shrink:0;}.ntc-htitle{font-size:15px;font-weight:800;color:var(--ink);}.ntc-hbtn{background:none;border:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--accent);min-width:64px;padding:8px;cursor:pointer;text-align:left;}#ntc-scroll{flex:1;overflow-y:auto;padding:12px 16px 24px;}#ntc-foot{flex-shrink:0;padding:10px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--sand-dark);background:var(--white);}#ntc-foot .ntc-btn{margin-top:0;}.ntc-link{background:none;border:none;font-family:inherit;font-size:12px;color:var(--ink-muted);text-decoration:underline;cursor:pointer;}.ntc-row{padding:8px 10px;margin-bottom:6px;border-radius:8px;}.ntc-city{font-size:13px;}.ntc-dates{font-size:11px;}.ntc-ic{font-size:14px;padding:4px 6px;}.ntc-label{margin:14px 0 6px;font-size:10px;}.ntc-blk{padding:4px 0;}.ntc-btn{padding:10px;font-size:13px;margin-top:8px;}';
+        document.head.appendChild(st);
+        var ov = document.createElement('div');
+        ov.id = 'ntc-overlay';
+        ov.onclick = function() { closeTripCreator(); };
+        var sh = document.createElement('div');
+        sh.id = 'ntc-sheet';
+        sh.innerHTML = '<div id="ntc-head"></div><div id="ntc-scroll"><div id="ntc-body"></div></div><div id="ntc-foot"></div>';
+        document.body.appendChild(ov);
+        document.body.appendChild(sh);
+      }
+      if (!window._ntc) {
+        var savedDraft = null;
+        try { savedDraft = JSON.parse(localStorage.getItem('ntc_draft')); } catch (e) {}
+        window._ntc = { name: (savedDraft && savedDraft.name) || '', rows: (savedDraft && Array.isArray(savedDraft.rows)) ? savedDraft.rows : [], mode: 'list' };
+      }
+      window._ntc.mode = 'list';
+      document.getElementById('ntc-overlay').classList.add('open');
+      document.getElementById('ntc-sheet').classList.add('open');
+      pushHistoryState('sheet', { sheet: 'trip-creator' });
+      ntcRender();
+    }
+    function closeTripCreator() {
+      var ov = document.getElementById('ntc-overlay');
+      var sh = document.getElementById('ntc-sheet');
+      if (ov) ov.classList.remove('open');
+      if (sh) sh.classList.remove('open');
+    }
+    function ntcCancel() { window._ntc = null; closeTripCreator(); }
+    function ntcLoadSample() {
+      window._ntc = { name: 'Thailand & Taiwan 2026', rows: ntcSampleRows(), mode: 'list' };
+      openTripCreator();
+    }
+    function ntcAddCity() {
+      openCityPicker(function(name) {
+        var s = window._ntc;
+        if (!s) return;
+        s.rows.push({ city: name, start: '', end: '' });
+        ntcEditDates(s.rows.length - 1);
+      });
+    }
+    function ntcChangeCity(i) {
+      openCityPicker(function(name) {
+        var s = window._ntc;
+        if (!s || !s.rows[i]) return;
+        s.rows[i].city = name;
+        ntcRender();
+      });
+    }
+    function ntcRemoveRow(i) {
+      var s = window._ntc;
+      if (!s) return;
+      s.rows.splice(i, 1);
+      setTimeout(ntcCheckGaps, 150);
+      ntcRender();
+    }
+    function ntcSortRows() {
+      window._ntc.rows.sort(function(a, b) {
+        if (!a.start && !b.start) return 0;
+        if (!a.start) return 1;
+        if (!b.start) return -1;
+        if (a.start !== b.start) return a.start < b.start ? -1 : 1;
+        return a.end < b.end ? -1 : (a.end > b.end ? 1 : 0);
+      });
+    }
+    function ntcEditDates(i) {
+      var s = window._ntc;
+      var r = s.rows[i];
+      s.pickIdx = i;
+      s.pickStart = r.start || '';
+      s.pickEnd = r.end || '';
+      var base = r.start || '';
+      if (!base) {
+        s.rows.forEach(function(x) { if (x.end && x.end > base) base = x.end; });
+      }
+      if (!base) {
+        var t = new Date();
+        base = t.getFullYear() + '-' + ntcPad(t.getMonth() + 1) + '-' + ntcPad(t.getDate());
+      }
+      s.calY = +base.split('-')[0];
+      s.calM = +base.split('-')[1] - 1;
+      s.mode = 'dates';
+      ntcRender();
+      var sheet = document.getElementById('ntc-sheet');
+      if (sheet) sheet.scrollTop = 0;
+    }
+    function ntcCalNav(dir) {
+      var s = window._ntc;
+      s.calM += dir;
+      if (s.calM > 11) { s.calM = 0; s.calY++; }
+      if (s.calM < 0) { s.calM = 11; s.calY--; }
+      ntcRender();
+    }
+    function ntcCalPick(y, m, d) {
+      var s = window._ntc;
+      var iso = y + '-' + ntcPad(m + 1) + '-' + ntcPad(d);
+      if (!s.pickStart || (s.pickStart && s.pickEnd)) { s.pickStart = iso; s.pickEnd = ''; }
+      else if (iso < s.pickStart) { s.pickStart = iso; s.pickEnd = ''; }
+      else { s.pickEnd = iso; }
+      ntcRender();
+    }
+    function ntcDatesDone() {
+      var s = window._ntc;
+      if (!s.pickStart || !s.pickEnd) { showToast('Tap the first date, then the last date'); return; }
+      var r = s.rows[s.pickIdx];
+      r.start = s.pickStart;
+      r.end = s.pickEnd;
+      setTimeout(ntcCheckGaps, 150);
+      ntcSortRows();
+      s.mode = 'list';
+      ntcRender();
+      var sheet = document.getElementById('ntc-sheet');
+      if (sheet) sheet.scrollTop = 0;
+    }
+    function ntcDatesBack() {
+      window._ntc.mode = 'list';
+      ntcRender();
+    }
+    function ntcCreate() {
+      var s = window._ntc;
+      if (!s) return;
+      if (!String(s.name || '').trim()) { showToast('Give the trip a name first'); return; }
+      if (typeof ntcCreateTrip === 'function') { ntcCreateTrip(s); }
+      else { showToast('Preview only — saving comes in the next step (8b)'); }
+    }
+    function ntcRenderDates(body, s) {
+      var r = s.rows[s.pickIdx];
+      var year = s.calY, month = s.calM;
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var firstDay = new Date(year, month, 1).getDay();
+      var h = '<div class="ntc-title">Dates for ' + ntcEsc(r.city) + '</div>';
+      h += '<div class="ntc-hint">Tap the first date, then the last date. For a one-day stop, tap the same date twice.</div>';
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0;">' +
+        '<button class="ntc-ic" onclick="ntcCalNav(-1)">‹</button>' +
+        '<div style="font-size:14px;font-weight:700;color:var(--ink);">' + NTC_MONTHS[month] + ' ' + year + '</div>' +
+        '<button class="ntc-ic" onclick="ntcCalNav(1)">›</button></div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:4px;">' +
+        ['Su','Mo','Tu','We','Th','Fr','Sa'].map(function(x) { return '<div style="font-size:10px;font-weight:700;color:var(--ink-muted);padding:4px 0;">' + x + '</div>'; }).join('') + '</div>';
+      h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">';
+      var rows = Math.ceil((firstDay + daysInMonth) / 7);
+      for (var i = 0; i < rows * 7; i++) {
+        var dayNum = i - firstDay + 1;
+        if (dayNum < 1 || dayNum > daysInMonth) { h += '<div></div>'; continue; }
+        var iso = year + '-' + ntcPad(month + 1) + '-' + ntcPad(dayNum);
+        var isEdge = iso === s.pickStart || iso === s.pickEnd;
+        var inRange = s.pickStart && s.pickEnd && iso > s.pickStart && iso < s.pickEnd;
+        var bg = 'transparent', color = 'var(--ink)', radius = '50%', fw = '500';
+        if (isEdge) { bg = 'var(--accent)'; color = '#fff'; fw = '700'; }
+        else if (inRange) { bg = 'var(--accent-light)'; color = 'var(--accent)'; radius = '0'; fw = '600'; }
+        h += '<div onclick="ntcCalPick(' + year + ',' + month + ',' + dayNum + ')" style="text-align:center;padding:8px 2px;cursor:pointer;background:' + bg + ';color:' + color + ';border-radius:' + radius + ';font-size:13px;font-weight:' + fw + ';">' + dayNum + '</div>';
+      }
+      h += '</div>';
+      var lbl = s.pickStart ? ntcFmtY(s.pickStart) + (s.pickEnd ? ' → ' + ntcFmtY(s.pickEnd) : ' → pick last date') : 'Pick the first date';
+      h += '<div class="ntc-hint" style="text-align:center;margin-top:12px;font-weight:600;">' + lbl + '</div>';
+      h += '<button class="ntc-btn"' + ((s.pickStart && s.pickEnd) ? '' : ' disabled') + ' onclick="ntcDatesDone()">Done</button>';
+      h += '<button class="ntc-btn sec" onclick="ntcDatesBack()">Back</button>';
+      body.innerHTML = h;
+    }
+    function ntcRender() {
+      var body = document.getElementById('ntc-body');
+      var s = window._ntc;
+      if (!body || !s) return;
+      ntcSaveDraft();
+      var head = document.getElementById('ntc-head');
+      var foot = document.getElementById('ntc-foot');
+      if (s.mode === 'dates') {
+        if (head) head.innerHTML = '<button class="ntc-hbtn" onclick="ntcDatesBack()">‹ Back</button><div class="ntc-htitle">Dates</div><div class="ntc-hbtn"></div>';
+        if (foot) foot.innerHTML = '';
+        ntcRenderDates(body, s);
+        return;
+      }
+      if (head) head.innerHTML = '<button class="ntc-hbtn" onclick="closeTripCreator()">‹ Back</button><div class="ntc-htitle">New trip</div><div class="ntc-hbtn"></div>';
+      var res = ntcBuildBlocks(s.rows);
+      var h = '';
+      h += '<input id="ntc-name" type="text" placeholder="Trip name, e.g. Thailand &amp; Taiwan 2026" value="' + ntcEsc(s.name) + '" oninput="window._ntc.name=this.value;ntcSaveDraft()" style="width:100%;font-family:inherit;font-size:14px;padding:12px;border:1px solid var(--sand-dark);border-radius:8px;background:var(--sand);color:var(--ink);outline:none;">';
+      h += '<div class="ntc-label">Cities and dates</div>';
+      if (!s.rows.length) { h += '<div class="ntc-hint">No cities yet. Tap Add city.</div>'; }
+      s.rows.forEach(function(r, i) {
+        var dates = r.start ? (r.end && r.end !== r.start ? ntcFmt(r.start) + ' → ' + ntcFmt(r.end) : ntcFmt(r.start) + ' (1 day)') : 'Tap to set dates';
+        h += '<div class="ntc-row' + (res.badRows[i] ? ' bad' : '') + '">' +
+          '<div class="ntc-row-main" onclick="ntcEditDates(' + i + ')"><div class="ntc-city">' + ntcEsc(r.city) + '</div><div class="ntc-dates">' + dates + '</div></div>' +
+          '<button class="ntc-ic" onclick="ntcChangeCity(' + i + ')">📍</button>' +
+          '<button class="ntc-ic" onclick="ntcRemoveRow(' + i + ')">✕</button></div>';
+      });
+      h += '<button class="ntc-btn sec" onclick="ntcAddCity()">＋ Add city</button>';
+      h += '<div class="ntc-label">Preview</div>';
+      if (res.errors.length) {
+        res.errors.forEach(function(e) { h += '<div class="ntc-err">⚠️ ' + ntcEsc(e) + '</div>'; });
+      }
+      if (res.totalDays && !res.errors.length) {
+        h += '<div class="ntc-hint" style="font-weight:700;">' + ntcFmtY(res.first) + ' → ' + ntcFmtY(res.last) + ' · ' + res.totalDays + ' days</div>';
+      }
+      res.blocks.forEach(function(b) {
+        var icon = b.type === 'transit' ? '✈️ ' : (b.type === 'tbd' ? '❓ ' : '📍 ');
+        var range = b.start === b.end ? ntcFmt(b.start) : ntcFmt(b.start) + ' → ' + ntcFmt(b.end);
+        var gapAttr = b.type === 'tbd' ? ' style="cursor:pointer;color:var(--accent);" data-s="' + b.start + '" data-e="' + b.end + '" onclick="ntcFillGap(this.dataset.s,this.dataset.e)"' : '';
+        h += '<div class="ntc-blk"' + gapAttr + '>' + icon + ntcEsc(b.label) + (b.type === 'tbd' ? ' (tap to add a city)' : '') + ' · ' + range + ' · ' + b.days + (b.days === 1 ? ' day' : ' days') + '</div>';
+      });
+      if (!res.blocks.length && !res.errors.length) { h += '<div class="ntc-hint">Add a city to see your days.</div>'; }
+      var canCreate = s.rows.length > 0 && !res.errors.length && res.totalDays > 0;
+      if (foot) foot.innerHTML = '<button class="ntc-btn"' + (canCreate ? '' : ' disabled') + ' onclick="ntcCreate()">Create trip</button>';
+      h += '<div style="text-align:center;margin:20px 0 8px;"><button class="ntc-link" onclick="ntcDiscard()">Discard draft</button></div>';
+      body.innerHTML = h;
+    }
+    function ntcSaveDraft() {
+      var s = window._ntc;
+      if (!s) return;
+      try { localStorage.setItem('ntc_draft', JSON.stringify({ name: s.name, rows: s.rows })); } catch (e) {}
+    }
+    function ntcDiscard() {
+      if (!confirm('Discard this draft?')) return;
+      window._ntc = null;
+      try { localStorage.removeItem('ntc_draft'); } catch (e) {}
+      closeTripCreator();
+    }
+    function ntcFillGap(start, end) {
+      openCityPicker(function(name) {
+        var s = window._ntc;
+        if (!s) return;
+        s.rows.push({ city: name, start: ntcAddDays(start, -1), end: ntcAddDays(end, 1) });
+        ntcSortRows();
+        s.mode = 'list';
+        ntcRender();
+      });
+    }
+    function ntcCheckGaps() {
+      var s = window._ntc;
+      var sh = document.getElementById('ntc-sheet');
+      if (!s || s.mode !== 'list' || !sh || !sh.classList.contains('open')) return;
+      var res = ntcBuildBlocks(s.rows);
+      s.skipGaps = s.skipGaps || {};
+      var gap = null;
+      res.blocks.forEach(function(b) {
+        if (!gap && b.type === 'tbd' && !s.skipGaps[b.start + '|' + b.end]) gap = b;
+      });
+      if (gap) ntcShowGap(gap);
+    }
+    function ntcShowGap(b) {
+      var old = document.getElementById('ntc-gap');
+      if (old) old.remove();
+      var s = window._ntc;
+      var d = document.createElement('div');
+      d.id = 'ntc-gap';
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:5350;display:flex;align-items:center;justify-content:center;padding:24px;';
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--white);border-radius:16px;padding:20px;width:100%;max-width:340px;';
+      var range = b.start === b.end ? ntcFmt(b.start) : ntcFmt(b.start) + ' → ' + ntcFmt(b.end);
+      card.innerHTML = '<div class="ntc-title">Gap in your trip</div><div class="ntc-hint">' + range + ' · ' + b.days + (b.days === 1 ? ' day' : ' days') + ' with no city. Add one now?</div>';
+      var pick = document.createElement('button');
+      pick.className = 'ntc-btn';
+      pick.textContent = 'Pick a city';
+      pick.onclick = function() { d.remove(); ntcFillGap(b.start, b.end); };
+      var later = document.createElement('button');
+      later.className = 'ntc-btn sec';
+      later.textContent = 'Add later';
+      later.onclick = function() { if (s) { s.skipGaps[b.start + '|' + b.end] = true; } d.remove(); };
+      card.appendChild(pick);
+      card.appendChild(later);
+      d.appendChild(card);
+      document.body.appendChild(d);
+    }
+    /* ===== end trip creator screen ===== */
     function openCityPicker(callback) {
       window._cityPickerCb = callback || null;
       if (!document.getElementById('city-picker-sheet')) {
@@ -4334,6 +4700,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           else if (st.sheet === 'mob-pin') { closeMobPinSheet(); }
           else if (st.sheet === 'bulk-move') { closePlanBulkMoveSheet(); }
           else if (st.sheet === 'city-picker') { closeCityPicker(); }
+          else if (st.sheet === 'trip-creator') { closeTripCreator(); }
         } else if (st && st.view) {
           __suppressHistoryPush = true;
           if (st.view === 'route' && typeof st.routeIndex === 'number') {
@@ -6633,7 +7000,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         if (!t) {
           t = document.createElement('div');
           t.id = 'plain-toast';
-          t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);border-radius:var(--radius);padding:12px 18px;font-size:14px;font-weight:600;z-index:4000;max-width:88vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.25s;pointer-events:none;';
+          t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--white);border-radius:var(--radius);padding:12px 18px;font-size:14px;font-weight:600;z-index:9000;max-width:88vw;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.25s;pointer-events:none;';
           document.body.appendChild(t);
         }
         t.textContent = message;
