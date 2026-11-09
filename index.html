@@ -6483,7 +6483,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var legToCity = (leg.to && leg.to.city) || '—';
             return (li > 0 ? '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;display:block;"><div style="width:1px;background:var(--sand-dark);flex:1;"></div><span style="font-size:10px;color:var(--ink-muted);white-space:nowrap;">Leg ' + (li+1) + ' · ' + legDayLabel + '</span><div style="width:1px;background:var(--sand-dark);flex:1;"></div></div>' : '<div style="font-size:10px;color:var(--ink-muted);margin-bottom:6px;">Leg 1 · ' + legDayLabel + '</div>') +
             '<div class="transport-view-detail"><strong>' + legFromCity + ' → ' + legToCity + '</strong>' + (leg.carrier||leg.flightNum ? ' · ' + (leg.carrier||'') + (leg.flightNum ? ' ' + leg.flightNum : '') : '') + '</div>' +
-            (leg.depart || leg.arrive ? '<div class="transport-view-detail">🕐 ' + (leg.depart||'?') + ' → ' + (leg.arrive||'?') + '</div>' : '') +
+            (leg.depart || leg.arrive ? '<div class="transport-view-detail">🕐 ' + (leg.depart||'?') + ' → ' + (leg.arrive||'?') + (leg.arriveNextDay ? ' +1' : '') + '</div>' : '') +
             (leg.confirmationCode ? '<div class="transport-view-detail">🔖 ' + leg.confirmationCode + '</div>' : '') +
             (missingLeg.length ? '<div style="font-size:11px;color:var(--warn);font-weight:600;">⚠️ Missing: ' + missingLeg.join(', ') + '</div>' : '');
           }).join('') +
@@ -6499,7 +6499,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           }
           cardBody =
             (tDisp.carrier || tDisp.flightNum ? '<div class="transport-view-detail"><strong>' + tDisp.carrier + (tDisp.flightNum ? ' · ' + tDisp.flightNum : '') + '</strong></div>' : '') +
-            (tDisp.depart || tDisp.arrive ? '<div class="transport-view-detail">🕐 ' + (tDisp.depart||'?') + ' → ' + (tDisp.arrive||'?') + '</div>' : '') +
+            (tDisp.depart || tDisp.arrive ? '<div class="transport-view-detail">🕐 ' + (tDisp.depart||'?') + ' → ' + (tDisp.arrive||'?') + (tDisp.arriveNextDay ? ' +1' : '') + '</div>' : '') +
             (tDisp.confirmationCode ? '<div class="transport-view-detail">🔖 Ref: <strong>' + tDisp.confirmationCode + '</strong></div>' : '') +
             (tDisp.seat ? '<div class="transport-view-detail">💺 Seat: <strong>' + tDisp.seat + '</strong></div>' : '') +
             (t.notes ? '<div class="transport-view-detail" style="font-style:italic;margin-top:4px;">' + t.notes + '</div>' : '') +
@@ -6568,6 +6568,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
               arrive: l.arrive || '',
               confirmationCode: l.confirmationCode || '',
               seat: l.seat || '',
+              arriveNextDay: !!l.arriveNextDay,
               dayIndex: di
             };
           });
@@ -6640,7 +6641,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
           '</div>' +
           '<div class="ts-row">' +
             '<div class="ts-field"><label>Departs</label><input type="time" id="ts-depart-' + i + '" value="' + tsTo24hr(leg.depart) + '"></div>' +
-            '<div class="ts-field"><label>Arrives</label><input type="time" id="ts-arrive-' + i + '" value="' + tsTo24hr(leg.arrive) + '"></div>' +
+            '<div class="ts-field"><label>Arrives</label><input type="time" id="ts-arrive-' + i + '" value="' + tsTo24hr(leg.arrive) + '"><label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;text-transform:none;letter-spacing:0;margin-top:6px;cursor:pointer;"><input type="checkbox" id="ts-next-' + i + '"' + (leg.arriveNextDay ? ' checked' : '') + ' style="width:auto;margin:0;padding:0;"> Lands next day</label></div>' +
           '</div>' +
           '<div class="ts-row">' +
             '<div class="ts-field"><label>Confirmation Code</label><input type="text" id="ts-code-' + i + '" value="' + leg.confirmationCode + '" placeholder="e.g. ABC123"></div>' +
@@ -6740,6 +6741,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         leg.arrive = tsFrom24hr((document.getElementById('ts-arrive-' + i) || {}).value) || leg.arrive;
         leg.confirmationCode = (document.getElementById('ts-code-' + i) || {}).value || leg.confirmationCode;
         leg.seat = (document.getElementById('ts-seat-' + i) || {}).value || leg.seat || '';
+        var nextEl = document.getElementById('ts-next-' + i); if (nextEl) leg.arriveNextDay = nextEl.checked;
         var dayEl = document.getElementById('ts-day-' + i);
         if (dayEl) leg.dayIndex = (dayEl.value === '') ? '' : parseInt(dayEl.value, 10);
       });
@@ -6777,6 +6779,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         })
       };
 
+      newEntry.legs.forEach(function(nl, ni) { if (legs[ni] && legs[ni].arriveNextDay) nl.arriveNextDay = true; });
       // For edit: remove old entry via canonical API
       if (_transportSheet.mode === 'edit') {
         var oldUid = _transportSheet._editUid;
@@ -14599,6 +14602,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         arrive: last.arrive || '',
         confirmationCode: first.confirmationCode || '',
         seat: first.seat || '',
+        arriveNextDay: !!last.arriveNextDay,
         isMultiLeg: legs.length > 1,
         legs: legs
       };
