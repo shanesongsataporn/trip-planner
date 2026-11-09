@@ -4407,6 +4407,29 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         ntcEditDates(s.rows.length - 1);
       });
     }
+    function ntcRenameCity(i) {
+      var s = window._ntc;
+      if (!s || !s.rows[i]) return;
+      var old = s.rows[i].city;
+      var nn = prompt('Show this city as:', old);
+      if (nn === null) return;
+      nn = nn.trim();
+      if (!nn || nn === old) return;
+      if (nn.indexOf('>') > -1) { showToast('The name can\'t contain >'); return; }
+      s.cities = s.cities || {};
+      var clash = s.cities[nn] || citySettings[nn];
+      if (clash) {
+        if (!confirm('"' + nn + '" already exists as a city. Use that city\'s details?')) return;
+      } else {
+        var data = s.cities[old] || citySettings[old];
+        if (data) s.cities[nn] = Object.assign({}, data);
+      }
+      s.rows.forEach(function(r) { if (r.city === old) r.city = nn; });
+      var stillUsed = s.rows.some(function(r) { return r.city === old; });
+      if (!stillUsed && s.cities[old]) delete s.cities[old];
+      ntcRender();
+    }
+
     function ntcChangeCity(i) {
       openCityPicker(function(name) {
         var s = window._ntc;
@@ -4675,6 +4698,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var dates = r.start ? (r.end && r.end !== r.start ? ntcFmt(r.start) + ' → ' + ntcFmt(r.end) : ntcFmt(r.start) + ' (1 day)') : 'Tap to set dates';
         h += '<div class="ntc-row' + (res.badRows[i] ? ' bad' : '') + '">' +
           '<div class="ntc-row-main" onclick="ntcEditDates(' + i + ')"><div class="ntc-city">' + ntcEsc(r.city) + '</div><div class="ntc-dates">' + dates + '</div></div>' +
+          '<button class="ntc-ic" onclick="ntcRenameCity(' + i + ')">✏️</button>' +
           '<button class="ntc-ic" onclick="ntcChangeCity(' + i + ')">📍</button>' +
           '<button class="ntc-ic" onclick="ntcRemoveRow(' + i + ')">✕</button></div>';
       });
@@ -4795,7 +4819,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       window._cityPickerDraft = !!(_ntcSheet && _ntcSheet.classList.contains('open'));
       if (!document.getElementById('city-picker-sheet')) {
         var st = document.createElement('style');
-        st.textContent = '#city-picker-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:5400;}#city-picker-overlay.open{display:block;}#city-picker-sheet{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--white);border-radius:20px 20px 0 0;z-index:5500;padding:12px 20px 40px;max-height:80vh;overflow-y:auto;}#city-picker-sheet.open{display:block;}.pac-container{z-index:6000 !important;}';
+        st.textContent = '#city-picker-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:5400;}#city-picker-overlay.open{display:block;}#city-picker-sheet{display:none;position:fixed;left:0;right:0;top:0;bottom:auto;background:var(--white);border-radius:0 0 20px 20px;z-index:5500;padding:calc(16px + env(safe-area-inset-top)) 20px 24px;max-height:80vh;overflow-y:auto;}#city-picker-sheet.open{display:block;}.pac-container{z-index:6000 !important;}';
         document.head.appendChild(st);
         var ov = document.createElement('div');
         ov.id = 'city-picker-overlay';
