@@ -5720,6 +5720,60 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         summaryHtml + addBtn + cardsHtml + '</div>';
     }
 
+    function quickAddStay(o) {
+      o = o || {};
+      function fail(m) { console.error('FAIL: quickAddStay - ' + m); return false; }
+      if (!currentTrip || !Array.isArray(currentTrip.days)) return fail('no trip loaded');
+      var name = (o.name || '').trim();
+      if (!name) return fail('name is required');
+      var ciIdx = -1, coIdx = -1;
+      currentTrip.days.forEach(function(d, i) {
+        var iso = getDayDateISO(d, currentTrip);
+        if (iso === o.checkin && ciIdx === -1) { ciIdx = i; }
+        if (iso === o.checkout) { coIdx = i; }
+      });
+      if (ciIdx === -1) return fail('check-in ' + o.checkin + ' is not a day in this trip');
+      if (coIdx === -1) return fail('check-out ' + o.checkout + ' is not a day in this trip');
+      if (coIdx < ciIdx) return fail('check-out is before check-in');
+      if (!Array.isArray(currentTrip.stays)) currentTrip.stays = [];
+      var ciId = currentTrip.days[ciIdx].id, coId = currentTrip.days[coIdx].id;
+      var dupe = currentTrip.stays.some(function(s) {
+        return (s.name || '').trim().toLowerCase() === name.toLowerCase() && s.checkinDayId === ciId && s.checkoutDayId === coId;
+      });
+      if (dupe) { console.log('PASS (skipped, already exists): ' + name); return true; }
+      var city = o.city || '';
+      if (!city) {
+        for (var i = coIdx; i >= ciIdx; i--) {
+          var d2 = currentTrip.days[i];
+          if (d2 && d2.city && d2.city.indexOf('>') === -1) { city = d2.city; break; }
+        }
+      }
+      var newStay = {
+        id: 'stay_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        name: name,
+        link: o.link || '',
+        city: city,
+        checkinDate: getDayDate(currentTrip.days[ciIdx], currentTrip),
+        checkoutDate: getDayDate(currentTrip.days[coIdx], currentTrip),
+        booked: !!o.booked,
+        price: o.price || '',
+        confirmationNumber: o.confirmationNumber || '',
+        checkinTime: o.checkinTime || '',
+        checkoutTime: o.checkoutTime || '',
+        notes: o.notes || ''
+      };
+      if (o.dryRun) { console.log('PASS (dry run, nothing saved): would add ' + name + ' | ' + newStay.checkinDate + ' to ' + newStay.checkoutDate + ' | city: ' + city); return true; }
+      _setStayDayRefs(newStay, ciIdx, coIdx);
+      currentTrip.stays.push(newStay);
+      syncStaysToDays();
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 5000);
+      saveToStorage();
+      try { if (typeof renderAccommodation === 'function') { renderAccommodation(); } } catch (e) {}
+      console.log('PASS: added ' + name + ' | ' + newStay.checkinDate + ' to ' + newStay.checkoutDate + ' | city: ' + city);
+      return true;
+    }
+
     function _findStayById(stayId) {
       if (!Array.isArray(currentTrip.stays)) return null;
       for (var i = 0; i < currentTrip.stays.length; i++) {
