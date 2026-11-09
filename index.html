@@ -2541,8 +2541,51 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (lbl) { lbl.textContent = '🗺 ' + (currentTrip ? currentTrip.name : ''); }
     }
 
+    function dayCity(dayOrLabel) {
+      var label = (typeof dayOrLabel === 'string') ? dayOrLabel : ((dayOrLabel && dayOrLabel.city) || '');
+      var c = label.split('>').pop().trim();
+      return (!c || c.toLowerCase() === 'to be decided') ? '' : c;
+    }
+    function placeSuffix(dayOrLabel) {
+      var c = dayCity(dayOrLabel);
+      if (!c) return '';
+      var info = getCityInfo(c);
+      return c + ((info && info.country) ? ', ' + info.country : '');
+    }
+    function placeQueryForDay(name, dayOrLabel) {
+      var c = dayCity(dayOrLabel);
+      return c ? placeQuery(name, c) : name;
+    }
+    function cityCenter(dayOrLabel) {
+      var c = dayCity(dayOrLabel);
+      if (!c) return null;
+      var info = getCityInfo(c);
+      if (!info || typeof info.lat !== 'number' || typeof info.lng !== 'number') return null;
+      return { lat: info.lat, lng: info.lng };
+    }
+    function tripFallbackCenter() {
+      var days = (typeof currentTrip !== 'undefined' && currentTrip && currentTrip.days) ? currentTrip.days : [];
+      for (var i = 0; i < days.length; i++) {
+        var c = dayCity(days[i]);
+        if (!c) continue;
+        var info = getCityInfo(c);
+        if (info && !info.noMarker && typeof info.lat === 'number' && typeof info.lng === 'number') return { lat: info.lat, lng: info.lng, zoom: 5, found: true };
+      }
+      return { lat: 20, lng: 0, zoom: 2, found: false };
+    }
     function getTripDestination() {
-      return (currentTrip && currentTrip.destination) ? currentTrip.destination : 'Thailand';
+      if (currentTrip && currentTrip.destination) { return currentTrip.destination; }
+      var seen = [];
+      ((currentTrip && currentTrip.days) || []).forEach(function(d) {
+        var c = dayCity(d);
+        if (!c) return;
+        var info = getCityInfo(c);
+        if (!info || info.noMarker || !info.country) return;
+        if (seen.indexOf(info.country) === -1) seen.push(info.country);
+      });
+      if (!seen.length) return 'your trip';
+      if (seen.length === 1) return seen[0];
+      return seen.slice(0, -1).join(', ') + ' & ' + seen[seen.length - 1];
     }
 
     function updateAppTitle() {
@@ -14999,7 +15042,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
       console.log('%c--- TEST 5: test_reorder_city_block ---', 'color:#3498DB;font-weight:bold');
       var assert = window.__test.assert;
       window.__test.withTestMode(function() {
-        var blockCity = 'Koh Samui';
+        var blockCity = (function() { var runs = []; currentTrip.days.forEach(function(d, i) { var c = d.city || ''; if (c.indexOf('>') !== -1) { return; } var last = runs[runs.length - 1]; if (last && last.city === c && last.end === i - 1) { last.end = i; } else { runs.push({ city: c, start: i, end: i }); } }); var cands = runs.filter(function(r, ri) { return r.end > r.start && ri > 0 && ri < runs.length - 1 && runs.filter(function(x) { return x.city === r.city; }).length === 1; }); return cands.length ? cands[0].city : 'no-eligible-block'; })();
         var blockStart = -1, blockEnd = -1;
         for (var i = 0; i < currentTrip.days.length; i++) {
           if ((currentTrip.days[i].city || '').indexOf(blockCity) !== -1 && (currentTrip.days[i].city || '').indexOf('>') === -1) {
