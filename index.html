@@ -1721,6 +1721,11 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     var mobCardsCurrentIndex = 0;
     var mobCardsSortedDays = [];
 
+    function actMapsUrl(act, name, day) {
+      if (act && typeof act === 'object' && act.mapsLink) { return act.mapsLink; }
+      return 'https://www.google.com/maps/search/' + encodeURIComponent(placeQueryForDay(name, day));
+    }
+
     function buildActivityCard(item, dayIndex, activity, actIndex) {
       var name = (typeof activity === 'object') ? activity.name : activity;
       var uid = (typeof activity === 'object' && activity.uid) ? activity.uid : ('day' + item.day + '_act' + actIndex);
@@ -1730,7 +1735,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var savedPhoto = cardPhotos[photoKey];
       var noteKey = uid ? 'act_' + uid : String(actIndex);
       var userNote = (item.cardNotes && item.cardNotes[noteKey]) || '';
-      var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(placeQueryForDay(name, item));
+      var mapsUrl = actMapsUrl(activity, name, item);
       var photoId = 'kp-' + photoKey;
       var cleanName = name.replace(/'/g, '');
       var cleanCity = item.city.split('>').pop().trim().replace(/'/g, '');
@@ -3730,7 +3735,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
             var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
             var noteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
             var note = (day.cardNotes && day.cardNotes[noteKey]) || '';
-            var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(placeQueryForDay(name, day));
+            var mapsUrl = actMapsUrl(a, name, day);
             var actDetailId = 'home-act-detail-' + di + '-' + i;
             var photoKey = 'act_' + uid;
             var photo = cardPhotos[photoKey] || '';
@@ -8375,7 +8380,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         var cityEmoji = isTransitDay(item) ? '📍' : getCityEmoji(item.city);
 
         function makeItinItem(emoji, text, dayIndex, type, itemIndex) {
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(placeQueryForDay(text, item));
+          var mapsUrl = actMapsUrl((type === 'act' && item.activities) ? item.activities[itemIndex] : null, text, item);
           var detailId = 'itin-detail-' + item.day + '-' + type + '-' + itemIndex;
           var photoKey = (type === 'act' && item.activities && item.activities[itemIndex] && item.activities[itemIndex].uid)
             ? 'act_' + item.activities[itemIndex].uid
@@ -9426,7 +9431,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         ? '<img class="kanban-card-photo" src="' + savedPhoto + '">'
         : '<div class="kanban-card-photo-placeholder" id="' + photoId + '" onclick="openPhotoPicker(\'' + photoKey + '\',\'' + cleanName + '\',\'' + cleanCity + '\',' + dayIndex + ',' + actIndex + ',\'activity\')" style="cursor:pointer;">' + catStyle.emoji + '<div style="font-size:10px;color:var(--ink-muted);font-weight:600;margin-top:4px;">📷 Add photo</div></div>';
 
-      var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(placeQueryForDay(name, item));
+      var mapsUrl = actMapsUrl(activity, name, item);
 
       card.innerHTML = photoHtml +
         '<div class="kanban-card-body">' +
@@ -9965,7 +9970,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         mapsQuery = encodeURIComponent(itemName + (day.city ? ' ' + day.city : ''));
       }
 
-      var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
+      var mapsUrl = (section === 'acts' && act && act.mapsLink) ? act.mapsLink : 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
       var directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + mapsQuery;
 
       if (expandEl) {
@@ -10233,7 +10238,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
       // Links row
       var linksEl = document.getElementById('de-item-links');
-      var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
+      var mapsUrl = (section === 'acts' && act && act.mapsLink) ? act.mapsLink : 'https://www.google.com/maps/search/?api=1&query=' + mapsQuery;
       var directionsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + mapsQuery;
       linksEl.innerHTML =
         '<a class="de-row-expand-btn" href="' + mapsUrl + '" target="_blank">🗺 Maps</a>' +
@@ -12344,7 +12349,7 @@ var pinDelay = Math.floor(Math.random() * 150);
           var uid = (typeof a === 'object' && a.uid) ? a.uid : ('day' + day.day + '_act' + i);
           var cat = (day.activityCategories && day.activityCategories[i]) || 'default';
           var emoji = (activityCategories[cat]||activityCategories['default']).emoji;
-          var mapsUrl = 'https://www.google.com/maps/search/' + encodeURIComponent(placeQueryForDay(name, day));
+          var mapsUrl = actMapsUrl(a, name, day);
           var photoKey = 'act_' + uid;
           var photo = cardPhotos[photoKey] || '';
           var mobNoteKey = (typeof a === 'object' && a.uid) ? ('act_' + a.uid) : String(i);
