@@ -1240,7 +1240,7 @@ gmp-advanced-marker.map-pin-active {
     </div>
     <div class="hdr-right">
       <div class="view-switcher">
-        <button class="view-btn active" onclick="setView('home')">🏠 Home</button>
+        <button class="view-btn active" onclick="setView('home')">🏠 Trip home</button>
         <button class="view-btn" onclick="setView('structure')">✏️ Plan</button>
         <button class="view-btn" onclick="setView('map')">🗺 Map</button>
         <button class="view-btn" onclick="setView('itinerary')">📋 Itinerary</button>
@@ -1302,6 +1302,7 @@ gmp-advanced-marker.map-pin-active {
     </div>
     <div class="menu-section">
       <div class="menu-section-label">Trips</div>
+      <button class="menu-item" onclick="openMyTrips();toggleMenu('hamburger-menu')">🧳 My Trips</button>
       <button class="menu-item" onclick="openTripCreator();toggleMenu('hamburger-menu')">✈️ Add new trip</button>
       <button class="menu-item" onclick="showRenameTripModal()">⚙️ Trip settings</button>
       <button class="menu-item" onclick="downloadTripBackup();toggleMenu('hamburger-menu')">📥 Download backup</button>
@@ -1319,7 +1320,7 @@ gmp-advanced-marker.map-pin-active {
   <!-- MOBILE VIEW PICKER -->
   <div id="mob-view-menu">
     <div class="menu-section">
-      <button class="menu-item" onclick="setView('home');toggleMenu('mob-view-menu')">🏠 Home</button>
+      <button class="menu-item" onclick="setView('home');toggleMenu('mob-view-menu')">🏠 Trip home</button>
       <button class="menu-item" onclick="setView('day-editor');toggleMenu('mob-view-menu')">✏️ Day Editor</button>
       <button class="menu-item" onclick="setView('structure');toggleMenu('mob-view-menu')">✏️ Plan</button>
       <button class="menu-item" onclick="setView('map');toggleMenu('mob-view-menu')">🗺 Map</button>
@@ -1348,6 +1349,7 @@ gmp-advanced-marker.map-pin-active {
     </div>
     <div class="menu-section">
       <div class="menu-section-label">Trip</div>
+      <button class="menu-item" onclick="openMyTrips();toggleMenu('mob-hamburger-menu')">🧳 My Trips</button>
       <button class="menu-item" id="mob-trip-label" onclick="showMobTripSelector()">🗺 Thailand - May 2026</button>
       <button class="menu-item" onclick="openTripCreator();toggleMenu('mob-hamburger-menu')">✈️ Add new trip</button>
       <button class="menu-item" onclick="showRenameTripModal();toggleMenu('mob-hamburger-menu')">⚙️ Trip settings</button>
@@ -4263,7 +4265,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       lastView = currentView === view ? lastView : currentView;
       var mobBackBtn = document.getElementById('mob-back-btn');
       if (mobBackBtn) {
-        mobBackBtn.style.display = (view === 'home') ? 'none' : 'block';
+        mobBackBtn.style.display = 'block';
       }
 
       document.querySelectorAll('.view-btn').forEach(function(btn) { btn.classList.remove('active'); });
@@ -12112,6 +12114,7 @@ var pinDelay = Math.floor(Math.random() * 150);
     }
 
     function goBack() {
+      if (currentView === 'home') { openMyTrips(); return; }
       setView(lastView === currentView ? 'home' : lastView);
     }
 
