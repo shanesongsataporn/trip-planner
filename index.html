@@ -5704,6 +5704,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
                 '<button onclick="showEditStayDatesSheet(\'' + stayIdAttr + '\')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">📅 Change Dates</button>' +
                 '<button onclick="deleteAccomStay(\'' + stayIdAttr + '\')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--danger);background:#fdecea;color:var(--danger);cursor:pointer;">🗑 Delete Stay</button>' +
               '</div>' +
+              '<div style="display:flex;gap:8px;margin-bottom:12px;"><button onclick="changeStayCity(\'' + stayIdAttr + '\')" style="flex:1;font-family:inherit;font-size:12px;font-weight:700;padding:8px;border-radius:var(--radius-sm);border:1px solid var(--sand-dark);background:var(--sand);color:var(--ink);cursor:pointer;">🏙 Change City (' + (s.city || 'none') + ')</button></div>' +
               '<div class="accom-field"><label>Check-in Time</label><input type="text" value="' + (s.checkinTime || '') + '" onchange="updateAccomStay(\'' + stayIdAttr + '\',\'checkinTime\',this.value)" placeholder="e.g. 2:00 PM"></div>' +
               '<div class="accom-field"><label>Check-out Time</label><input type="text" value="' + (s.checkoutTime || '') + '" onchange="updateAccomStay(\'' + stayIdAttr + '\',\'checkoutTime\',this.value)" placeholder="e.g. 11:00 AM"></div>' +
               '<div class="accom-field"><label>Confirmation Number</label><input type="text" value="' + (s.confirmationNumber || '') + '" onchange="updateAccomStay(\'' + stayIdAttr + '\',\'confirmationNumber\',this.value)" placeholder="e.g. BK-123456"></div>' +
@@ -5747,6 +5748,20 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       setTimeout(function() { deSuppressSync = false; }, 5000);
       saveToStorage();
       return 'deleted';
+    }
+
+    function changeStayCity(stayId) {
+      var s = _findStayById(stayId);
+      if (!s) return;
+      var v = prompt('City label for this stay (e.g. Rayong):', s.city || '');
+      if (v === null) return;
+      v = v.trim();
+      if (!v) return;
+      s.city = v;
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 5000);
+      saveToStorage();
+      renderAccommodation();
     }
 
     function quickAddStay(o) {
