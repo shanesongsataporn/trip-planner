@@ -5720,6 +5720,35 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
         summaryHtml + addBtn + cardsHtml + '</div>';
     }
 
+    function _updateStayFromDay(di, ai, field, value) {
+      var day = currentTrip.days[di];
+      var a = day && day.accommodation && day.accommodation[ai];
+      if (!a) return false;
+      var stay = a.id ? _findStayById(a.id) : null;
+      if (!stay) { a[field] = value; return false; }
+      stay[field] = value;
+      syncStaysToDays();
+      return true;
+    }
+
+    function _deleteStayFromDay(di, ai) {
+      var day = currentTrip.days[di];
+      var a = day && day.accommodation && day.accommodation[ai];
+      var stay = (a && a.id) ? _findStayById(a.id) : null;
+      if (!stay) return 'none';
+      var ciDay = getDayByCheckinRef(stay, currentTrip);
+      var coDay = getDayByCheckoutRef(stay, currentTrip);
+      var n = (ciDay && coDay) ? (currentTrip.days.indexOf(coDay) - currentTrip.days.indexOf(ciDay)) : 0;
+      if (n < 1) n = 1;
+      if (!confirm('This removes "' + (stay.name || 'this stay') + '" from all ' + n + ' night' + (n !== 1 ? 's' : '') + '. Delete the stay?')) return 'cancel';
+      currentTrip.stays = currentTrip.stays.filter(function(s) { return s !== stay; });
+      syncStaysToDays();
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 5000);
+      saveToStorage();
+      return 'deleted';
+    }
+
     function quickAddStay(o) {
       o = o || {};
       function fail(m) { console.error('FAIL: quickAddStay - ' + m); return false; }
@@ -8913,12 +8942,17 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function inlineUpdateAccom(dayIndex, i, value) {
+      if (!value.trim()) return;
+      if (_updateStayFromDay(dayIndex, i, 'name', value.trim())) { saveToStorage(); return; }
       normaliseAccom(currentTrip.days[dayIndex]);
       currentTrip.days[dayIndex].accommodation[i].name = value.trim();
       saveToStorage();
     }
 
     function inlineDeleteAccom(dayIndex, i) {
+      var _r = _deleteStayFromDay(dayIndex, i);
+      if (_r === 'cancel') return;
+      if (_r === 'deleted') { refreshInlineEdit(dayIndex); refreshHomeInlineEdit(dayIndex); return; }
       normaliseAccom(currentTrip.days[dayIndex]);
       currentTrip.days[dayIndex].accommodation.splice(i, 1);
       saveToStorage();
@@ -9221,6 +9255,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function deleteCalAccom(dayIndex, i) {
+      var _r = _deleteStayFromDay(dayIndex, i);
+      if (_r === 'cancel') return;
+      if (_r === 'deleted') { refreshInlineEdit(dayIndex); return; }
       normaliseAccom(currentTrip.days[dayIndex]);
       currentTrip.days[dayIndex].accommodation.splice(i, 1);
       saveToStorage();
