@@ -11707,6 +11707,21 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       return { gone: false, ci: newCi, co: newCo };
     }
 
+    // Call BEFORE day d is removed: re-point every hotel by day id, and drop hotels left with no nights.
+    function _fixStaysBeforeDelete(d) {
+      var out = { removed: [], changed: 0 };
+      if (!currentTrip || !Array.isArray(currentTrip.stays)) return out;
+      var plan = currentTrip.stays.map(function(s) { return _stayRefsAfterDelete(s, d); });
+      var goneIdx = [];
+      currentTrip.stays.forEach(function(s, i) {
+        var p = plan[i];
+        if (p && p.gone) { goneIdx.push(i); out.removed.push(s.name); }
+        else if (p) { _setStayDayRefs(s, p.ci, p.co); out.changed++; }
+      });
+      goneIdx.sort(function(a, b) { return b - a; }).forEach(function(i) { currentTrip.stays.splice(i, 1); });
+      return out;
+    }
+
     function _deleteDayAt(deletedAt) {
       if (!Array.isArray(currentTrip.days)) return null;
       if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
