@@ -11722,6 +11722,18 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       return out;
     }
 
+    // Call AFTER a day is removed: rewrite each hotel's date text from its day pointers, then rebuild each day's hotel rows.
+    function _refreshStaysAfterDelete() {
+      if (!currentTrip || !Array.isArray(currentTrip.stays)) return;
+      currentTrip.stays.forEach(function(s) {
+        var ci = getDayByCheckinRef(s, currentTrip);
+        var co = getDayByCheckoutRef(s, currentTrip);
+        if (ci) s.checkinDate = getDayDate(ci, currentTrip);
+        if (co) s.checkoutDate = getDayDate(co, currentTrip);
+      });
+      syncStaysToDays();
+    }
+
     function _deleteDayAt(deletedAt) {
       if (!Array.isArray(currentTrip.days)) return null;
       if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
