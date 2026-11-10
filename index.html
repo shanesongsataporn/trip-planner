@@ -6812,7 +6812,27 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     function showAddTransportModal(prefillDi) { openTransportSheet('add', prefillDi, null); }
     function showEditTransportModal(di, ti) { openTransportSheet('edit', di, ti); }
 
+    function _flightDeleteLabel(day, di, t) {
+      var f = getFlightDisplay(t);
+      var route = (f.from || '?') + ' to ' + (f.to || '?');
+      var num = String(f.flightNum || '').trim();
+      return 'Delete ' + (t.type || 'Transport') + ': ' + route + (num ? ', ' + num : '') + ' (Day ' + (di + 1) + ', ' + getDayDate(day, currentTrip) + ')?';
+    }
     function deleteTransportDirect(di, ti) {
+      var _d = currentTrip.days[di];
+      var _t = (_d && _d.transport) ? _d.transport[ti] : null;
+      if (_t && _t.uid) {
+        if (!confirm(_flightDeleteLabel(_d, di, _t))) return;
+        if (typeof autoBackupToFirestore === 'function') autoBackupToFirestore('delete-flight-' + (di + 1));
+        _removeFlightFromDay(di, _t.uid);
+        deSuppressSync = true;
+        setTimeout(function() { deSuppressSync = false; }, 5000);
+        saveToStorage();
+        renderTransport();
+        var _sv = document.getElementById('view-split');
+        if (_sv && _sv.style.display !== 'none' && typeof selectSplitDay === 'function' && deCurrentIndex != null) { try { selectSplitDay(deCurrentIndex); } catch (e) { console.warn('[deleteTransportDirect] selectSplitDay re-render failed:', e.message); } }
+        return;
+      }
       var day = currentTrip.days[di];
       if (!day) return;
       var t = day.transport[ti];
