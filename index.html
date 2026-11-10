@@ -7576,7 +7576,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       autoBackupToFirestore('delete-day-' + (di + 1));
       pushStructHistory('Day ' + (di + 1) + ' deleted from ' + (day.city || 'trip'));
       structHistory[0].stays = JSON.parse(JSON.stringify(currentTrip.stays || []));
-      currentTrip.days.splice(di, 1);
+      if (!_deleteDayAt(di)) { alert('Cannot delete the last day.'); return; }
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 5000);
       renumberDays();
       saveToStorage();
       renderPlanView();
