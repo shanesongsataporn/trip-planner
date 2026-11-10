@@ -11741,6 +11741,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       _fixStaysBeforeDelete(deletedAt);
       var removed = currentTrip.days.splice(deletedAt, 1)[0];
       _cascadeDeleteDay(deletedAt);
+      _refreshStaysAfterDelete();
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
       return removed;
     }
