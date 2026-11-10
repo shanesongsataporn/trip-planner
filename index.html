@@ -5467,6 +5467,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       setTimeout(function() { initListsPlaceAutocomplete(); }, 200);
     }
 
+    function _alignActivityCats(day) {
+      if (!Array.isArray(day.activities)) day.activities = [];
+      if (!Array.isArray(day.activityCategories)) day.activityCategories = [];
+      while (day.activityCategories.length < day.activities.length) day.activityCategories.push('default');
+      if (day.activityCategories.length > day.activities.length) day.activityCategories.length = day.activities.length;
+    }
     function confirmAddToDay(dayIndex) {
       var list = (currentTrip.lists || []).find(function(l) { return l.id === _listsAddToDayListId; });
       if (!list) return;
@@ -5477,7 +5483,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!Array.isArray(day.activities)) day.activities = [];
       var uid = 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       var activity = { name: item.name, uid: uid };
-      if (item.mapsLink) activity.link = item.mapsLink;
+      if (item.mapsLink) activity.mapsLink = item.mapsLink;
+      _alignActivityCats(day);
+      day.activityCategories.push('default');
       day.activities.push(activity);
       item.assignedDayIndex = dayIndex;
       deSuppressSync = true;
@@ -9117,7 +9125,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function inlineUpdateActivity(dayIndex, i, field, value) {
       var item = currentTrip.days[dayIndex];
-      if (field === 'name') { item.activities[i] = value.trim(); }
+      if (field === 'name') { var _cur = item.activities[i]; if (_cur && typeof _cur === 'object') { _cur.name = value.trim(); } else { item.activities[i] = { name: value.trim(), uid: Math.random().toString(36).slice(2, 8) }; } }
       if (field === 'cat') { if (!item.activityCategories) { item.activityCategories = []; } item.activityCategories[i] = value; }
       saveToStorage();
     }
@@ -14365,7 +14373,8 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
         normaliseFood(day);
         day.food.push({ name: name, link: link, bookingUrl: '', reservationRequired: false, reservationBooked: false, notes: place.formatted_address || place.address || '', mustOrder: '' });
       } else if (_discSelectedCat === 'activity') {
-        day.activities.push(name);
+        _alignActivityCats(day);
+        day.activities.push({ name: name, uid: Math.random().toString(36).slice(2, 8), link: link });
         if (!day.activityCategories) { day.activityCategories = []; }
         day.activityCategories.push(_discSelectedSubcat || 'default');
         if (!day.activityLinks) { day.activityLinks = []; }
