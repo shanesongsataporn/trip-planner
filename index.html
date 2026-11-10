@@ -7597,7 +7597,16 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (_note) msg += '\n\n' + _note;
       if (!confirm(msg)) return;
 
-      currentTrip.days = currentTrip.days.filter(function(d) { return d.city !== city; });
+      autoBackupToFirestore('remove-city-' + city);
+      pushStructHistory(city + ' removed (' + daysInCity.length + ' days)');
+      structHistory[0].stays = JSON.parse(JSON.stringify(currentTrip.stays || []));
+      var _blocked = false;
+      for (var i = currentTrip.days.length - 1; i >= 0; i--) {
+        if (currentTrip.days[i].city === city && !_deleteDayAt(i)) { _blocked = true; break; }
+      }
+      if (_blocked) alert('A trip needs at least one day, so the last day was kept.');
+      deSuppressSync = true;
+      setTimeout(function() { deSuppressSync = false; }, 5000);
       renumberDays();
       saveToStorage();
       renderPlanView();
