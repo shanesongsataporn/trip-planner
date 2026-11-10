@@ -11692,6 +11692,21 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
     }
 
+    // Where a hotel's check-in and check-out should point once day d is deleted. Returns null if unaffected.
+    function _stayRefsAfterDelete(s, d) {
+      var days = currentTrip.days;
+      var ciDay = getDayByCheckinRef(s, currentTrip);
+      var coDay = getDayByCheckoutRef(s, currentTrip);
+      if (!ciDay || !coDay) return null;
+      var ci = days.indexOf(ciDay), co = days.indexOf(coDay);
+      if (ci !== d && co !== d) return null;
+      var newCi = (ci === d) ? d + 1 : ci;
+      var newCo = (co === d) ? ((d + 1 < days.length) ? d + 1 : d - 1) : co;
+      var post = function(i) { return i > d ? i - 1 : i; };
+      if (ci === co || post(newCo) <= post(newCi)) return { gone: true };
+      return { gone: false, ci: newCi, co: newCo };
+    }
+
     function _deleteDayAt(deletedAt) {
       if (!Array.isArray(currentTrip.days)) return null;
       if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
