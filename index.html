@@ -7570,6 +7570,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var msg = hasContent
         ? 'Delete Day ' + (di + 1) + ' (' + day.city + ')? This day has content and cannot be undone easily.'
         : 'Delete Day ' + (di + 1) + ' (' + day.city + ')?';
+      var _note = _deleteDaysNote([di]);
+      if (_note) msg += '\n\n' + _note;
       if (!confirm(msg)) return;
       autoBackupToFirestore('delete-day-' + (di + 1));
       pushStructHistory('Day ' + (di + 1) + ' deleted from ' + (day.city || 'trip'));
@@ -11782,6 +11784,23 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       var endDates = p.lastDateAfter + ' instead of ' + p.lastDateBefore;
       if (movesLater) lines.push('Days after ' + (n === 1 ? 'it move 1 day' : 'them move ' + n + ' days') + ' earlier, so the trip will end ' + endDates + '.');
       else lines.push('The trip will end ' + endDates + '.');
+      return lines.join('\n');
+    }
+
+    // Plain-English note for the city-remove confirm: what goes with the city, plus hotel and date effects. Saves nothing.
+    function _removeCityNote(city) {
+      var idx = [], acts = 0, food = 0, flights = 0;
+      currentTrip.days.forEach(function(d, i) {
+        if (d.city !== city) return;
+        idx.push(i);
+        acts += (d.activities || []).filter(function(a) { return a != null; }).length;
+        food += (d.food || []).length;
+        flights += (d.transport || []).length;
+      });
+      if (!idx.length) return '';
+      var lines = [idx.length + (idx.length === 1 ? ' day' : ' days') + ' will be deleted (activities: ' + acts + ', food items: ' + food + ', flights: ' + flights + ').'];
+      var rest = _deleteDaysNote(idx);
+      if (rest) lines.push(rest);
       return lines.join('\n');
     }
 
