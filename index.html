@@ -7593,6 +7593,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var msg = withContent.length
         ? city + ' has ' + withContent.length + ' day(s) with content. Delete anyway?'
         : 'Remove ' + city + ' and all its days?';
+      var _note = _removeCityNote(city);
+      if (_note) msg += '\n\n' + _note;
       if (!confirm(msg)) return;
 
       currentTrip.days = currentTrip.days.filter(function(d) { return d.city !== city; });
