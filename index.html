@@ -7575,6 +7575,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       if (!confirm(msg)) return;
       autoBackupToFirestore('delete-day-' + (di + 1));
       pushStructHistory('Day ' + (di + 1) + ' deleted from ' + (day.city || 'trip'));
+      structHistory[0].stays = JSON.parse(JSON.stringify(currentTrip.stays || []));
       currentTrip.days.splice(di, 1);
       renumberDays();
       saveToStorage();
