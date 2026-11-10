@@ -11738,6 +11738,7 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       if (!Array.isArray(currentTrip.days)) return null;
       if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
       if (currentTrip.days.length <= 1) return null;
+      _fixStaysBeforeDelete(deletedAt);
       var removed = currentTrip.days.splice(deletedAt, 1)[0];
       _cascadeDeleteDay(deletedAt);
       currentTrip.days.forEach(function(d, i) { d.day = i + 1; });
