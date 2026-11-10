@@ -4524,7 +4524,94 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       pushHistoryState('sheet', { sheet: 'trip-creator' });
       ntcRender();
     }
-    function mtEnsureCss() {
+    function mtEnsureTicketCss() {
+      if (document.getElementById('mt-style-t')) return;
+      var st = document.createElement('style');
+      st.id = 'mt-style-t';
+      var hi = 'inset 0 1px 0 rgba(255,255,255,.12)';
+      st.textContent = [
+        '#mt-page .mt-tk{display:flex;min-height:120px;margin:0 0 16px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,0)),var(--sand);border:1px solid var(--sand-dark);border-radius:20px;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s,box-shadow .08s;box-shadow:' + hi + ',0 4px 0 rgba(0,0,0,.3),0 4px 0 var(--accent),0 10px 16px rgba(0,0,0,.18);}',
+        '#mt-page .mt-tk:active{transform:translateY(3px);box-shadow:' + hi + ',0 1px 0 rgba(0,0,0,.3),0 1px 0 var(--accent),0 2px 4px rgba(0,0,0,.18);}',
+        '#mt-page .mt-tk:not(.cont){box-shadow:' + hi + ',0 4px 0 var(--sand-dark),0 10px 16px rgba(0,0,0,.12);}',
+        '#mt-page .mt-tk:not(.cont):active{box-shadow:' + hi + ',0 1px 0 var(--sand-dark),0 2px 4px rgba(0,0,0,.12);}',
+        '#mt-page .mt-tk:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}',
+        '#mt-page .mt-tk-main{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:24px 16px 24px 24px;}',
+        '#mt-page .mt-tk .mt-name{font-size:18px;font-weight:600;line-height:1.25;}',
+        '#mt-page .mt-tk .mt-dates{font-size:15px;margin:0;}',
+        '#mt-page .mt-cities{font-size:13px;color:var(--ink-muted);}',
+        '#mt-page .mt-c{white-space:nowrap;}',
+        '#mt-page .mt-stub{flex:0 0 96px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:16px 8px;border-left:2px dashed var(--sand-dark);text-align:center;}',
+        '#mt-page .mt-stub::before,#mt-page .mt-stub::after{content:"";position:absolute;left:-9px;width:16px;height:16px;border-radius:50%;background:var(--white);}',
+        '#mt-page .mt-stub::before{top:-9px;}',
+        '#mt-page .mt-stub::after{bottom:-9px;}',
+        '#mt-page .mt-num{font-size:48px;font-weight:600;line-height:1;color:var(--accent);}',
+        '#mt-page .mt-unit{font-size:13px;color:var(--ink-muted);white-space:nowrap;}',
+        '#mt-page .mt-ended{font-size:15px;font-weight:600;color:var(--ink-muted);}',
+        '#mt-page .mt-tk.cont .mt-stub{background:var(--accent);border-left-color:rgba(255,255,255,.6);border-radius:0 19px 19px 0;}',
+        '#mt-page .mt-tk.cont .mt-num,#mt-page .mt-tk.cont .mt-unit,#mt-page .mt-tk.cont .mt-ended{color:#fff;}',
+        '#mt-page .mt-ft{display:flex;min-height:72px;margin:0 0 16px;background:var(--sand);border:1px solid var(--sand-dark);border-radius:20px;color:var(--ink);box-shadow:' + hi + ',0 1px 2px rgba(0,0,0,.25);}',
+        '#mt-page .mt-ft .mt-tk-main{padding:16px 16px 16px 24px;}',
+        '#mt-page .mt-ft .mt-name{font-size:15px;font-weight:600;}',
+        '#mt-page .mt-ft .mt-dates{font-size:13px;margin:0;}',
+        '#mt-page .mt-ft .mt-stub{color:var(--accent);}',
+        '#mt-page .mt-btn.mt-new{background:var(--sand);color:var(--ink);border:1px solid var(--sand-dark);min-height:48px;border-radius:12px;}',
+        '#mt-page .mt-btn.sec{background:none;color:var(--ink-muted);}',
+        '#mt-page .mt-label{text-transform:none;font-size:13px;letter-spacing:0;font-weight:600;}',
+        '@media (prefers-reduced-motion:reduce){#mt-page .mt-tk{transition:none;}}'
+      ].join('');
+      document.head.appendChild(st);
+    }
+
+function mtDayLabel(iso) {
+      var wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var mo = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      var p = iso.split('-');
+      var dow = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay();
+      return wd[dow] + ' ' + (+p[2]) + ' ' + mo[+p[1] - 1];
+    }
+
+function mtStubParts(e) {
+      if (!e || !e.start) return { num: '', unit: '' };
+      var today = mtToday();
+      var en = e.end || e.start;
+      if (today < e.start) {
+        var n = mtDiff(today, e.start);
+        return { num: String(n), unit: n === 1 ? 'day to go' : 'days to go' };
+      }
+      if (today <= en) {
+        var left = mtDiff(today, en);
+        if (left === 0) return { num: '', unit: 'Last day' };
+        return { num: String(left), unit: left === 1 ? 'day left' : 'days left' };
+      }
+      return { ended: true };
+    }
+
+function mtNextFlight(trip, today) {
+      var best = null;
+      (trip.days || []).forEach(function(d) {
+        if (best) return;
+        var iso = getDayDateISO(d, trip);
+        if (!iso || iso < today) return;
+        (d.transport || []).forEach(function(t) {
+          if (best || !t) return;
+          if (t.type && String(t.type).toLowerCase() !== 'flight') return;
+          var f = getFlightDisplay(t);
+          if (f.from || f.to) best = { iso: iso, f: f };
+        });
+      });
+      return best;
+    }
+
+function mtWrapParts(parts) {
+      return parts.map(function(p, i) { return '<span class="mt-c">' + ntcEsc(p) + (i < parts.length - 1 ? ',' : '') + '</span>'; }).join(' ');
+    }
+
+function mtTkKey(ev, key) {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); mtOpenTrip(key); }
+    }
+
+function mtEnsureCss() {
+      mtEnsureTicketCss();
       if (document.getElementById('mt-style')) return;
       var st = document.createElement('style');
       st.id = 'mt-style';
@@ -4605,6 +4692,40 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     function mtCardHtml(x, isCont) {
       var e = x.e;
+      var cs = (e.cities || []).filter(function(c) { try { return !getCityInfo(c).noMarker; } catch (err) { return true; } });
+      var sp = mtStubParts(e);
+      var stub = sp.ended ? '<span class="mt-ended">Ended</span>' : '<span class="mt-num">' + ntcEsc(sp.num) + '</span><span class="mt-unit">' + ntcEsc(sp.unit) + '</span>';
+      var k = String(x.key).replace(/'/g, "\\'");
+      var tk = '<div class="mt-tk' + (isCont ? ' cont' : '') + '" role="button" tabindex="0" ontouchstart="" onclick="mtOpenTrip(\'' + k + '\')" onkeydown="mtTkKey(event,\'' + k + '\')">' +
+        '<div class="mt-tk-main">' +
+          '<div class="mt-name">' + ntcEsc(e.name || x.key) + (e.test ? '<span class="mt-tag">TEST</span>' : '') + '</div>' +
+          '<div class="mt-dates"><span class="mt-c">' + mtFmt(e.start) + ' –</span> <span class="mt-c">' + mtFmt(e.end) + '</span></div>' +
+          (cs.length ? '<div class="mt-cities">' + mtWrapParts(cs) + '</div>' : '') +
+        '</div>' +
+        '<div class="mt-stub">' + stub + '</div>' +
+      '</div>';
+      return tk + (isCont ? mtFlightTicketHtml(x) : '');
+    }
+
+function mtCardHtmlOld(x, isCont) {
+      var e = x.e;
+      var cs = (e.cities || []).filter(function(c) { try { return !getCityInfo(c).noMarker; } catch (err) { return true; } });
+      var sp = mtStubParts(e);
+      var stub = sp.ended ? '<span class="mt-ended">Ended</span>' : '<span class="mt-num">' + ntcEsc(sp.num) + '</span><span class="mt-unit">' + ntcEsc(sp.unit) + '</span>';
+      var k = String(x.key).replace(/'/g, "\\'");
+      var tk = '<div class="mt-tk' + (isCont ? ' cont' : '') + '" role="button" tabindex="0" ontouchstart="" onclick="mtOpenTrip(\'' + k + '\')" onkeydown="mtTkKey(event,\'' + k + '\')">' +
+        '<div class="mt-tk-main">' +
+          '<div class="mt-name">' + ntcEsc(e.name || x.key) + (e.test ? '<span class="mt-tag">TEST</span>' : '') + '</div>' +
+          '<div class="mt-dates"><span class="mt-c">' + mtFmt(e.start) + ' –</span> <span class="mt-c">' + mtFmt(e.end) + '</span></div>' +
+          (cs.length ? '<div class="mt-cities">' + mtWrapParts(cs) + '</div>' : '') +
+        '</div>' +
+        '<div class="mt-stub">' + stub + '</div>' +
+      '</div>';
+      return tk + (isCont ? mtFlightTicketHtml(x) : '');
+    }
+
+function mtCardHtmlOld(x, isCont) {
+      var e = x.e;
       var _cs = (e.cities || []).filter(function(c) { try { return !getCityInfo(c).noMarker; } catch (err) { return true; } });
       var chips = _cs.slice(0, 6).map(function(c) { return '<span class="mt-chip">' + ntcEsc(c) + '</span>'; }).join('');
       var more = _cs.length - 6;
@@ -4617,7 +4738,35 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       '</div>';
     }
 
-    function mtRender() {
+    function mtFlightTicketHtml(x) {
+      if (!currentTrip || x.key !== currentTripKey) return '';
+      var e = x.e, today = mtToday(), name = '', parts = [], icon = '';
+      var plane = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16l20-6-3-3-6 2-6-5-2 1 4 6-5 2z"/></svg>';
+      var pin = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+      if (today < e.start) {
+        var nf = mtNextFlight(currentTrip, today);
+        if (!nf) return '';
+        name = (nf.f.from && nf.f.to) ? nf.f.from + ' to ' + nf.f.to : (nf.f.from || nf.f.to);
+        parts = [nf.f.flightNum, mtDayLabel(nf.iso), nf.f.depart].filter(Boolean);
+        icon = plane;
+      } else if (today <= (e.end || e.start)) {
+        var days = currentTrip.days || [];
+        for (var i = 0; i < days.length; i++) {
+          if (getDayDateISO(days[i], currentTrip) === today) {
+            name = String(days[i].city || '').replace(/ > /g, ' to ');
+            parts = ['Today', 'Day ' + (i + 1) + ' of ' + days.length];
+            icon = pin;
+            break;
+          }
+        }
+        if (!name) return '';
+      } else {
+        return '';
+      }
+      return '<div class="mt-ft"><div class="mt-tk-main"><div class="mt-name">' + ntcEsc(name) + '</div><div class="mt-dates">' + mtWrapParts(parts) + '</div></div><div class="mt-stub">' + icon + '</div></div>';
+    }
+
+function mtRender() {
       var el = document.getElementById('mt-inner');
       if (!el) return;
       var list = getTripListForPicker();
@@ -4628,12 +4777,12 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var upcoming = rest.filter(function(x) { return !x.past; });
       var past = rest.filter(function(x) { return x.past; });
       var h = '<div class="mt-title">Your trips</div><div class="mt-sub">Pick one up, or start something new.</div>';
-      if (cont) { h += '<div class="mt-label">Continue</div>' + mtCardHtml(cont, true); }
+      if (cont) { h += mtCardHtml(cont, true); }
       if (upcoming.length) {
         h += '<div class="mt-label">All trips</div>' + upcoming.map(function(x) { return mtCardHtml(x, false); }).join('');
       }
       if (!cont && !upcoming.length && !past.length) { h += '<div class="mt-empty">Nothing planned yet. Start one!</div>'; }
-      h += '<button class="mt-btn" onclick="openTripCreator()">＋ New trip</button>';
+      h += '<button class="mt-btn mt-new" onclick="openTripCreator()">＋ New trip</button>';
       if (past.length) {
         h += '<button class="mt-btn sec" onclick="mtTogglePast()">Past trips (' + past.length + ') ' + (window._mtPastOpen ? '▴' : '▾') + '</button>';
         if (window._mtPastOpen) { h += '<div style="margin-top:10px;">' + past.map(function(x) { return mtCardHtml(x, false); }).join('') + '</div>'; }
