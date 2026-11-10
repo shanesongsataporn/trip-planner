@@ -772,7 +772,7 @@
     .disc-cat-btn { font-family: inherit; font-size: 12px; font-weight: 700; padding: 12px 8px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: var(--sand); color: var(--ink); cursor: pointer; text-align: center; transition: all 0.15s; }
     .disc-cat-btn:hover, .disc-cat-btn.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
     .disc-subcat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .disc-day-list { max-height: 220px; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); overflow: hidden; }
+    .disc-day-list { max-height: 220px; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); overflow-x: hidden; overscroll-behavior: contain; }
     .disc-day-option { padding: 11px 14px; font-size: 13px; font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--sand-dark); cursor: pointer; transition: background 0.12s; display: flex; align-items: center; gap: 8px; }
     .disc-day-option:last-child { border-bottom: none; }
     .disc-day-option:hover, .disc-day-option.selected { background: var(--accent-light); color: var(--accent); font-weight: 700; }
