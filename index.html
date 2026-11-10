@@ -11734,6 +11734,41 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       syncStaysToDays();
     }
 
+    // Dry run on a throwaway copy: which hotels would go or lose nights, and where the trip would end. Saves nothing.
+    function _previewDeleteDays(indices) {
+      var real = currentTrip;
+      var res = { ok: true, removedStays: [], shortenedStays: [], lastDateBefore: '', lastDateAfter: '', daysAfter: 0 };
+      var nightsOf = function(t, s) {
+        var a = getDayByCheckinRef(s, t), b = getDayByCheckoutRef(s, t);
+        return (a && b) ? t.days.indexOf(b) - t.days.indexOf(a) : -1;
+      };
+      try {
+        var copy = JSON.parse(JSON.stringify(real));
+        var before = {};
+        (real.stays || []).forEach(function(s) { before[s.id] = nightsOf(real, s); });
+        res.lastDateBefore = getDayDate(real.days[real.days.length - 1], real);
+        currentTrip = copy;
+        indices.slice().sort(function(a, b) { return b - a; }).forEach(function(i) {
+          if (!_deleteDayAt(i)) res.ok = false;
+        });
+        res.daysAfter = copy.days.length;
+        res.lastDateAfter = getDayDate(copy.days[copy.days.length - 1], copy);
+        var after = {};
+        (copy.stays || []).forEach(function(s) { after[s.id] = s; });
+        (real.stays || []).forEach(function(s) {
+          var a = after[s.id];
+          if (!a) res.removedStays.push(s.name);
+          else if (nightsOf(copy, a) !== before[s.id]) res.shortenedStays.push(s.name);
+        });
+      } catch (e) {
+        res.ok = false;
+        res.error = e.message;
+      } finally {
+        currentTrip = real;
+      }
+      return res;
+    }
+
     function _deleteDayAt(deletedAt) {
       if (!Array.isArray(currentTrip.days)) return null;
       if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
