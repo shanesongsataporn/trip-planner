@@ -11769,6 +11769,22 @@ else if (type === 'food') { normaliseFood(currentDayItem); currentDayItem.food.p
       return res;
     }
 
+    // Plain-English note for a delete confirm box: hotels affected and how far later days move. Saves nothing.
+    function _deleteDaysNote(indices) {
+      if (!indices || !indices.length) return '';
+      var p = _previewDeleteDays(indices);
+      if (!p.ok) return '';
+      var lines = [];
+      if (p.removedStays.length) lines.push('Hotels removed (no nights left): ' + p.removedStays.join(', ') + '.');
+      if (p.shortenedStays.length) lines.push('Hotels losing a night: ' + p.shortenedStays.join(', ') + '.');
+      var n = indices.length;
+      var movesLater = Math.max.apply(null, indices) < currentTrip.days.length - 1;
+      var endDates = p.lastDateAfter + ' instead of ' + p.lastDateBefore;
+      if (movesLater) lines.push('Days after ' + (n === 1 ? 'it move 1 day' : 'them move ' + n + ' days') + ' earlier, so the trip will end ' + endDates + '.');
+      else lines.push('The trip will end ' + endDates + '.');
+      return lines.join('\n');
+    }
+
     function _deleteDayAt(deletedAt) {
       if (!Array.isArray(currentTrip.days)) return null;
       if (deletedAt < 0 || deletedAt >= currentTrip.days.length) return null;
