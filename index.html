@@ -7740,6 +7740,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function undoStructAction() {
+      var _us = structHistory.length ? structHistory[0].stays : null;
+      if (_us) currentTrip.stays = JSON.parse(JSON.stringify(_us));
       if (!structHistory.length) return;
       var entry = structHistory.shift();
       currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
@@ -7750,6 +7752,8 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
     }
 
     function undoSplitAction() {
+      var _us = structHistory.length ? structHistory[0].stays : null;
+      if (_us) currentTrip.stays = JSON.parse(JSON.stringify(_us));
       if (!structHistory.length) return;
       var entry = structHistory.shift();
       currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
@@ -7792,6 +7796,7 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
       var entry = structHistory[index];
       if (!entry) return;
       currentTrip.days = JSON.parse(JSON.stringify(entry.snapshot));
+      if (entry.stays) { currentTrip.stays = JSON.parse(JSON.stringify(entry.stays)); syncStaysToDays(); }
       structHistory = structHistory.slice(index + 1);
       saveToStorage();
       renderPlanView();
