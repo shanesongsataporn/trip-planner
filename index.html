@@ -544,7 +544,47 @@
     .accom-add-btn { width: 100%; font-family: inherit; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius-sm); border: none; background: var(--accent); color: #fff; cursor: pointer; margin-top: 16px; }
     .accom-add-btn:disabled { opacity: 0.4; cursor: default; }
     .accom-cancel-btn { width: 100%; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: none; color: var(--ink-muted); cursor: pointer; margin-top: 8px; }
-    #view-lists { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
+    #view-packing { display: none; position: fixed; inset: 56px 0 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
+.pk-wrap { max-width: 680px; margin: 0 auto; }
+.pk-title { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--ink); }
+.pk-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 16px; }
+.pk-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.pk-tab { flex: 1; min-height: 44px; border-radius: var(--radius-sm); border: 1px solid var(--sand-dark); background: none; padding: 4px; text-align: center; font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink-muted); display: flex; flex-direction: column; justify-content: center; line-height: 1.2; cursor: pointer; }
+.pk-tab small { font-weight: 600; font-size: 11px; }
+.pk-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pk-bar { height: 6px; border-radius: 3px; background: var(--sand-dark); margin-bottom: 16px; overflow: hidden; }
+.pk-bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.pk-cat { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); margin-bottom: 12px; overflow: hidden; }
+.pk-cat-h { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
+.pk-row { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 16px; border-top: 1px solid var(--sand-dark); font-size: 14px; color: var(--ink); }
+.pk-box { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--ink-muted); background: none; padding: 0; flex: none; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.pk-box::after { content: ''; position: absolute; inset: -11px; }
+.pk-box.d { background: var(--accent); border-color: var(--accent); }
+.pk-box svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.pk-t { flex: 1; min-width: 0; cursor: pointer; padding: 8px 0; }
+.pk-t.d { color: var(--ink-muted); text-decoration: line-through; }
+.pk-note { font-size: 11px; color: var(--ink-muted); margin-top: 1px; text-decoration: none; }
+.pk-add { display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-top: 1px solid var(--sand-dark); font-family: inherit; font-size: 13px; font-weight: 700; color: var(--accent); background: none; border-left: none; border-right: none; border-bottom: none; width: 100%; text-align: left; cursor: pointer; }
+.pk-edit { padding: 12px 16px; border-top: 1px solid var(--sand-dark); background: var(--sand); }
+.pk-edit label { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 4px; }
+.pk-input { width: 100%; font-family: inherit; font-size: 14px; color: var(--ink); border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--white); box-sizing: border-box; margin-bottom: 8px; }
+.pk-btns { display: flex; gap: 8px; }
+.pk-btn { font-family: inherit; font-size: 12px; font-weight: 700; padding: 8px 16px; min-height: 36px; border-radius: 20px; border: none; background: var(--accent); color: #fff; cursor: pointer; }
+.pk-btn.sec { background: none; border: 1px solid var(--sand-dark); color: var(--ink-muted); }
+.pk-btn.del { background: none; border: 1px solid var(--danger); color: var(--danger); margin-left: auto; }
+.pk-two { display: grid; grid-template-columns: 1fr 1fr; }
+.pk-two .pk-col { min-width: 0; }
+.pk-two .pk-col + .pk-col { border-left: 1px solid var(--sand-dark); }
+.pk-two .pk-row { padding: 0 12px; gap: 8px; font-size: 13px; }
+.pk-who { font-size: 11px; font-weight: 800; color: var(--ink); padding: 0 12px 8px; display: flex; justify-content: space-between; }
+.pk-empty { padding: 12px; font-size: 12px; color: var(--ink-muted); }
+.pk-notes { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); padding: 12px 16px 16px; }
+.pk-notes .pk-lab { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
+.pk-notes textarea { width: 100%; min-height: 84px; font-family: inherit; font-size: 13px; line-height: 1.4; color: var(--ink); border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--sand); box-sizing: border-box; resize: vertical; }
+.pk-notes .pk-hint { font-size: 11px; color: var(--ink-muted); margin-top: 8px; }
+.pk-tx.d { color: var(--ink-muted); text-decoration: line-through; }
+.pk-btns.top { margin-bottom: 16px; }
+#view-lists { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
     #view-transport { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
@@ -1298,6 +1338,7 @@ gmp-advanced-marker.map-pin-active {
       <div class="menu-section-label">Logistics</div>
       <button class="menu-item" onclick="setView('accommodation');toggleMenu('hamburger-menu')">🏨 Accommodation</button>
       <button class="menu-item" onclick="setView('transport');toggleMenu('hamburger-menu')">✈️ Transport</button>
+      <button class="menu-item" onclick="setView('packing');toggleMenu('hamburger-menu')">🎒 Packing</button>
       <button class="menu-item" onclick="setView('lists');toggleMenu('hamburger-menu')">📋 Lists</button>
     </div>
     <div class="menu-section">
@@ -1345,6 +1386,7 @@ gmp-advanced-marker.map-pin-active {
       <div class="menu-section-label">Logistics</div>
       <button class="menu-item" onclick="setView('accommodation');toggleMenu('mob-hamburger-menu')">🏨 Accommodation</button>
       <button class="menu-item" onclick="setView('transport');toggleMenu('mob-hamburger-menu')">✈️ Transport</button>
+      <button class="menu-item" onclick="setView('packing');toggleMenu('mob-hamburger-menu')">🎒 Packing</button>
       <button class="menu-item" onclick="setView('lists');toggleMenu('mob-hamburger-menu')">📋 Lists</button>
     </div>
     <div class="menu-section">
@@ -1428,6 +1470,7 @@ gmp-advanced-marker.map-pin-active {
     </div>
   </div>
   <div id="view-accommodation"></div>
+  <div id="view-packing"></div>
   <div id="view-lists"></div>
   <div id="view-home"></div>
   <div id="view-budget"></div>
@@ -4266,6 +4309,9 @@ var map, splitMap, currentTrip, currentTripKey = 'thailand_2026';
 
     // ===== VIEW SWITCHING =====
     function setView(view) {
+      var pkEl = document.getElementById('view-packing');
+      if (pkEl) { pkEl.style.display = view === 'packing' ? 'block' : 'none'; }
+      if (view === 'packing' && typeof renderPacking === 'function') { renderPacking(); }
       closeDeItemSheet();
       if (document.getElementById('home-edit-done-pill')) { exitHomeTileEdit(); }
       if (!__suppressHistoryPush) { pushHistoryState(view); }
@@ -5747,7 +5793,274 @@ function mtRender() {
       renderLists();
     }
 
-    function renderLists() {
+    var PK_CATS = ['Before you go', 'Documents', 'Clothes', 'Toiletries', 'Tech', 'Health', 'Other'];
+var PK_CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>';
+var _pkTab = 'p1';
+var _pkEditId = null;
+var _pkAddCat = null;
+var _pkSyncTimer = null;
+
+function pkUid() {
+  return 'u' + Math.random().toString(36).slice(2, 8);
+}
+
+function pkEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function pkStarter() {
+  var groups = [
+    ['Before you go', ['Arrange travel insurance', 'Tell the bank', 'Charge devices', 'Download offline maps']],
+    ['Documents', ['Passport', 'Visa or entry papers', 'Insurance details', 'Booking confirmations', 'Cards and cash']],
+    ['Clothes', ['Tops', 'Bottoms', 'Underwear and socks', 'Sleepwear', 'Swimwear', 'Shoes', 'Light jacket']],
+    ['Toiletries', ['Toothbrush and toothpaste', 'Deodorant', 'Sunscreen', 'Shampoo', 'Razor']],
+    ['Tech', ['Phone charger', 'Power bank', 'Plug adapter', 'Headphones']],
+    ['Health', ['Regular medication', 'Basic first aid', 'Pain relief']],
+    ['Other', ['Daypack', 'Water bottle', 'Earplugs and eye mask']]
+  ];
+  var person = [];
+  groups.forEach(function(g) {
+    g[1].forEach(function(t) { person.push({ cat: g[0], text: t }); });
+  });
+  var shared = [
+    { cat: 'Before you go', text: 'Airport transfers' },
+    { cat: 'Tech', text: 'Plug adapter' },
+    { cat: 'Health', text: 'First aid kit' },
+    { cat: 'Toiletries', text: 'Sunscreen' }
+  ];
+  return { person: person, shared: shared };
+}
+
+function pkEnsure() {
+  if (!currentTrip) return null;
+  var pk = currentTrip.packing;
+  if (!pk || typeof pk !== 'object') { pk = currentTrip.packing = {}; }
+  if (!Array.isArray(pk.people) || pk.people.length === 0) {
+    pk.people = [{ id: 'p1', name: 'Traveller 1' }, { id: 'p2', name: 'Traveller 2' }];
+  }
+  if (!Array.isArray(pk.items)) { pk.items = []; }
+  if (typeof pk.notes !== 'string') { pk.notes = ''; }
+  if (!pk.seeded) {
+    var st = pkStarter();
+    pk.people.forEach(function(p) {
+      st.person.forEach(function(s, i) {
+        pk.items.push({ id: p.id + '-' + i, who: p.id, cat: s.cat, text: s.text, done: false, note: '' });
+      });
+    });
+    st.shared.forEach(function(s, i) {
+      pk.items.push({ id: 'sh-' + i, who: 'shared', cat: s.cat, text: s.text, done: false, note: '' });
+    });
+    pk.seeded = true;
+  }
+  return pk;
+}
+
+function pkSave() {
+  deSuppressSync = true;
+  if (_pkSyncTimer) { clearTimeout(_pkSyncTimer); }
+  _pkSyncTimer = setTimeout(function() { deSuppressSync = false; _pkSyncTimer = null; }, 5000);
+  saveToStorage();
+}
+
+function pkProgress(who) {
+  var pk = currentTrip && currentTrip.packing;
+  var total = 0;
+  var done = 0;
+  if (pk && Array.isArray(pk.items)) {
+    pk.items.forEach(function(it) {
+      if (it && it.who === who) { total++; if (it.done) { done++; } }
+    });
+  }
+  return { done: done, total: total };
+}
+
+function pkFind(id) {
+  var pk = currentTrip && currentTrip.packing;
+  if (!pk || !Array.isArray(pk.items)) return null;
+  for (var i = 0; i < pk.items.length; i++) {
+    if (pk.items[i] && pk.items[i].id === id) return pk.items[i];
+  }
+  return null;
+}
+
+function pkSetTab(id) {
+  _pkTab = id;
+  _pkEditId = null;
+  _pkAddCat = null;
+  renderPacking();
+}
+
+function pkCancel() {
+  _pkEditId = null;
+  _pkAddCat = null;
+  renderPacking();
+}
+
+function pkToggle(id) {
+  var it = pkFind(id);
+  if (!it) return;
+  it.done = !it.done;
+  pkSave();
+  renderPacking();
+}
+
+function pkEdit(id) {
+  _pkEditId = (_pkEditId === id) ? null : id;
+  _pkAddCat = null;
+  renderPacking();
+}
+
+function pkSaveEdit(id) {
+  var it = pkFind(id);
+  if (!it) return;
+  var tEl = document.getElementById('pk-edit-text');
+  var nEl = document.getElementById('pk-edit-note');
+  var cEl = document.getElementById('pk-edit-cat');
+  var txt = tEl ? tEl.value.trim() : '';
+  if (txt) { it.text = txt; }
+  if (nEl) { it.note = nEl.value.trim(); }
+  if (cEl && PK_CATS.indexOf(cEl.value) > -1) { it.cat = cEl.value; }
+  _pkEditId = null;
+  pkSave();
+  renderPacking();
+}
+
+function pkDelete(id) {
+  var it = pkFind(id);
+  if (!it) return;
+  if (!confirm('Delete "' + it.text + '"?')) return;
+  currentTrip.packing.items = currentTrip.packing.items.filter(function(x) { return x && x.id !== id; });
+  _pkEditId = null;
+  pkSave();
+  renderPacking();
+}
+
+function pkShowAdd(ci) {
+  _pkAddCat = PK_CATS[ci] || null;
+  _pkEditId = null;
+  renderPacking();
+  var el = document.getElementById('pk-add-text');
+  if (el) { el.focus(); }
+}
+
+function pkConfirmAdd(ci) {
+  var cat = PK_CATS[ci];
+  var el = document.getElementById('pk-add-text');
+  var txt = el ? el.value.trim() : '';
+  _pkAddCat = null;
+  if (!cat || !txt || _pkTab === 'both') { renderPacking(); return; }
+  var pk = pkEnsure();
+  var id;
+  do { id = pkUid(); } while (pkFind(id));
+  pk.items.push({ id: id, who: _pkTab, cat: cat, text: txt, done: false, note: '' });
+  pkSave();
+  renderPacking();
+}
+
+function pkRename(id) {
+  var pk = pkEnsure();
+  var p = pk.people.find(function(x) { return x.id === id; });
+  if (!p) return;
+  var n = prompt('Name:', p.name);
+  if (n && n.trim()) {
+    p.name = n.trim();
+    pkSave();
+    renderPacking();
+  }
+}
+
+function pkSaveNotes() {
+  var el = document.getElementById('pk-notes');
+  var pk = pkEnsure();
+  if (!el || !pk) return;
+  if (el.value !== pk.notes) {
+    pk.notes = el.value;
+    pkSave();
+  }
+}
+
+function pkRowHtml(it, compact) {
+  var done = !!it.done;
+  var h = '<div class="pk-row">';
+  h += '<button class="pk-box' + (done ? ' d' : '') + '" onclick="pkToggle(\'' + it.id + '\')" aria-pressed="' + done + '" aria-label="Packed: ' + pkEsc(it.text) + '">' + (done ? PK_CHECK : '') + '</button>';
+  h += '<div class="pk-t"' + (compact ? '' : ' onclick="pkEdit(\'' + it.id + '\')"') + '>';
+  h += '<span class="pk-tx' + (done ? ' d' : '') + '">' + pkEsc(it.text) + '</span>';
+  if (it.note && !compact) { h += '<div class="pk-note">' + pkEsc(it.note) + '</div>'; }
+  h += '</div></div>';
+  if (!compact && _pkEditId === it.id) {
+    var opts = PK_CATS.map(function(c) {
+      return '<option value="' + pkEsc(c) + '"' + (c === it.cat ? ' selected' : '') + '>' + pkEsc(c) + '</option>';
+    }).join('');
+    h += '<div class="pk-edit">';
+    h += '<label>Item</label><input id="pk-edit-text" class="pk-input" type="text" value="' + pkEsc(it.text) + '">';
+    h += '<label>Note</label><input id="pk-edit-note" class="pk-input" type="text" value="' + pkEsc(it.note || '') + '" placeholder="e.g. blue one, in the hallway">';
+    h += '<label>Category</label><select id="pk-edit-cat" class="pk-input">' + opts + '</select>';
+    h += '<div class="pk-btns"><button class="pk-btn" onclick="pkSaveEdit(\'' + it.id + '\')">Save</button><button class="pk-btn sec" onclick="pkCancel()">Cancel</button><button class="pk-btn del" onclick="pkDelete(\'' + it.id + '\')">Delete</button></div>';
+    h += '</div>';
+  }
+  return h;
+}
+
+function renderPacking() {
+  var el = document.getElementById('view-packing');
+  if (!el) return;
+  var pk = pkEnsure();
+  if (!pk) return;
+  var st = el.scrollTop;
+  var people = pk.people;
+  var isPerson = people.some(function(p) { return p.id === _pkTab; });
+  if (!isPerson && _pkTab !== 'shared' && _pkTab !== 'both') { _pkTab = people[0].id; isPerson = true; }
+  var sub = _pkTab === 'both' ? 'Who is packing what.' : (_pkTab === 'shared' ? 'Things one of you brings for both.' : 'Tick things off as you pack them.');
+  var h = '<div class="pk-wrap"><h2 class="pk-title">Packing</h2><div class="pk-sub">' + sub + '</div>';
+  h += '<div class="pk-tabs">';
+  people.forEach(function(p) {
+    var pr = pkProgress(p.id);
+    h += '<button class="pk-tab' + (_pkTab === p.id ? ' on' : '') + '" onclick="pkSetTab(\'' + p.id + '\')">' + pkEsc(p.name) + '<small>' + pr.done + ' of ' + pr.total + '</small></button>';
+  });
+  var ps = pkProgress('shared');
+  h += '<button class="pk-tab' + (_pkTab === 'shared' ? ' on' : '') + '" onclick="pkSetTab(\'shared\')">Shared<small>' + ps.done + ' of ' + ps.total + '</small></button>';
+  h += '<button class="pk-tab' + (_pkTab === 'both' ? ' on' : '') + '" onclick="pkSetTab(\'both\')">Both</button>';
+  h += '</div>';
+  if (_pkTab === 'both') {
+    PK_CATS.forEach(function(cat) {
+      var any = false;
+      var cols = people.map(function(p) {
+        var its = pk.items.filter(function(x) { return x && x.who === p.id && x.cat === cat; });
+        if (its.length) { any = true; }
+        var dn = its.filter(function(x) { return x.done; }).length;
+        var c = '<div class="pk-col"><div class="pk-who"><span>' + pkEsc(p.name) + '</span><span>' + (its.length ? dn + ' of ' + its.length : '') + '</span></div>';
+        c += its.length ? its.map(function(x) { return pkRowHtml(x, true); }).join('') : '<div class="pk-empty">Nothing here</div>';
+        return c + '</div>';
+      });
+      if (!any) return;
+      h += '<div class="pk-cat"><div class="pk-cat-h"><span>' + pkEsc(cat) + '</span></div><div class="pk-two">' + cols.join('') + '</div></div>';
+    });
+  } else {
+    var pr2 = pkProgress(_pkTab);
+    var pct = pr2.total ? Math.round(pr2.done * 100 / pr2.total) : 0;
+    h += '<div class="pk-bar"><i style="width:' + pct + '%"></i></div>';
+    if (isPerson) {
+      h += '<div class="pk-btns top"><button class="pk-btn sec" onclick="pkRename(\'' + _pkTab + '\')">Rename</button></div>';
+    }
+    PK_CATS.forEach(function(cat, ci) {
+      var its = pk.items.filter(function(x) { return x && x.who === _pkTab && x.cat === cat; });
+      var dn = its.filter(function(x) { return x.done; }).length;
+      h += '<div class="pk-cat"><div class="pk-cat-h"><span>' + pkEsc(cat) + '</span><span>' + (its.length ? dn + ' of ' + its.length : '') + '</span></div>';
+      h += its.map(function(x) { return pkRowHtml(x, false); }).join('');
+      if (_pkAddCat === cat) {
+        h += '<div class="pk-edit"><input id="pk-add-text" class="pk-input" type="text" placeholder="New item" onkeydown="if(event.key===\'Enter\'){pkConfirmAdd(' + ci + ');}"><div class="pk-btns"><button class="pk-btn" onclick="pkConfirmAdd(' + ci + ')">Add</button><button class="pk-btn sec" onclick="pkCancel()">Cancel</button></div></div>';
+      } else {
+        h += '<button class="pk-add" onclick="pkShowAdd(' + ci + ')">+ Add item</button>';
+      }
+      h += '</div>';
+    });
+  }
+  h += '<div class="pk-notes"><div class="pk-lab">Notes</div><textarea id="pk-notes" onblur="pkSaveNotes()" placeholder="Anything that does not belong to one item">' + pkEsc(pk.notes) + '</textarea><div class="pk-hint">No passport or card numbers here. Trips are not private yet.</div></div></div>';
+  el.innerHTML = h;
+  el.scrollTop = st;
+}
+
+function renderLists() {
       var el = document.getElementById('view-lists');
       if (!el) return;
       if (!Array.isArray(currentTrip.lists)) currentTrip.lists = [];
@@ -16058,6 +16371,7 @@ reviewEl.innerHTML = '<div style="background:var(--sand);border-radius:var(--rad
             if (currentView === 'split' && !deSuppressSync) { renderSplit(); }
             if (currentView === 'budget') { renderBudget(); }
             if (currentView === 'food') { renderFood(); }
+            if (currentView === 'packing' && !(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && document.activeElement.closest('#view-packing'))) { renderPacking(); }
           }
         }
       });
