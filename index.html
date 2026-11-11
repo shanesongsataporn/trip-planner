@@ -584,6 +584,12 @@
 .pk-notes .pk-hint { font-size: 11px; color: var(--ink-muted); margin-top: 8px; }
 .pk-tx.d { color: var(--ink-muted); text-decoration: line-through; }
 .pk-btns.top { margin-bottom: 16px; }
+.pk-cat-h { cursor: pointer; min-height: 44px; -webkit-tap-highlight-color: transparent; }
+.pk-cat-h > span:last-child { display: flex; align-items: center; gap: 8px; }
+.pk-chev { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s; }
+.pk-cat.shut .pk-chev { transform: rotate(-90deg); }
+.pk-cat.shut > .pk-row, .pk-cat.shut > .pk-edit, .pk-cat.shut > .pk-add, .pk-cat.shut > .pk-two { display: none; }
+@media (prefers-reduced-motion: reduce) { .pk-chev { transition: none; } }
 #view-lists { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px 20px 120px; scrollbar-width: thin; }
     #view-budget { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
 #view-food { display: none; position: fixed; top: 56px; left: 0; right: 0; bottom: 100px; overflow-y: auto; background: var(--sand); z-index: 1; padding: 20px; scrollbar-width: thin; }
@@ -6002,6 +6008,11 @@ function pkRowHtml(it, compact) {
 }
 
 function renderPacking() {
+  renderPackingBase();
+  pkDecorateCats(document.getElementById('view-packing'));
+}
+
+function renderPackingBase() {
   var el = document.getElementById('view-packing');
   if (!el) return;
   var pk = pkEnsure();
@@ -6058,6 +6069,53 @@ function renderPacking() {
   h += '<div class="pk-notes"><div class="pk-lab">Notes</div><textarea id="pk-notes" onblur="pkSaveNotes()" placeholder="Anything that does not belong to one item">' + pkEsc(pk.notes) + '</textarea><div class="pk-hint">No passport or card numbers here. Trips are not private yet.</div></div></div>';
   el.innerHTML = h;
   el.scrollTop = st;
+}
+
+function pkLoadCollapsed() {
+  try {
+    var raw = localStorage.getItem('pk_collapsed');
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && typeof o === 'object' && !Array.isArray(o)) { return o; }
+    }
+  } catch (e) {}
+  return {};
+}
+
+var _pkCollapsed = pkLoadCollapsed();
+
+function pkToggleCat(ci) {
+  var cat = PK_CATS[ci];
+  if (!cat) return;
+  if (_pkCollapsed[cat]) { delete _pkCollapsed[cat]; } else { _pkCollapsed[cat] = true; }
+  try { localStorage.setItem('pk_collapsed', JSON.stringify(_pkCollapsed)); } catch (e) {}
+  if (_pkCollapsed[cat]) {
+    if (_pkAddCat === cat) { _pkAddCat = null; }
+    var editing = _pkEditId ? pkFind(_pkEditId) : null;
+    if (editing && editing.cat === cat) { _pkEditId = null; }
+  }
+  renderPacking();
+}
+
+function pkDecorateCats(el) {
+  if (!el) return;
+  var chev = '<svg class="pk-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+  Array.prototype.forEach.call(el.querySelectorAll('.pk-cat'), function(card) {
+    var head = card.querySelector('.pk-cat-h');
+    if (!head || !head.firstElementChild) return;
+    var name = head.firstElementChild.textContent;
+    var ci = PK_CATS.indexOf(name);
+    if (ci === -1) return;
+    var shut = !!_pkCollapsed[name];
+    if (head.children.length < 2) { head.appendChild(document.createElement('span')); }
+    head.lastElementChild.insertAdjacentHTML('beforeend', chev);
+    head.setAttribute('role', 'button');
+    head.setAttribute('tabindex', '0');
+    head.setAttribute('aria-expanded', shut ? 'false' : 'true');
+    head.setAttribute('onclick', 'pkToggleCat(' + ci + ')');
+    head.setAttribute('onkeydown', "if(event.key==='Enter'||event.key===' '){event.preventDefault();pkToggleCat(" + ci + ");}");
+    if (shut) { card.classList.add('shut'); }
+  });
 }
 
 function renderLists() {
